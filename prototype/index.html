@@ -1,226 +1,54 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Emberwing — prototype</title>
+  <title>Emberwing — sanity check</title>
   <style>
-    html, body { margin: 0; background:#000; overflow:hidden; }
+    html, body { margin:0; background:#000; overflow:hidden; }
     canvas { display:block; }
+    #badge {
+      position:fixed; left:12px; top:12px;
+      color:#fff; font:14px ui-monospace, Menlo, Monaco, Consolas, monospace;
+      background:rgba(0,0,0,0.4); padding:8px 10px; border:1px solid rgba(255,255,255,0.2);
+      border-radius:10px;
+    }
   </style>
 </head>
 <body>
-<canvas id="c"></canvas>
+  <div id="badge">JS is running ✅ (you should see a red dot)</div>
+  <canvas id="c"></canvas>
 
-<script>
-(() => {
-  const canvas = document.getElementById("c");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    alert("Canvas 2D context failed to initialize.");
-    return;
-  }
+  <script>
+    const c = document.getElementById("c");
+    const ctx = c.getContext("2d");
 
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  window.addEventListener("resize", () => { resize(); makeStars(); });
-  resize();
-
-  // ---------- Arrow Keys ONLY ----------
-  const arrows = { ArrowLeft:false, ArrowRight:false, ArrowUp:false };
-  window.addEventListener("keydown", (e) => {
-    if (e.key in arrows) { arrows[e.key] = true; e.preventDefault(); }
-  });
-  window.addEventListener("keyup", (e) => {
-    if (e.key in arrows) { arrows[e.key] = false; e.preventDefault(); }
-  });
-
-  // ---------- Stars ----------
-  const stars = [];
-  function makeStars() {
-    stars.length = 0;
-    const count = Math.max(250, Math.floor((canvas.width * canvas.height) / 5000));
-    for (let i = 0; i < count; i++) {
-      stars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        d: 0.35 + Math.random() * 1.25, // depth
-        a: 0.15 + Math.random() * 0.65  // alpha
-      });
+    function resize() {
+      c.width = innerWidth;
+      c.height = innerHeight;
     }
-  }
-  makeStars();
+    addEventListener("resize", resize);
+    resize();
 
-  // ---------- Ship (ember) ----------
-  let x = canvas.width / 2;
-  let y = canvas.height / 2;
-  let angle = -Math.PI / 2;
+    let t = 0;
+    function loop() {
+      t += 0.02;
 
-  const baseSpeed = 2.1;
-  const boostSpeed = 4.0;
-  const turnRate = 0.06;
-
-  // ---------- Trail ----------
-  const trail = []; // {x,y,life,size}
-  function addTrail(boosting) {
-    const bx = x - Math.cos(angle) * 10;
-    const by = y - Math.sin(angle) * 10;
-
-    trail.push({
-      x: bx + (Math.random()-0.5) * 3,
-      y: by + (Math.random()-0.5) * 3,
-      life: boosting ? 0.65 : 0.85,
-      size: boosting ? 10 + Math.random()*10 : 8 + Math.random()*8
-    });
-
-    // keep it light
-    if (trail.length > 160) trail.splice(0, trail.length - 160);
-  }
-
-  function wrap() {
-    if (x < 0) x += canvas.width;
-    if (x > canvas.width) x -= canvas.width;
-    if (y < 0) y += canvas.height;
-    if (y > canvas.height) y -= canvas.height;
-  }
-
-  let last = performance.now();
-
-  function update(dt) {
-    if (arrows.ArrowLeft) angle -= turnRate;
-    if (arrows.ArrowRight) angle += turnRate;
-
-    const boosting = arrows.ArrowUp;
-    const speed = boosting ? boostSpeed : baseSpeed;
-
-    // move ship
-    x += Math.cos(angle) * speed;
-    y += Math.sin(angle) * speed;
-    wrap();
-
-    // parallax stars
-    const vx = Math.cos(angle) * speed;
-    const vy = Math.sin(angle) * speed;
-    for (const s of stars) {
-      s.x -= vx * (0.55 / s.d) * dt * 60;
-      s.y -= vy * (0.55 / s.d) * dt * 60;
-      if (s.x < 0) s.x += canvas.width;
-      if (s.x > canvas.width) s.x -= canvas.width;
-      if (s.y < 0) s.y += canvas.height;
-      if (s.y > canvas.height) s.y -= canvas.height;
-    }
-
-    // trail + decay
-    addTrail(boosting);
-    if (boosting) addTrail(true);
-
-    for (let i = trail.length - 1; i >= 0; i--) {
-      trail[i].life -= (boosting ? 1.7 : 1.4) * dt;
-      trail[i].size *= (1 - 0.9 * dt);
-      if (trail[i].life <= 0 || trail[i].size < 0.5) trail.splice(i, 1);
-    }
-
-    return { speed, boosting };
-  }
-
-  function draw(speed, boosting) {
-    // clear
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // stars
-    ctx.fillStyle = "#fff";
-    for (const s of stars) {
-      ctx.globalAlpha = s.a;
-      ctx.fillRect(s.x, s.y, 1, 1);
-    }
-    ctx.globalAlpha = 1;
-
-    // trail (simple ember haze)
-    for (const p of trail) {
-      const a = Math.max(0, p.life);
-      // warm ember tones without gradients
-      ctx.globalAlpha = 0.25 * a;
-      ctx.fillStyle = "rgb(255,120,40)";
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.globalAlpha = 0.18 * a;
-      ctx.fillStyle = "rgb(255,60,20)";
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * 0.7, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    // ember ship: halo + core
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-
-    // halo
-    ctx.globalAlpha = 0.22;
-    ctx.fillStyle = "rgb(255,140,40)";
-    ctx.beginPath();
-    ctx.arc(0, 0, 22, 0, Math.PI * 2);
-    ctx.fill();
-
-    // core
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = "rgb(255,220,160)";
-    ctx.beginPath();
-    ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // tiny wing hint
-    ctx.globalAlpha = 0.45;
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(10, 0);
-    ctx.lineTo(-6, -4);
-    ctx.moveTo(10, 0);
-    ctx.lineTo(-6, 4);
-    ctx.stroke();
-
-    ctx.restore();
-    ctx.globalAlpha = 1;
-
-    // UI
-    ctx.fillStyle = "rgba(255,255,255,0.75)";
-    ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
-    ctx.fillText("EMBERWING — prototype", 16, 22);
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    ctx.fillText("← / → turn    ↑ boost", 16, 40);
-    ctx.fillText(`speed: ${speed.toFixed(1)} ${boosting ? "(boost)" : ""}`, 16, 58);
-  }
-
-  function loop(now) {
-    const dt = Math.min((now - last) / 1000, 0.033);
-    last = now;
-
-    let state;
-    try {
-      state = update(dt);
-      draw(state.speed, state.boosting);
-    } catch (err) {
-      console.error("Emberwing prototype error:", err);
       ctx.fillStyle = "#000";
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle = "rgba(255,255,255,0.9)";
-      ctx.font = "14px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
-      ctx.fillText("Prototype error — open DevTools Console.", 16, 30);
-      return;
+      ctx.fillRect(0, 0, c.width, c.height);
+
+      // big obvious red dot moving
+      const x = c.width/2 + Math.cos(t) * 120;
+      const y = c.height/2 + Math.sin(t) * 80;
+
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.arc(x, y, 18, 0, Math.PI*2);
+      ctx.fill();
+
+      requestAnimationFrame(loop);
     }
-
-    requestAnimationFrame(loop);
-  }
-
-  requestAnimationFrame(loop);
-})();
-</script>
+    loop();
+  </script>
 </body>
 </html>
