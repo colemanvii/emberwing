@@ -106,3 +106,45 @@ Emberwing is a small project by design.
 A quiet game about motion, focus, and staying airborne.
 
 Nothing more than that.
+
+---
+
+## Roadmap
+
+Emberwing is intentionally slow-growing.  
+This roadmap is directional, not a checklist.
+
+### Phase 1 — Orientation
+- Establish vision and tone
+- Publish white paper
+- Keep scope small and clear
+
+### Phase 2 — First Flight
+- Single playable browser build
+- One ship
+- One mission
+- Keyboard + joystick support
+- Focus on flight feel and clarity
+
+### Phase 3 — Mission Loop
+- Briefing → mission → debrief
+- Simple objectives (protect, pursue, survive)
+- Light radio chatter for atmosphere
+
+### Phase 4 — Expansion (Optional)
+- Additional missions
+- New environments
+- Small variations in challenge or ship handling
+
+Expansion only happens if it preserves simplicity.
+
+### What Will Not Change
+- Browser-first access
+- No accounts, no installs
+- No grind, no monetization pressure
+- Respect for the player’s time
+
+---
+
+Emberwing grows only if it stays light enough to fly.
+
