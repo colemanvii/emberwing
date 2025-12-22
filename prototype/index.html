@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Emberwing — prototype</title>
+  <style>
+    html, body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+// Ship state
+let x = canvas.width / 2;
+let y = canvas.height / 2;
+let angle = -Math.PI / 2; // pointing up
+let speed = 2;
+
+// Input
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
+
+function update() {
+  // Turn
+  if (keys["a"]) angle -= 0.05;
+  if (keys["d"]) angle += 0.05;
+
+  // Move forward
+  x += Math.cos(angle) * speed;
+  y += Math.sin(angle) * speed;
+
+  // Wrap screen
+  if (x < 0) x = canvas.width;
+  if (x > canvas.width) x = 0;
+  if (y < 0) y = canvas.height;
+  if (y > canvas.height) y = 0;
+}
+
+function draw() {
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Ship
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(12, 0);
+  ctx.lineTo(-8, -6);
+  ctx.lineTo(-8, 6);
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
