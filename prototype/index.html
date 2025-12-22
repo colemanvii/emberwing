@@ -3,6 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Emberwing — prototype</title>
   <style>
     html, body { margin: 0; background: #000; overflow: hidden; }
@@ -23,43 +24,71 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-// --- Stars (parallax) ---
+// ---------- Stars (parallax) ----------
 const stars = [];
 function makeStars() {
   stars.length = 0;
-  const count = Math.floor((canvas.width * canvas.height) / 6000); // scales with screen
+  const count = Math.floor((canvas.width * canvas.height) / 6500);
   for (let i = 0; i < count; i++) {
     stars.push({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      z: Math.random() * 1 + 0.25,     // depth factor
-      r: Math.random() * 1.5 + 0.2     // size
+      z: 0.25 + Math.random() * 1.0,   // depth
+      r: 0.2 + Math.random() * 1.6     // radius
     });
   }
 }
 makeStars();
 window.addEventListener("resize", makeStars);
 
-// --- Ship (an ember) ---
+function moveStars(dt, shipAngle, shipSpeed) {
+  // move background opposite ship motion
+  const vx = Math.cos(shipAngle) * shipSpeed;
+  const vy = Math.sin(shipAngle) * shipSpeed;
+  for (const s of stars) {
+    s.x -= vx * (0.55 / s.z) * dt * 60;
+    s.y -= vy * (0.55 / s.z) * dt * 60;
+
+    if (s.x < 0) s.x += canvas.width;
+    if (s.x > canvas.width) s.x -= canvas.width;
+    if (s.y < 0) s.y += canvas.height;
+    if (s.y > canvas.height) s.y -= canvas.height;
+  }
+}
+
+// ---------- Ship (ember) ----------
 let x = canvas.width / 2;
 let y = canvas.height / 2;
 let angle = -Math.PI / 2;
 
-let baseSpeed = 2.2;
+const baseSpeed = 2.2;
+const boostSpeed = 4.2;
 let speed = baseSpeed;
-let turnRate = 0.055;
 
-// --- Input ---
-const keys = {};
-window.addEventListener("keydown", e => keys[e.key] = true);
-window.addEventListener("keyup", e => keys[e.key] = false);
+const turnRate = 0.055;
 
-// --- Ember trail particles ---
+// ---------- Arrow Keys ONLY ----------
+const arrows = { ArrowLeft:false, ArrowRight:false, ArrowUp:false };
+
+window.addEventListener("keydown", (e) => {
+  if (e.key in arrows) {
+    arrows[e.key] = true;
+    e.preventDefault();
+  }
+});
+
+window.addEventListener("keyup", (e) => {
+  if (e.key in arrows) {
+    arrows[e.key] = false;
+    e.preventDefault();
+  }
+});
+
+// ---------- Ember trail ----------
 const trail = [];
 const sparks = [];
 
-function spawnTrail() {
-  // A warm ember smear behind the ship
+function spawnTrail(boosting) {
   const backX = x - Math.cos(angle) * 10;
   const backY = y - Math.sin(angle) * 10;
 
@@ -69,20 +98,19 @@ function spawnTrail() {
     vx: (Math.random() - 0.5) * 0.25,
     vy: (Math.random() - 0.5) * 0.25,
     life: 1.0,
-    size: 10 + Math.random() * 10,
+    size: 10 + Math.random() * 12,
     heat: 0.7 + Math.random() * 0.3
   });
 
-  // occasional sparks
-  if (Math.random() < 0.35) {
-    const s = 1 + Math.random() * 1.5;
+  const sparkChance = boosting ? 0.65 : 0.35;
+  if (Math.random() < sparkChance) {
     sparks.push({
       x: backX,
       y: backY,
-      vx: -Math.cos(angle) * (0.6 + Math.random() * 1.4) + (Math.random() - 0.5) * 0.6,
-      vy: -Math.sin(angle) * (0.6 + Math.random() * 1.4) + (Math.random() - 0.5) * 0.6,
-      life: 0.6 + Math.random() * 0.35,
-      size: s
+      vx: -Math.cos(angle) * (0.8 + Math.random() * 1.8) + (Math.random() - 0.5) * 0.7,
+      vy: -Math.sin(angle) * (0.8 + Math.random() * 1.8) + (Math.random() - 0.5) * 0.7,
+      life: 0.55 + Math.random() * 0.35,
+      size: 1 + Math.random() * 1.6
     });
   }
 }
@@ -94,7 +122,7 @@ function updateParticles(dt) {
     p.y += p.vy * 60 * dt;
     p.life -= 1.8 * dt;
     p.size *= (1 - 0.55 * dt);
-    if (p.life <= 0 || p.size < 0.5) trail.splice(i, 1);
+    if (p.life <= 0 || p.size < 0.6) trail.splice(i, 1);
   }
 
   for (let i = sparks.length - 1; i >= 0; i--) {
@@ -108,7 +136,6 @@ function updateParticles(dt) {
   }
 }
 
-// --- Helpers ---
 function wrap() {
   if (x < 0) x = canvas.width;
   if (x > canvas.width) x = 0;
@@ -116,32 +143,17 @@ function wrap() {
   if (y > canvas.height) y = 0;
 }
 
-function updateStars(dt) {
-  // Move stars opposite ship movement for motion feel
-  const vx = Math.cos(angle) * speed;
-  const vy = Math.sin(angle) * speed;
-
-  for (const s of stars) {
-    s.x -= vx * (0.55 / s.z) * dt * 60;
-    s.y -= vy * (0.55 / s.z) * dt * 60;
-
-    if (s.x < 0) s.x += canvas.width;
-    if (s.x > canvas.width) s.x -= canvas.width;
-    if (s.y < 0) s.y += canvas.height;
-    if (s.y > canvas.height) s.y -= canvas.height;
-  }
-}
-
+// ---------- Update / Draw ----------
 let last = performance.now();
 
 function update(dt) {
-  // Turn: arrows
-  if (keys["ArrowLeft"]) angle -= turnRate;
-  if (keys["ArrowRight"]) angle += turnRate;
+  // Turning (arrow keys)
+  if (arrows.ArrowLeft) angle -= turnRate;
+  if (arrows.ArrowRight) angle += turnRate;
 
-  // Speed: hold Up to boost (more sparks)
-  const boosting = !!keys["ArrowUp"];
-  speed = boosting ? 4.2 : baseSpeed;
+  // Boost (ArrowUp)
+  const boosting = arrows.ArrowUp;
+  speed = boosting ? boostSpeed : baseSpeed;
 
   // Move forward
   x += Math.cos(angle) * speed;
@@ -149,18 +161,17 @@ function update(dt) {
   wrap();
 
   // Background motion
-  updateStars(dt);
+  moveStars(dt, angle, speed);
 
   // Trail
-  spawnTrail();
-  if (boosting) spawnTrail();
+  spawnTrail(boosting);
+  if (boosting) spawnTrail(true);
 
   updateParticles(dt);
 }
 
 function drawStars() {
   ctx.save();
-  ctx.globalAlpha = 0.9;
   for (const s of stars) {
     ctx.globalAlpha = 0.25 + 0.6 * (1 - s.z);
     ctx.fillStyle = "#fff";
@@ -172,24 +183,21 @@ function drawStars() {
 }
 
 function drawTrail() {
-  // Soft ember haze
+  // warm ember haze
   for (const p of trail) {
     const a = Math.max(0, p.life);
-    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-
-    // ember color stack: hot core -> orange -> smoke
-    grad.addColorStop(0.0, `rgba(255, 245, 220, ${0.28 * a})`);
-    grad.addColorStop(0.25, `rgba(255, 170, 60, ${0.24 * a * p.heat})`);
-    grad.addColorStop(0.55, `rgba(255, 90, 20, ${0.16 * a * p.heat})`);
-    grad.addColorStop(1.0, `rgba(0, 0, 0, 0)`);
-
-    ctx.fillStyle = grad;
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+    g.addColorStop(0.0, `rgba(255, 245, 220, ${0.28 * a})`);
+    g.addColorStop(0.25, `rgba(255, 170, 60, ${0.24 * a * p.heat})`);
+    g.addColorStop(0.55, `rgba(255, 90, 20, ${0.16 * a * p.heat})`);
+    g.addColorStop(1.0, `rgba(0, 0, 0, 0)`);
+    ctx.fillStyle = g;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Sparks: tiny bright points
+  // sparks
   ctx.save();
   for (const s of sparks) {
     const a = Math.max(0, s.life);
@@ -203,12 +211,11 @@ function drawTrail() {
 }
 
 function drawEmberShip() {
-  // Ember "core" + halo + tiny wing suggestion
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
 
-  // Halo (soft glow)
+  // halo glow
   const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, 26);
   halo.addColorStop(0.0, "rgba(255,240,200,0.35)");
   halo.addColorStop(0.35, "rgba(255,140,40,0.20)");
@@ -219,7 +226,7 @@ function drawEmberShip() {
   ctx.arc(0, 0, 26, 0, Math.PI * 2);
   ctx.fill();
 
-  // Core ember (bright)
+  // core ember
   const core = ctx.createRadialGradient(0, 0, 0, 0, 0, 9);
   core.addColorStop(0.0, "rgba(255,255,235,0.95)");
   core.addColorStop(0.35, "rgba(255,210,120,0.90)");
@@ -230,7 +237,7 @@ function drawEmberShip() {
   ctx.arc(0, 0, 9, 0, Math.PI * 2);
   ctx.fill();
 
-  // Tiny “wing” silhouette (subtle, so it still feels like an ember)
+  // tiny wing hint (still ember-first)
   ctx.strokeStyle = "rgba(255,255,255,0.35)";
   ctx.lineWidth = 1.5;
   ctx.beginPath();
@@ -240,7 +247,7 @@ function drawEmberShip() {
   ctx.lineTo(-6, 4);
   ctx.stroke();
 
-  // Forward point (just a hint)
+  // forward point
   ctx.fillStyle = "rgba(255,255,255,0.45)";
   ctx.beginPath();
   ctx.arc(10, 0, 1.6, 0, Math.PI * 2);
@@ -265,8 +272,6 @@ function loop(now) {
 
   update(dt);
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // background
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
