@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Emberwing — prototype</title>
+  <style>
+    html, body { margin:0; background:#000; overflow:hidden; }
+    canvas { display:block; }
+    #badge {
+      position:fixed; left:12px; top:12px;
+      color:rgba(255,255,255,0.85);
+      font:13px ui-monospace, Menlo, Monaco, Consolas, monospace;
+      background:rgba(0,0,0,0.35);
+      padding:8px 10px;
+      border:1px solid rgba(255,255,255,0.16);
+      border-radius:10px;
+      user-select:none;
+    }
+  </style>
+</head>
+<body>
+  <div id="badge">EMBERWING // ← → turn   ↑ boost</div>
+  <canvas id="c"></canvas>
+
+<script>
+(() => {
+  const c = document.getElementById("c");
+  const ctx = c.getContext("2d");
+  if (!ctx) { alert("Canvas 2D failed."); return; }
+
+  function resize() { c.width = innerWidth; c.height = innerHeight; }
+  addEventListener("resize", () => { resize(); makeStars(); });
+  resize();
+
+  // Arrow keys only
+  const arrows = { ArrowLeft:false, ArrowRight:false, ArrowUp:false };
+  addEventListener("keydown", (e) => { if (e.key in arrows) { arrows[e.key]=true; e.preventDefault(); }});
+  addEventListener("keyup",   (e) => { if (e.key in arrows) { arrows[e.key]=false; e.preventDefault(); }});
+
+  // Stars
+  const stars = [];
+  function makeStars() {
+    stars.length = 0;
+    const count = Math.max(300, Math.floor((c.width * c.height) / 5200));
+    for (let i=0;i<count;i++) {
+      stars.push({
+        x: Math.random()*c.width,
+        y: Math.random()*c.height,
+        d: 0.35 + Math.random()*1.35,  // depth
+        a: 0.10 + Math.random()*0.70   // alpha
+      });
+    }
+  }
+  makeStars();
+
+  // Ember "ship"
+  let x = c.width/2, y = c.height/2;
+  let ang = -Math.PI/2;
+
+  const base = 2.1;
+  const boost = 4.2;
+  const turn = 0.06;
+
+  // Trail puffs + sparks
+  const puffs = []; // {x,y,life,size}
+  const sparks = []; // {x,y,vx,vy,life}
+
+  function addPuff(boosting) {
+    const bx = x - Math.cos(ang)*12;
+    const by = y - Math.sin(ang)*12;
+    puffs.push({
+      x: bx + (Math.random()-0.5)*3,
+      y: by + (Math.random()-0.5)*3,
+      life: boosting ? 0.55 : 0.75,
+      size: (boosting ? 14 : 10) + Math.random()*10
+    });
+    if (puffs.length > 200) puffs.splice(0, puffs.length-200);
+
+    // little sparks sometimes
+    if (Math.random() < (boosting ? 0.6 : 0.25)) {
+      sparks.push({
+        x: bx, y: by,
+        vx: -Math.cos(ang)*(1.2+Math.random()*2.2) + (Math.random()-0.5)*0.9,
+        vy: -Math.sin(ang)*(1.2+Math.random()*2.2) + (Math.random()-0.5)*0.9,
+        life: 0.35 + Math.random()*0.35
+      });
+    }
+    if (sparks.length > 220) sparks.splice(0, sparks.length-220);
+  }
+
+  function wrap() {
+    if (x < 0) x += c.width;
+    if (x > c.width) x -= c.width;
+    if (y < 0) y += c.height;
+    if (y > c.height) y -= c.height;
+  }
+
+  let last = performance.now();
+
+  function tick(now) {
+    const dt = Math.min((now-last)/1000, 0.033);
+    last = now;
+
+    // input
+    if (arrows.ArrowLeft)  ang -= turn;
+    if (arrows.ArrowRight) ang += turn;
+    const boosting = arrows.ArrowUp;
+    const spd = boosting ? boost : base;
+
+    // move
+    x += Math.cos(ang)*spd;
+    y += Math.sin(ang)*spd;
+    wrap();
+
+    // move stars opposite motion
+    const vx = Math.cos(ang)*spd;
+    const vy = Math.sin(ang)*spd;
+    for (const s of stars) {
+      s.x -= vx*(0.55/s.d)*dt*60;
+      s.y -= vy*(0.55/s.d)*dt*60;
+      if (s.x < 0) s.x += c.width;
+      if (s.x > c.width) s.x -= c.width;
+      if (s.y < 0) s.y += c.height;
+      if (s.y > c.height) s.y -= c.height;
+    }
+
+    // trail
+    addPuff(boosting);
+    if (boosting) addPuff(true);
+
+    // decay puffs
+    for (let i=puffs.length-1;i>=0;i--) {
+      const p = puffs[i];
+      p.life -= 1.8*dt;
+      p.size *= (1 - 0.9*dt);
+      if (p.life <= 0 || p.size < 0.6) puffs.splice(i,1);
+    }
+
+    // decay sparks
+    for (let i=sparks.length-1;i>=0;i--) {
+      const s = sparks[i];
+      s.x += s.vx*dt*60;
+      s.y += s.vy*dt*60;
+      s.vx *= (1-1.6*dt);
+      s.vy *= (1-1.6*dt);
+      s.life -= 3.2*dt;
+      if (s.life <= 0) sparks.splice(i,1);
+    }
+
+    // draw
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0,0,c.width,c.height);
+
+    // stars
+    ctx.fillStyle = "#fff";
+    for (const s of stars) {
+      ctx.globalAlpha = s.a;
+      ctx.fillRect(s.x, s.y, 1, 1);
+    }
+    ctx.globalAlpha = 1;
+
+    // puffs (ember haze)
+    for (const p of puffs) {
+      const a = Math.max(0, p.life);
+      ctx.globalAlpha = 0.18*a;
+      ctx.fillStyle = "rgb(255,120,40)";
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+
+      ctx.globalAlpha = 0.12*a;
+      ctx.fillStyle = "rgb(255,60,20)";
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size*0.7,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // sparks
+    for (const s of sparks) {
+      ctx.globalAlpha = Math.max(0, s.life);
+      ctx.fillStyle = "rgb(255,210,120)";
+      ctx.beginPath(); ctx.arc(s.x,s.y,1.6,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // ember core (ship)
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(ang);
+
+    // halo
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = "rgb(255,140,40)";
+    ctx.beginPath(); ctx.arc(0,0,22,0,Math.PI*2); ctx.fill();
+
+    // core
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = "rgb(255,220,160)";
+    ctx.beginPath(); ctx.arc(0,0,6,0,Math.PI*2); ctx.fill();
+
+    // tiny wing hint
+    ctx.globalAlpha = 0.40;
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(12,0); ctx.lineTo(-6,-4);
+    ctx.moveTo(12,0); ctx.lineTo(-6,4);
+    ctx.stroke();
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
