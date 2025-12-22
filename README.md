@@ -1,9 +1,9 @@
 # Emberwing
 
-## Description
+**Star Airborne. The long glide.**
 
-**Emberwing** is a small, browser-based flight game about dogfighting in open space.  
-It’s inspired by classic Star Wars–style missions, built to be beautiful, fast, and accessible to anyone with an internet connection.
+Emberwing is a small, browser-based flight game about dogfighting in open space.  
+Inspired by classic Star Wars–style missions, it’s built to be beautiful, fast, and accessible to anyone with an internet connection.
 
 No installs. No accounts. Just flight.
 
@@ -64,13 +64,44 @@ Using modern browser technology allows it to be shared as a simple link. The gam
 
 ### Long-Term Vision  
 Emberwing may grow slowly:
-- more missions
-- new environments
-- subtle variations in ships or challenges
+- more missions  
+- new environments  
+- subtle variations in ships or challenges  
 
 Growth is optional. The core experience must always remain intact: fly, fight, glide, return.
 
-### Closing  
+---
+
+## Screenshots
+
+*(Coming soon)*  
+This section will show in-game flight, combat moments, and mission briefings once the first playable build is live.
+
+---
+
+## How to Play
+
+*(Early outline — subject to change)*
+
+- **Move:** Keyboard, mouse, or joystick  
+- **Fly:** Arcade-style controls, tuned for feel over realism  
+- **Fight:** Short dogfighting missions with clear objectives  
+- **Finish:** Debrief, reset, fly again  
+
+No progression trees. No grind. Each mission stands on its own.
+
+---
+
+## Status
+
+Emberwing is in early development.  
+This repository currently serves as a design and vision reference.  
+Playable builds will come later.
+
+---
+
+## Closing
+
 Emberwing is a small project by design.  
 A quiet game about motion, focus, and staying airborne.
 
