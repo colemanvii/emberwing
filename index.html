@@ -1,612 +1,172 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Emberwing — Mission Glide</title>
-  <style>
-    :root{
-      --hud:rgba(245,246,255,.10);
-      --hud2:rgba(245,246,255,.18);
-      --text:rgba(245,246,255,.62);
-      --text2:rgba(245,246,255,.42);
-      --ember:rgba(255,140,70,.95);
-      --ember2:rgba(255,95,35,.55);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; background:#000; overflow:hidden;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      color:white;
-    }
-    canvas{ position:fixed; inset:0; width:100vw; height:100vh; display:block; }
+function drawCraft(w,h){
+  const cx = w/2;
+  const cy = h*0.78;
 
-    .hud{
-      position:fixed; inset:0;
-      pointer-events:none;
-      opacity:0;
-      transition: opacity 600ms ease;
-    }
-    .awake .hud{ opacity:1; }
+  ctx.save();
+  ctx.translate(cx, cy);
 
-    .hudLine{
-      position:absolute; top:10%; bottom:10%; width:1px;
-      background: linear-gradient(to bottom, transparent 0%, var(--hud) 18%, var(--hud) 82%, transparent 100%);
-      filter: blur(.15px);
-    }
-    .hudLine.left{ left:28px; }
-    .hudLine.right{ right:28px; }
+  // Weighty response
+  ctx.rotate(roll * 0.16);
 
-    .hudArc{
-      position:absolute; left:50%; bottom:26px;
-      width:min(560px, 82vw); height:84px; transform:translateX(-50%);
-      border-bottom:1px solid var(--hud);
-      border-radius: 0 0 999px 999px / 0 0 120px 120px;
-      opacity:.85;
-    }
-    .tick{
-      position:absolute; bottom:24px; left:50%;
-      width:1px; height:12px; transform:translateX(-50%);
-      background: linear-gradient(to top, transparent 0%, var(--hud2) 55%, transparent 100%);
-      opacity:.55;
-    }
+  // Responsive scale
+  const s = Math.min(w, h) / 920;
+  ctx.scale(s, s);
 
-    .readouts{
-      position:absolute; left:26px; bottom:26px;
-      display:flex; gap:18px; flex-wrap:wrap;
-      font-size:12px; letter-spacing:.14em; text-transform:uppercase;
-      color:var(--text2); user-select:none; white-space:nowrap;
-    }
-    .readouts b{ color:var(--text); font-weight:600; letter-spacing:.08em; margin-left:6px; }
+  // --- Shadow ---
+  ctx.save();
+  ctx.globalAlpha = 0.26;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath();
+  ctx.ellipse(0, 132, 270, 42, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
 
-    .hint{
-      position:absolute; right:26px; bottom:26px;
-      font-size:12px; letter-spacing:.12em; text-transform:uppercase;
-      color:var(--text2); opacity:.55; user-select:none; text-align:right; line-height:1.6;
-    }
+  // --- Base metal body (slightly warmer, not pure black) ---
+  ctx.fillStyle = 'rgba(16,16,18,0.72)';
+  ctx.beginPath();
+  ctx.moveTo(-320, 62);
+  ctx.quadraticCurveTo(-220, -6, -90, -28);
+  ctx.quadraticCurveTo(0, -42, 90, -28);
+  ctx.quadraticCurveTo(220, -6, 320, 62);
+  ctx.quadraticCurveTo(220, 146, 90, 174);
+  ctx.quadraticCurveTo(0, 188, -90, 174);
+  ctx.quadraticCurveTo(-220, 146, -320, 62);
+  ctx.closePath();
+  ctx.fill();
 
-    .toast{
-      position:absolute; left:50%; top:14%;
-      transform:translateX(-50%);
-      font-size:12px; letter-spacing:.18em; text-transform:uppercase;
-      color:rgba(245,246,255,.55);
-      opacity:0; transition: opacity 600ms ease;
-      user-select:none;
-    }
-    .toast.on{ opacity:.95; }
+  // --- Warm metal sheen (vintage aircraft paint) ---
+  const sheen = ctx.createLinearGradient(0, -40, 0, 190);
+  sheen.addColorStop(0.00,'rgba(255,240,220,0.060)');
+  sheen.addColorStop(0.28,'rgba(255,240,220,0.028)');
+  sheen.addColorStop(0.62,'rgba(255,240,220,0.010)');
+  sheen.addColorStop(1.00,'rgba(255,240,220,0.000)');
+  ctx.fillStyle = sheen;
+  ctx.beginPath();
+  ctx.moveTo(-260, 62);
+  ctx.quadraticCurveTo(-160, 18, 0, 14);
+  ctx.quadraticCurveTo(160, 18, 260, 62);
+  ctx.quadraticCurveTo(160, 102, 0, 114);
+  ctx.quadraticCurveTo(-160, 102, -260, 62);
+  ctx.closePath();
+  ctx.fill();
 
-    .emberMark{
-      position:absolute; left:50%; bottom:38px;
-      width:10px; height:10px; transform:translateX(-50%);
-      border-radius:999px;
-      background: radial-gradient(circle, var(--ember) 0%, rgba(255,160,90,.75) 22%, rgba(255,120,60,.35) 45%, transparent 70%);
-      box-shadow: 0 0 18px 3px var(--ember2), 0 0 44px 10px rgba(255,120,60,.12);
-      opacity:.82;
-      animation:pulse 6.5s ease-in-out infinite;
-      will-change: transform, opacity;
-    }
-    @keyframes pulse{
-      0%,100%{ transform:translateX(-50%) scale(.95); opacity:.68 }
-      50%{ transform:translateX(-50%) scale(1.10); opacity:.93 }
-    }
+  // --- Centerline seam (like a real airframe) ---
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, -26);
+  ctx.lineTo(0, 178);
+  ctx.stroke();
 
-    .grain{
-      position:fixed; inset:-20%; pointer-events:none;
-      background:
-        repeating-linear-gradient(0deg, transparent 0 2px, rgba(255,255,255,.02) 2px 3px),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
-      mix-blend-mode:overlay; opacity:.09;
-      animation: grain 7s steps(2,end) infinite;
-    }
-    @keyframes grain{ 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(-3%,2%,0)} }
-  </style>
-</head>
-<body>
-  <canvas id="c"></canvas>
+  // --- Panel seams (subtle) ---
+  ctx.strokeStyle = 'rgba(0,0,0,0.30)';
+  ctx.lineWidth = 1;
 
-  <div class="hud" id="hud">
-    <div class="hudLine left"></div>
-    <div class="hudLine right"></div>
-    <div class="hudArc"></div>
-    <div class="tick"></div>
+  // mid seam left/right
+  ctx.beginPath();
+  ctx.moveTo(-250, 72);
+  ctx.quadraticCurveTo(-160, 38, -70, 30);
+  ctx.stroke();
 
-    <div class="readouts">
-      SPD <b id="spd">—</b>
-      ALT <b id="alt">—</b>
-      HDG <b id="hdg">—</b>
-      THR <b id="thr">—</b>
-      ASST <b id="asst">HI</b>
-      BRG <b id="brg">—</b>
-      DST <b id="dst">—</b>
-      LOCK <b id="lock">—</b>
-    </div>
+  ctx.beginPath();
+  ctx.moveTo(250, 72);
+  ctx.quadraticCurveTo(160, 38, 70, 30);
+  ctx.stroke();
 
-    <div class="hint">
-      ↑↓ pitch · ←→ bank<br/>
-      SPACE steady · ENTER ignite<br/>
-      CAPS assist
-    </div>
+  // trailing panel arc
+  ctx.beginPath();
+  ctx.moveTo(-210, 132);
+  ctx.quadraticCurveTo(0, 162, 210, 132);
+  ctx.stroke();
 
-    <div class="toast" id="toast">GLIDE CONFIRMED</div>
-    <div class="emberMark" id="emberMark"></div>
-  </div>
-
-  <div class="grain"></div>
-
-<script>
-(() => {
-  // --- Canvas ---
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d', { alpha:false });
-
-  function resize(){
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    canvas.width  = Math.floor(window.innerWidth * dpr);
-    canvas.height = Math.floor(window.innerHeight * dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-  }
-  window.addEventListener('resize', resize);
-  resize();
-
-  // --- HUD + UI ---
-  const spdEl  = document.getElementById('spd');
-  const altEl  = document.getElementById('alt');
-  const hdgEl  = document.getElementById('hdg');
-  const thrEl  = document.getElementById('thr');
-  const asstEl = document.getElementById('asst');
-  const brgEl  = document.getElementById('brg');
-  const dstEl  = document.getElementById('dst');
-  const lockEl = document.getElementById('lock');
-  const toast  = document.getElementById('toast');
-  const emberMark = document.getElementById('emberMark');
-
-  let awakeTimer = null;
-  function awaken(){
-    document.body.classList.add('awake');
-    clearTimeout(awakeTimer);
-    awakeTimer = setTimeout(()=>document.body.classList.remove('awake'), 2200);
-  }
-  ['pointermove','pointerdown','keydown','touchstart'].forEach(ev=>{
-    window.addEventListener(ev, awaken, { passive:true });
-  });
-  awaken();
-
-  const keys = new Set();
-  window.addEventListener('keydown', (e)=>{
-    awaken();
-    keys.add(e.key);
-
-    if (e.key === 'CapsLock'){
-      assistHigh = !assistHigh;
-      asstEl.textContent = assistHigh ? 'HI' : 'LO';
-      softEmber(assistHigh ? 1.05 : 0.95);
-    }
-    if (e.key === 'Enter'){
-      throttle = Math.max(throttle, 0.82);
-      showToast('GLIDE CONFIRMED');
-      softEmber(1.10);
-    }
-    if (e.key === ' '){
-      steady();
-      showToast('STEADY');
-      softEmber(1.03);
-      e.preventDefault();
-    }
-  }, { passive:false });
-
-  window.addEventListener('keyup', (e)=>keys.delete(e.key));
-
-  function showToast(text){
-    toast.textContent = text;
-    toast.classList.add('on');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(()=>toast.classList.remove('on'), 900);
-  }
-
-  function softEmber(scale){
-    emberMark.animate(
-      [
-        { transform:"translateX(-50%) scale(1)" },
-        { transform:`translateX(-50%) scale(${scale})` },
-        { transform:"translateX(-50%) scale(1)" }
-      ],
-      { duration: 650, easing:"cubic-bezier(.2,.7,.2,1)" }
-    );
-  }
-
-  // --- Math helpers ---
-  const TAU = Math.PI*2;
-  const RAD2DEG = 180/Math.PI;
-  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
-  function lerp(a,b,t){ return a + (b-a)*t; }
-  function wrap(v, m){
-    // keep v in [-m, m]
-    if (v >  m) v -= 2*m;
-    if (v < -m) v += 2*m;
-    return v;
-  }
-  function angWrap(a){
-    // [-pi, pi]
-    a = (a + Math.PI) % (TAU);
-    if (a < 0) a += TAU;
-    return a - Math.PI;
-  }
-
-  // --- Flight state ---
-  let assistHigh = true;
-
-  let pitch = 0, roll = 0, yaw = 0;     // radians
-  let targetPitch = 0, targetRoll = 0;
-
-  let throttle = 0.64;  // 0..1
-  let speed = 260;      // units
-  let altitude = 38000; // feet-ish
-  let vspeed = 0;
-
-  // World coords: forward is undeniable
-  let px = 0, py = 0;
-
-  // Limits / feel
-  const maxPitch = 0.28; // ~16 deg
-  const maxRoll  = 0.62; // ~35 deg
-
-  function steady(){
-    targetPitch *= 0.28;
-    targetRoll  *= 0.28;
-    vspeed      *= 0.48;
-  }
-
-  // --- Mission waypoint (purpose) ---
-  // You’re flying to this point. When aligned, you get "LOCK".
-  const target = { x: 24000, y: 8000 };
-  function bearingToTarget(){
-    const dx = target.x - px;
-    const dy = target.y - py;
-    const ang = Math.atan2(dy, dx);   // radians
-    const deg = ((ang * RAD2DEG) % 360 + 360) % 360;
-    const dist = Math.hypot(dx, dy);
-    return { ang, deg, dist };
-  }
-
-  // --- Procedural cloud field (wraparound) ---
-  function rand(seed){
-    const x = Math.sin(seed) * 10000;
-    return x - Math.floor(x);
-  }
-  const clouds = [];
-  const COUNT = 260;
-  const WORLD_W = 6200;
-  const WORLD_H = 4200;
-
-  for(let i=0;i<COUNT;i++){
-    const s = i * 12.345;
-    clouds.push({
-      x: (rand(s) * 2 - 1) * WORLD_W,
-      y: (rand(s+1) * 2 - 1) * WORLD_H,
-      r: 50 + rand(s+2) * 290,
-      l: rand(s+3) < 0.5 ? 0 : 1,
-      a: 0.035 + rand(s+4) * 0.11
-    });
-  }
-
-  // --- Render ---
-  function drawSky(w,h){
-    const g = ctx.createLinearGradient(0,0,0,h);
-    g.addColorStop(0, '#05060a');
-    g.addColorStop(0.22,'#081228');
-    g.addColorStop(0.60,'#0b2a55');
-    g.addColorStop(1, '#0f4a86');
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,w,h);
-
-    const cap = ctx.createRadialGradient(w*0.5,h*0.15, 0, w*0.5,h*0.15, Math.max(w,h)*0.92);
-    cap.addColorStop(0,'rgba(255,255,255,0.05)');
-    cap.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle = cap;
-    ctx.fillRect(0,0,w,h);
-  }
-
-  function drawHorizon(w,h){
-    const cx = w/2, cy = h/2;
-    const lift = pitch * (h*0.98);
-
+  // --- Rivet rows (tiny dots) ---
+  function rivetRow(x0,y0,x1,y1,n,alpha){
     ctx.save();
-    ctx.translate(cx, cy + lift);
-    ctx.rotate(-roll);
-
-    ctx.strokeStyle = 'rgba(245,246,255,0.085)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-w, 0);
-    ctx.lineTo( w, 0);
-    ctx.stroke();
-
-    const haze = ctx.createLinearGradient(0,-160,0,200);
-    haze.addColorStop(0,'rgba(255,255,255,0.00)');
-    haze.addColorStop(0.55,'rgba(255,255,255,0.03)');
-    haze.addColorStop(1,'rgba(255,255,255,0.00)');
-    ctx.fillStyle = haze;
-    ctx.fillRect(-w, -200, w*2, 400);
-
-    ctx.restore();
-  }
-
-  function drawWaypoint(w,h){
-    // Mission star: sits near horizon, moves with bearing relative to heading
-    const cx = w/2, cy = h/2;
-    const b = bearingToTarget();
-    const hdgDeg = ((yaw * RAD2DEG) % 360 + 360) % 360;
-
-    let rel = b.deg - hdgDeg;          // degrees
-    rel = ((rel + 540) % 360) - 180;   // [-180, 180]
-
-    const x = cx + clamp(rel / 40, -1, 1) * (w*0.24);
-    const y = cy + pitch*(h*0.55) - 18;
-
-    const a = clamp(1 - Math.abs(rel)/120, 0, 1) * 0.32;
-    if (a <= 0.01) return;
-
-    ctx.save();
-    ctx.globalAlpha = a;
-
-    const g = ctx.createRadialGradient(x,y,0, x,y, 22);
-    g.addColorStop(0,'rgba(255,140,70,0.78)');
-    g.addColorStop(0.32,'rgba(255,140,70,0.22)');
-    g.addColorStop(1,'rgba(255,140,70,0.00)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x,y,22,0,TAU);
-    ctx.fill();
-
-    ctx.fillStyle = 'rgba(245,246,255,0.09)';
-    ctx.beginPath();
-    ctx.arc(x,y,2.2,0,TAU);
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  function drawClouds(w,h){
-    const cx = w/2, cy = h/2;
-
-    // Forward streaming. This is the “not hovering” lever.
-    const forward = speed * 1.55;
-    const strafe  = roll * speed * 0.62;
-    const climb   = pitch * speed * 0.55;
-
-    for (const c of clouds){
-      const layerMul = c.l === 0 ? 0.55 : 0.88;
-
-      // Wrap around player position (world space)
-      const wx = wrap(c.x - px*0.28*layerMul, WORLD_W);
-      const wy = wrap(c.y - py*0.28*layerMul, WORLD_H);
-
-      // Screen mapping (stream downscreen with forward)
-      const x0 = cx + wx + (strafe * layerMul);
-      const y0 = cy + wy + (forward * 0.22 * layerMul) + (climb * layerMul) + h*0.20;
-
-      // Draw wrapped neighbors to keep coverage
-      for (let ox=-1; ox<=1; ox++){
-        for (let oy=-1; oy<=1; oy++){
-          const x = x0 + ox*(WORLD_W*2);
-          const y = y0 + oy*(WORLD_H*2);
-
-          if (x < -800 || x > w+800 || y < -800 || y > h+1400) continue;
-
-          const rg = ctx.createRadialGradient(x,y, 0, x,y, c.r);
-          rg.addColorStop(0, `rgba(255,255,255,${c.a})`);
-          rg.addColorStop(1, 'rgba(255,255,255,0)');
-          ctx.fillStyle = rg;
-          ctx.beginPath();
-          ctx.arc(x,y,c.r,0,TAU);
-          ctx.fill();
-        }
-      }
-    }
-  }
-
-  function drawSpeedLines(w,h){
-    // Tactical energy: only when you mean it.
-    const intensity =
-      clamp((speed - 280) / 240, 0, 1) *
-      clamp((throttle - 0.60) / 0.40, 0, 1);
-
-    if (intensity <= 0.02) return;
-
-    ctx.save();
-    ctx.globalAlpha = 0.11 * intensity;
-    ctx.translate(w/2, h/2);
-    ctx.rotate(-roll*0.25);
-
-    const count = Math.floor(30 * intensity);
-    for (let i=0; i<count; i++){
-      const x = (Math.random()*2-1) * w*0.55;
-      const y = (Math.random()*2-1) * h*0.20;
-      const len = 140 + Math.random()*340;
-      ctx.strokeStyle = 'rgba(245,246,255,0.35)';
-      ctx.lineWidth = 1;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    for(let i=0;i<=n;i++){
+      const t = i/n;
+      const x = x0 + (x1-x0)*t;
+      const y = y0 + (y1-y0)*t;
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x, y + len);
-      ctx.stroke();
+      ctx.arc(x,y,1.1,0,Math.PI*2);
+      ctx.fill();
     }
     ctx.restore();
   }
+  rivetRow(-230, 76, -84, 36, 18, 0.030);
+  rivetRow( 230, 76,  84, 36, 18, 0.030);
+  rivetRow(-190, 132, -40, 154, 14, 0.022);
+  rivetRow( 190, 132,  40, 154, 14, 0.022);
 
-  function drawContrails(w,h,now){
-    // From the craft, downscreen. Length = speed.
-    const cx = w/2;
-    const cy = h*0.78;
-    const len = 520 + speed * 2.2;
+  // --- Tangerine pinstripe (quiet signature) ---
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.strokeStyle = 'rgba(255,140,70,0.55)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-120, 118);
+  ctx.quadraticCurveTo(0, 138, 120, 118);
+  ctx.stroke();
+  ctx.restore();
 
-    ctx.save();
-    ctx.globalAlpha = 0.10 + clamp((speed-240)/320, 0, 0.14);
-    ctx.strokeStyle = 'rgba(245,246,255,0.72)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([6,10]);
-    ctx.lineDashOffset = now * -0.03;
+  // --- Small “registration mark” (like old aircraft ID) ---
+  ctx.save();
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = 'rgba(245,246,255,0.55)';
+  ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('EW-7', 0, 8);
+  ctx.restore();
 
-    const sway = roll * 220;
+  // --- Canopy / instrument blister (vintage glass) ---
+  ctx.save();
+  ctx.globalAlpha = 0.60;
+  const canopy = ctx.createRadialGradient(0, 18, 0, 0, 18, 74);
+  canopy.addColorStop(0,'rgba(255,255,255,0.055)');
+  canopy.addColorStop(0.55,'rgba(255,255,255,0.018)');
+  canopy.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle = canopy;
+  ctx.beginPath();
+  ctx.ellipse(0, 18, 96, 50, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
 
-    // left
-    ctx.beginPath();
-    ctx.moveTo(cx - 26, cy + 30);
-    ctx.bezierCurveTo(cx - 70 - sway*0.20, cy + 150,
-                      cx - 160 - sway*0.45, cy + 290,
-                      cx - 240 - sway*0.70, cy + len);
-    ctx.stroke();
+  // --- Ember “lamp” (warm cabin glow) ---
+  const coreY = 98;
 
-    // right
-    ctx.beginPath();
-    ctx.moveTo(cx + 26, cy + 30);
-    ctx.bezierCurveTo(cx + 70 - sway*0.20, cy + 150,
-                      cx + 160 - sway*0.45, cy + 290,
-                      cx + 240 - sway*0.70, cy + len);
-    ctx.stroke();
+  // outer warm halo
+  ctx.save();
+  ctx.globalAlpha = 0.75;
+  const glow = ctx.createRadialGradient(0, coreY, 0, 0, coreY, 86);
+  glow.addColorStop(0,'rgba(255,170,95,0.65)');
+  glow.addColorStop(0.25,'rgba(255,140,70,0.18)');
+  glow.addColorStop(1,'rgba(255,120,60,0.00)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, coreY, 86, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
 
-    ctx.restore();
-  }
+  // inner filament
+  ctx.save();
+  ctx.globalAlpha = 0.95;
+  const filament = ctx.createRadialGradient(0, coreY, 0, 0, coreY, 22);
+  filament.addColorStop(0,'rgba(255,220,170,0.95)');
+  filament.addColorStop(0.55,'rgba(255,150,85,0.35)');
+  filament.addColorStop(1,'rgba(255,120,60,0)');
+  ctx.fillStyle = filament;
+  ctx.beginPath();
+  ctx.arc(0, coreY, 22, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
 
-  function drawCraft(w,h){
-    // CENTERED. Embodied. Tactical. You are the aircraft.
-    const cx = w/2;
-    const cy = h*0.78;
+  // --- Nose cut / intake crease (engineered detail) ---
+  ctx.strokeStyle = 'rgba(0,0,0,0.34)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-78, -22);
+  ctx.quadraticCurveTo(0, -38, 78, -22);
+  ctx.stroke();
 
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(roll * 0.20);
-
-    // body
-    ctx.fillStyle = 'rgba(10,12,18,0.66)';
-    ctx.beginPath();
-    ctx.moveTo(-250, 40);
-    ctx.quadraticCurveTo(-140,-12, 0,-20);
-    ctx.quadraticCurveTo(140,-12, 250, 40);
-    ctx.quadraticCurveTo(140, 90, 0, 104);
-    ctx.quadraticCurveTo(-140, 90, -250, 40);
-    ctx.closePath();
-    ctx.fill();
-
-    // subtle panel sheen (earned, quiet)
-    ctx.fillStyle = 'rgba(255,255,255,0.038)';
-    ctx.beginPath();
-    ctx.moveTo(-190, 38);
-    ctx.quadraticCurveTo(-100, 8, 0, 4);
-    ctx.quadraticCurveTo(100, 8, 190, 38);
-    ctx.quadraticCurveTo(100, 62, 0, 70);
-    ctx.quadraticCurveTo(-100, 62, -190, 38);
-    ctx.closePath();
-    ctx.fill();
-
-    // nose ridge
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, -16);
-    ctx.lineTo(0, 92);
-    ctx.stroke();
-
-    // ember core
-    const eg = ctx.createRadialGradient(0,58,0, 0,58, 42);
-    eg.addColorStop(0,'rgba(255,140,70,0.95)');
-    eg.addColorStop(0.35,'rgba(255,120,60,0.24)');
-    eg.addColorStop(1,'rgba(255,120,60,0.00)');
-    ctx.fillStyle = eg;
-    ctx.beginPath();
-    ctx.arc(0,58,42,0,TAU);
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  // --- Simulation loop ---
-  let last = performance.now();
-
-  function step(now){
-    const dt = Math.min(0.033, (now - last) / 1000);
-    last = now;
-
-    // Inputs
-    const up    = keys.has('ArrowUp');
-    const down  = keys.has('ArrowDown');
-    const left  = keys.has('ArrowLeft');
-    const right = keys.has('ArrowRight');
-    const space = keys.has(' ');
-
-    const pitchN = (up?1:0) - (down?1:0);
-    const rollN  = (right?1:0) - (left?1:0);
-
-    // Nudge targets (small, consistent)
-    targetPitch = clamp(targetPitch + pitchN * dt * 0.46, -maxPitch, maxPitch);
-    targetRoll  = clamp(targetRoll  + rollN  * dt * 0.84, -maxRoll,  maxRoll);
-
-    if (space) steady();
-
-    // Autostabilize targets (planes fly themselves)
-    const relaxPerSec = assistHigh ? 2.1 : 0.75;
-    const relax = Math.exp(-relaxPerSec * dt);
-    targetPitch *= relax;
-    targetRoll  *= relax;
-
-    // Ease actual angles (weight)
-    const pitchEase = 1 - Math.pow(assistHigh ? 0.80 : 0.90, dt*60);
-    const rollEase  = 1 - Math.pow(assistHigh ? 0.76 : 0.88, dt*60);
-    pitch = lerp(pitch, targetPitch, pitchEase);
-    roll  = lerp(roll,  targetRoll,  rollEase);
-
-    // Coordinated turn (bank creates heading change)
-    const turnRate = assistHigh ? 0.50 : 0.72;
-    yaw += (roll * turnRate) * dt;
-
-    // Speed: throttle = forward
-    const drag = 0.0016 + Math.abs(roll)*0.0032 + Math.abs(pitch)*0.0042;
-    speed += ((throttle*600) - speed) * dt * 0.85;
-    speed -= speed * drag * dt * 60;
-    speed = clamp(speed, 140, 600);
-
-    // Altitude: pitch couples to vertical speed
-    vspeed += (pitch * speed * 0.36) * dt * 60;
-    vspeed *= Math.pow(assistHigh ? 0.90 : 0.94, dt*60);
-    altitude += vspeed * dt * 2.3;
-    altitude = clamp(altitude, 5000, 65000);
-
-    // Forward world motion (THIS is the mission feel)
-    const forward = speed * dt * 3.0;
-    px += Math.cos(yaw) * forward;
-    py += Math.sin(yaw) * forward;
-
-    // Render
-    const w = window.innerWidth, h = window.innerHeight;
-    drawSky(w,h);
-    drawHorizon(w,h);
-    drawWaypoint(w,h);
-    drawClouds(w,h);
-    drawSpeedLines(w,h);
-    drawContrails(w,h,now);
-    drawCraft(w,h);
-
-    // Readouts
-    spdEl.textContent = String(Math.round(speed));
-    altEl.textContent = String(Math.round(altitude));
-    const hdgDeg = ((yaw * RAD2DEG) % 360 + 360) % 360;
-    hdgEl.textContent = String(Math.round(hdgDeg)).padStart(3,'0');
-    thrEl.textContent = String(Math.round(throttle*100)).padStart(2,'0') + '%';
-
-    const b = bearingToTarget();
-    brgEl.textContent = String(Math.round(b.deg)).padStart(3,'0');
-    dstEl.textContent = String(Math.max(0, Math.round(b.dist/250))).padStart(2,'0');
-
-    // Tactical "LOCK" when aligned to bearing + close enough
-    const rel = angWrap(b.ang - yaw);
-    const aligned = Math.abs(rel) < (6 / RAD2DEG); // ~6 degrees
-    const close = b.dist < 2500;
-    lockEl.textContent = (aligned ? (close ? 'FIRE' : 'LOCK') : '—');
-
-    requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-})();
-</script>
-</body>
-</html>
+  ctx.restore();
+}
