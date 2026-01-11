@@ -6,230 +6,67 @@
   <title>EMBERWING // Cirrus x Haven</title>
   <style>
     :root{
-      --bg0:#070a10;
-      --bg1:#0a1224;
-      --ink:#d7e3ff;
-      --muted:rgba(215,227,255,.72);
-      --dim:rgba(215,227,255,.45);
-      --glass:rgba(10,16,30,.38);
-      --glass2:rgba(10,16,30,.18);
+      --ink:#d7e3ff; --muted:rgba(215,227,255,.72); --dim:rgba(215,227,255,.45);
       --line:rgba(215,227,255,.16);
-      --accent:rgba(255,190,120,.92);
-      --accent2:rgba(120,210,255,.85);
-      --warn:rgba(255,120,120,.92);
-      --ok:rgba(120,255,190,.85);
+      --glass:rgba(10,16,30,.38); --glass2:rgba(10,16,30,.18);
       --shadow:rgba(0,0,0,.45);
       --radius:14px;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
     }
-
-    html,body{ height:100%; margin:0; background: radial-gradient(1200px 700px at 50% 12%, #101a36 0%, #070a10 55%, #05070b 100%); color:var(--ink); overflow:hidden; }
+    html,body{ height:100%; margin:0; overflow:hidden; background:#05070b; color:var(--ink); }
     #wrap{ position:fixed; inset:0; }
+    canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
 
-    canvas{
-      position:absolute; inset:0;
-      width:100%; height:100%;
-      display:block;
-      background: transparent;
-    }
-
-    /* --- HUD layer --- */
-    #hud{
-      position:absolute; inset:0;
-      pointer-events:none;
-      font-family:var(--sans);
-      letter-spacing:.2px;
-      user-select:none;
-    }
-
-    .topbar{
-      position:absolute; left:20px; right:20px; top:16px;
-      display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
-      pointer-events:none;
-    }
-
-    .brand{
-      pointer-events:none;
-      display:flex; flex-direction:column; gap:6px;
-      padding:12px 14px;
-      border-radius:var(--radius);
+    #hud{ position:absolute; inset:0; pointer-events:none; user-select:none; font-family:var(--sans); letter-spacing:.2px; }
+    .topbar{ position:absolute; left:20px; right:20px; top:16px; display:flex; justify-content:space-between; gap:14px; }
+    .brand,.panel,.help,.status{
+      padding:12px 14px; border-radius:var(--radius);
       background: linear-gradient(180deg, rgba(10,16,30,.42), rgba(10,16,30,.16));
       border:1px solid var(--line);
       box-shadow: 0 18px 50px var(--shadow);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      max-width:min(520px, 48vw);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     }
-
-    .brand .title{
-      font-family:var(--mono);
-      font-size:12px;
-      color:rgba(215,227,255,.9);
-      display:flex; align-items:center; gap:10px;
-      text-transform:uppercase;
-    }
-    .dot{
-      width:8px;height:8px;border-radius:99px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,210,160,1), rgba(255,190,120,.2));
-      box-shadow: 0 0 16px rgba(255,190,120,.55);
-      display:inline-block;
-    }
-    .subtitle{
-      font-size:12.5px;
-      color:var(--muted);
-      line-height:1.25;
-    }
+    .brand{ max-width:min(560px, 52vw); display:flex; flex-direction:column; gap:6px; }
+    .title{ font-family:var(--mono); font-size:12px; text-transform:uppercase; display:flex; align-items:center; gap:10px; color:rgba(215,227,255,.9); }
+    .dot{ width:8px;height:8px;border-radius:99px; background: radial-gradient(circle at 30% 30%, rgba(255,210,160,1), rgba(255,190,120,.2)); box-shadow: 0 0 16px rgba(255,190,120,.55); }
+    .subtitle{ font-size:12.5px; color:var(--muted); line-height:1.25; }
     .subtitle b{ color:rgba(215,227,255,.92); font-weight:600; }
-
-    .rightstack{
-      display:flex; gap:12px; align-items:flex-start;
-    }
-
-    .panel{
-      pointer-events:none;
-      padding:12px 14px;
-      border-radius:var(--radius);
-      background: linear-gradient(180deg, rgba(10,16,30,.42), rgba(10,16,30,.16));
-      border:1px solid var(--line);
-      box-shadow: 0 18px 50px var(--shadow);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      min-width: 210px;
-    }
-
-    .panel .hdr{
-      font-family:var(--mono);
-      font-size:11px;
-      color:rgba(215,227,255,.8);
-      text-transform:uppercase;
-      display:flex; align-items:center; justify-content:space-between;
-      margin-bottom:10px;
-    }
-    .badge{
-      font-family:var(--mono);
-      font-size:10px;
-      padding:3px 8px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      color:rgba(215,227,255,.82);
-      background: rgba(10,16,30,.14);
-    }
-
-    .kv{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap:8px 14px;
-      align-items:center;
-      font-size:12.5px;
-    }
+    .rightstack{ display:flex; gap:12px; align-items:flex-start; }
+    .panel{ min-width: 220px; }
+    .hdr{ font-family:var(--mono); font-size:11px; text-transform:uppercase; color:rgba(215,227,255,.8); display:flex; justify-content:space-between; margin-bottom:10px; }
+    .badge{ font-family:var(--mono); font-size:10px; padding:3px 8px; border-radius:999px; border:1px solid var(--line); color:rgba(215,227,255,.82); background: rgba(10,16,30,.14); }
+    .kv{ display:grid; grid-template-columns: 1fr auto; gap:8px 14px; align-items:center; font-size:12.5px; }
     .k{ color:var(--dim); font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
-    .v{ color:rgba(215,227,255,.92); font-variant-numeric: tabular-nums; font-family:var(--mono); font-size:12px; }
+    .v{ color:rgba(215,227,255,.92); font-family:var(--mono); font-size:12px; font-variant-numeric: tabular-nums; }
 
-    .bottom{
-      position:absolute; left:20px; right:20px; bottom:18px;
-      display:flex; justify-content:space-between; gap:12px; align-items:flex-end;
-      pointer-events:none;
-    }
+    .bottom{ position:absolute; left:20px; right:20px; bottom:18px; display:flex; justify-content:space-between; gap:12px; align-items:flex-end; }
+    .help{ max-width:min(680px, 62vw); display:flex; flex-direction:column; gap:8px; }
+    .help .row{ display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; color:var(--muted); font-size:12.5px; }
+    .key{ font-family:var(--mono); font-size:11px; padding:3px 8px; border-radius:9px; border:1px solid rgba(215,227,255,.2); color:rgba(215,227,255,.86); background: rgba(10,16,30,.18); }
 
-    .help{
-      pointer-events:none;
-      padding:12px 14px;
-      border-radius:var(--radius);
-      background: linear-gradient(180deg, rgba(10,16,30,.35), rgba(10,16,30,.10));
-      border:1px solid var(--line);
-      box-shadow: 0 18px 50px var(--shadow);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      max-width:min(620px, 58vw);
-      display:flex; flex-direction:column; gap:8px;
-    }
-    .help .row{
-      display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
-      color:var(--muted);
-      font-size:12.5px;
-    }
-    .key{
-      font-family:var(--mono);
-      font-size:11px;
-      padding:3px 8px;
-      border-radius:9px;
-      border:1px solid rgba(215,227,255,.2);
-      color:rgba(215,227,255,.86);
-      background: rgba(10,16,30,.18);
-    }
+    .status{ min-width: 300px; }
+    .big{ font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.6px; display:flex; justify-content:space-between; gap:10px; margin-bottom:8px; color:rgba(215,227,255,.92); }
+    .bar{ height:8px; border-radius:999px; background: rgba(215,227,255,.10); border:1px solid rgba(215,227,255,.14); overflow:hidden; position:relative; }
+    .fill{ position:absolute; inset:0; width:50%; background: linear-gradient(90deg, rgba(120,210,255,.15), rgba(120,210,255,.75)); box-shadow: 0 0 18px rgba(120,210,255,.35); }
 
-    .status{
-      pointer-events:none;
-      padding:12px 14px;
-      border-radius:var(--radius);
-      background: linear-gradient(180deg, rgba(10,16,30,.35), rgba(10,16,30,.10));
-      border:1px solid var(--line);
-      box-shadow: 0 18px 50px var(--shadow);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      min-width: 260px;
+    #grain{ position:absolute; inset:0; pointer-events:none; opacity:.07; mix-blend-mode: overlay;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+      background-size:220px 220px;
     }
-
-    .status .big{
-      font-family:var(--mono);
-      font-size:12px;
-      color:rgba(215,227,255,.92);
-      margin-bottom:8px;
-      display:flex; align-items:center; justify-content:space-between;
-      gap:10px;
-      text-transform:uppercase;
-      letter-spacing:.6px;
-    }
-
-    .bar{
-      height:8px;
-      border-radius:999px;
-      background: rgba(215,227,255,.10);
-      border:1px solid rgba(215,227,255,.14);
-      overflow:hidden;
-      position:relative;
-    }
-    .fill{
-      position:absolute; inset:0;
-      width:50%;
-      background: linear-gradient(90deg, rgba(120,210,255,.15), rgba(120,210,255,.75));
-      box-shadow: 0 0 18px rgba(120,210,255,.35);
-    }
-
-    /* monk mode fades the chrome */
-    .monk #hud .brand,
-    .monk #hud .panel,
-    .monk #hud .help,
-    .monk #hud .status{
-      opacity:.18;
-      filter:saturate(.65);
-    }
-    .monk #hud .help{ display:none; }
-
-    /* tiny “film grain” overlay */
-    #grain{
-      position:absolute; inset:0;
-      pointer-events:none;
-      opacity:.07;
-      mix-blend-mode: overlay;
-      background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
-      background-size: 220px 220px;
-    }
-
-    /* subtle vignette */
-    #vignette{
-      position:absolute; inset:-2px;
-      pointer-events:none;
+    #vignette{ position:absolute; inset:-2px; pointer-events:none;
       background: radial-gradient(1200px 700px at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,.34) 55%, rgba(0,0,0,.66) 100%);
     }
 
-    /* mobile safe */
-    @media (max-width: 900px){
+    .monk #hud .brand, .monk #hud .panel, .monk #hud .help, .monk #hud .status{
+      opacity:.16; filter:saturate(.65);
+    }
+    .monk #hud .help{ display:none; }
+
+    @media (max-width: 980px){
       .panel{ display:none; }
-      .status{ min-width: 220px; }
-      .brand{ max-width: 70vw; }
+      .status{ min-width: 240px; }
+      .brand{ max-width: 72vw; }
     }
   </style>
 </head>
@@ -241,10 +78,9 @@
         <div class="brand">
           <div class="title"><span class="dot"></span> EMBERWING // CIRRUS x HAVEN <span class="badge" id="modeBadge">LIVE</span></div>
           <div class="subtitle">
-            Mission: <b>hold heading, protect wattage, fly forward.</b> <span id="missionLine">Reach the quiet horizon.</span>
+            Mission: <b>fly forward, thread the gates, keep the ember.</b> <span id="missionLine">Find the quiet horizon.</span>
           </div>
         </div>
-
         <div class="rightstack">
           <div class="panel">
             <div class="hdr"><span>NAV</span><span class="badge" id="navBadge">NORM</span></div>
@@ -252,17 +88,16 @@
               <div class="k">HDG</div><div class="v" id="hdg">000</div>
               <div class="k">ALT</div><div class="v" id="alt">00000</div>
               <div class="k">SPD</div><div class="v" id="spd">000</div>
-              <div class="k">THR</div><div class="v" id="thr">0%</div>
+              <div class="k">BOOST</div><div class="v" id="bst">OFF</div>
             </div>
           </div>
-
           <div class="panel">
-            <div class="hdr"><span>ATTITUDE</span><span class="badge" id="attBadge">STABLE</span></div>
+            <div class="hdr"><span>MISSION</span><span class="badge" id="msBadge">RUN</span></div>
             <div class="kv">
-              <div class="k">PITCH</div><div class="v" id="pitch">0.0°</div>
-              <div class="k">ROLL</div><div class="v" id="roll">0.0°</div>
-              <div class="k">YAW</div><div class="v" id="yaw">0.0°</div>
-              <div class="k">G</div><div class="v" id="g">1.00</div>
+              <div class="k">GATES</div><div class="v" id="gates">0</div>
+              <div class="k">MISS</div><div class="v" id="miss">0</div>
+              <div class="k">SCORE</div><div class="v" id="score">0000</div>
+              <div class="k">RANGE</div><div class="v" id="range">—</div>
             </div>
           </div>
         </div>
@@ -278,13 +113,12 @@
             <span class="key">ENTER</span> toggle HUD
           </div>
           <div class="row" style="opacity:.92">
-            Fly like you mean it: forward motion is king. Your ship stays centered. The world moves.
+            Thread the rings. Boost to close distance. Monk mode restores wattage faster.
           </div>
         </div>
-
         <div class="status">
           <div class="big">
-            <span>ENERGY // “WATTAGE”</span>
+            <span>WATTAGE</span>
             <span class="badge" id="wattBadge">STEADY</span>
           </div>
           <div class="bar"><div class="fill" id="wattFill"></div></div>
@@ -300,668 +134,846 @@
     <div id="vignette"></div>
   </div>
 
-  <script>
-    // =============================
-    // EMBERWING // Cirrus x Haven
-    // Single-file canvas flight feel
-    // =============================
+<script>
+(() => {
+  // ===== Canvas + offscreen post stack =====
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d", { alpha:true });
 
-    const canvas = document.getElementById("c");
-    const ctx = canvas.getContext("2d", { alpha:true });
+  // Offscreen: main scene + bloom buffer
+  const scene = document.createElement("canvas");
+  const sctx = scene.getContext("2d", { alpha:true });
+  const bloom1 = document.createElement("canvas");
+  const b1 = bloom1.getContext("2d", { alpha:true });
+  const bloom2 = document.createElement("canvas");
+  const b2 = bloom2.getContext("2d", { alpha:true });
 
-    // UI refs
-    const $ = (id)=>document.getElementById(id);
-    const ui = {
-      hdg:$("hdg"), alt:$("alt"), spd:$("spd"), thr:$("thr"),
-      pitch:$("pitch"), roll:$("roll"), yaw:$("yaw"), g:$("g"),
-      wattFill:$("wattFill"), wattBadge:$("wattBadge"),
-      modeBadge:$("modeBadge"), navBadge:$("navBadge"), attBadge:$("attBadge"),
-      missionLine:$("missionLine"), signal:$("signal"), lock:$("lock"),
-      help:$("help"), hud:$("hud")
-    };
+  // UI refs
+  const $ = (id)=>document.getElementById(id);
+  const ui = {
+    modeBadge:$("modeBadge"), missionLine:$("missionLine"),
+    hdg:$("hdg"), alt:$("alt"), spd:$("spd"), bst:$("bst"),
+    gates:$("gates"), miss:$("miss"), score:$("score"), range:$("range"),
+    msBadge:$("msBadge"), navBadge:$("navBadge"),
+    wattFill:$("wattFill"), wattBadge:$("wattBadge"), signal:$("signal"), lock:$("lock"),
+    hud: $("hud")
+  };
 
-    // State
-    const S = {
-      t:0,
-      dt:0,
-      monk:false,
-      hudVisible:true,
+  // ===== Helpers =====
+  const TAU = Math.PI*2;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const smooth=(t)=>t*t*(3-2*t);
+  const fmt3=(n)=>String(Math.round(((n%360)+360)%360)).padStart(3,"0");
+  const fmtAlt=(n)=>String(Math.round(n)).padStart(5,"0");
+  const fmtSpd=(n)=>String(Math.round(n)).padStart(3,"0");
 
-      // flight-ish kinematics
-      throttle: 0.55,     // 0..1
-      boost: false,
-      speed: 380,         // knots-ish
-      targetSpeed: 380,
-      altitude: 38100,    // feet-ish
-      heading: 0,         // degrees
-      pitch: 0,           // radians
-      roll: 0,            // radians
-      yawRate: 0,         // rad/s
-      g: 1.0,
+  // ===== State =====
+  const S = {
+    t:0, dt:0, monk:false, hudVisible:true,
+    keys:new Set(),
+    // flight feel (damped “pilot”)
+    pitch:0, roll:0,
+    pitchV:0, rollV:0, // velocities
+    heading:0,
+    altitude:38100,
+    throttle:0.58,
+    boost:false,
+    speed:380,
+    targetSpeed:380,
+    driftX:0, driftY:0,
+    // game loop
+    gatesHit:0,
+    gatesMiss:0,
+    score:0,
+    // vibe meters
+    wattage:0.86,
+    signalClean:1.0,
+    // camera / FX
+    camJitter:0,
+    // audio
+    audioOn:false,
+    audio: null,
+  };
 
-      // “world” drift for parallax
-      driftX:0,
-      driftY:0,
+  // ===== Resize =====
+  function resize(){
+    const dpr = Math.max(1, Math.min(2, devicePixelRatio || 1));
+    canvas.width = Math.floor(innerWidth*dpr);
+    canvas.height = Math.floor(innerHeight*dpr);
+    canvas.style.width = innerWidth+"px";
+    canvas.style.height = innerHeight+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
 
-      // calm / wattage (aesthetic gameplay)
-      wattage: 0.86,      // 0..1
-      signalClean: 1.0,   // 0..1
+    scene.width = Math.floor(innerWidth*dpr);
+    scene.height = Math.floor(innerHeight*dpr);
+    sctx.setTransform(dpr,0,0,dpr,0,0);
 
-      // input
-      keys: new Set(),
-    };
+    // bloom downsample sizes (cheaper)
+    const bw = Math.floor(innerWidth/2);
+    const bh = Math.floor(innerHeight/2);
+    bloom1.width = bw; bloom1.height = bh;
+    bloom2.width = bw; bloom2.height = bh;
+  }
+  addEventListener("resize", resize, {passive:true});
+  resize();
 
-    // Resize
-    function resize(){
-      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-      canvas.width = Math.floor(innerWidth * dpr);
-      canvas.height = Math.floor(innerHeight * dpr);
-      canvas.style.width = innerWidth + "px";
-      canvas.style.height = innerHeight + "px";
-      ctx.setTransform(dpr,0,0,dpr,0,0); // draw in CSS pixels
-    }
-    addEventListener("resize", resize, {passive:true});
-    resize();
+  // ===== Audio (WebAudio synth engine) =====
+  function initAudio(){
+    if (S.audioOn) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ac = new AC();
 
-    // =============================
-    // Input
-    // =============================
-    function onKey(e, down){
-      const k = e.code;
-      if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","Enter","CapsLock"].includes(k)){
-        e.preventDefault();
-      }
-      if (down) S.keys.add(k); else S.keys.delete(k);
+    const master = ac.createGain();
+    master.gain.value = 0.0;
+    master.connect(ac.destination);
 
-      if (down && k === "CapsLock"){
-        S.monk = !S.monk;
-        document.body.classList.toggle("monk", S.monk);
-        ui.modeBadge.textContent = S.monk ? "MONK" : "LIVE";
-      }
-      if (down && k === "Enter"){
-        S.hudVisible = !S.hudVisible;
-        ui.hud.style.display = S.hudVisible ? "block" : "none";
-      }
-      if (k === "Space"){
-        S.boost = down;
-      }
-    }
-    addEventListener("keydown", (e)=>onKey(e,true), {passive:false});
-    addEventListener("keyup", (e)=>onKey(e,false), {passive:false});
+    // engine: saw + sine + filtered noise
+    const osc1 = ac.createOscillator(); osc1.type="sawtooth";
+    const osc2 = ac.createOscillator(); osc2.type="sine";
 
-    // =============================
-    // Utility
-    // =============================
-    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-    const lerp=(a,b,t)=>a+(b-a)*t;
-    const smooth=(t)=>t*t*(3-2*t);
-    const TAU = Math.PI*2;
+    const engGain = ac.createGain(); engGain.gain.value = 0.0;
 
-    function fmt3(n){ n = ((n%360)+360)%360; return String(Math.round(n)).padStart(3,"0"); }
-    function fmtAlt(n){ return String(Math.round(n)).padStart(5,"0"); }
-    function fmtSpd(n){ return String(Math.round(n)).padStart(3,"0"); }
+    const filter = ac.createBiquadFilter(); filter.type="lowpass"; filter.frequency.value=520;
 
-    // =============================
-    // Stars / streaks
-    // =============================
-    const stars = [];
-    const STAR_COUNT = 520;
+    // noise
+    const noiseBuf = ac.createBuffer(1, ac.sampleRate*2, ac.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i=0;i<data.length;i++) data[i] = (Math.random()*2-1)*0.25;
+    const noise = ac.createBufferSource(); noise.buffer=noiseBuf; noise.loop=true;
+    const noiseGain = ac.createGain(); noiseGain.gain.value=0.0;
 
-    function initStars(){
-      stars.length = 0;
-      for (let i=0;i<STAR_COUNT;i++){
-        stars.push({
-          x: Math.random()*2-1,
-          y: Math.random()*1.6-0.35,
-          z: Math.random(),       // 0 near, 1 far
-          s: Math.random()*1.2+0.2,
-          hue: Math.random()<0.08 ? 1 : 0, // tiny warm accents
-        });
-      }
-    }
-    initStars();
+    const noiseHP = ac.createBiquadFilter(); noiseHP.type="highpass"; noiseHP.frequency.value=120;
 
-    function drawStars(w,h,dt,forward){
-      const cx = w*0.5, cy = h*0.42;
-      const dx = S.driftX * 0.0016;
-      const dy = S.driftY * 0.0016;
+    // warning beep (for low wattage)
+    const beep = ac.createOscillator(); beep.type="sine"; beep.frequency.value=880;
+    const beepGain = ac.createGain(); beepGain.gain.value=0.0;
 
-      for (const st of stars){
-        st.z -= dt * (0.50 + (1-st.z)*2.4) * forward;
-        if (st.z <= 0.02){
-          st.x = Math.random()*2-1;
-          st.y = Math.random()*1.6-0.35;
-          st.z = 1;
-          st.s = Math.random()*1.2+0.2;
-          st.hue = Math.random()<0.08 ? 1 : 0;
-        }
+    osc1.connect(engGain); osc2.connect(engGain);
+    engGain.connect(filter); filter.connect(master);
 
-        const p = 0.12 / (st.z + 0.06);
-        const x = cx + (st.x + dx) * w * p;
-        const y = cy + (st.y + dy) * h * p;
+    noise.connect(noiseHP); noiseHP.connect(noiseGain); noiseGain.connect(master);
 
-        const streak = (1.2 + (1-st.z)*18) * forward;
-        const lx = (x-cx) * 0.0023 * streak;
-        const ly = (y-cy) * 0.0023 * streak;
+    beep.connect(beepGain); beepGain.connect(master);
 
-        const a = Math.min(0.92, 0.12 + (1-st.z)*0.88);
-        ctx.globalAlpha = a * (S.monk ? 0.78 : 1.0);
-        ctx.lineWidth = Math.max(1, st.s*(1-st.z)*1.6);
+    osc1.start(); osc2.start(); noise.start(); beep.start();
 
-        if (st.hue){
-          ctx.strokeStyle = "rgba(255,190,120,0.75)";
-        } else {
-          ctx.strokeStyle = "rgba(190,220,255,0.80)";
-        }
+    // fade in master
+    master.gain.setValueAtTime(0.0, ac.currentTime);
+    master.gain.linearRampToValueAtTime(0.55, ac.currentTime + 0.35);
 
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + lx, y + ly);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-      ctx.lineWidth = 1;
-    }
+    S.audioOn = true;
+    S.audio = { ac, master, osc1, osc2, engGain, filter, noiseGain, beepGain };
+  }
 
-    // =============================
-    // Clouds (procedural ribbons)
-    // =============================
-    const clouds = [];
-    const CLOUD_COUNT = 34;
+  function updateAudio(){
+    if (!S.audioOn) return;
+    const { ac, osc1, osc2, engGain, filter, noiseGain, beepGain } = S.audio;
 
-    function initClouds(){
-      clouds.length=0;
-      for (let i=0;i<CLOUD_COUNT;i++){
-        clouds.push({
-          x: Math.random()*2-1,
-          y: Math.random()*1.3-0.15,
-          z: Math.random(), // 0 near, 1 far
-          w: Math.random()*0.55+0.25,
-          h: Math.random()*0.14+0.05,
-          p: Math.random()*TAU,
-        });
-      }
-    }
-    initClouds();
+    const heat = clamp(S.throttle + (S.boost?0.55:0), 0, 1);
+    const rpm = 180 + heat*520 + (Math.abs(S.roll)+Math.abs(S.pitch))*40;
+    const rumble = 0.10 + heat*0.32;
 
-    function drawClouds(w,h,dt,forward){
-      // a high-altitude haze + ribbon-clouds that slide underneath
-      const cx=w*0.5, cy=h*0.55;
-      const driftX = S.driftX*0.0009;
-      const driftY = S.driftY*0.0009;
+    // engine gain and frequencies
+    engGain.gain.setTargetAtTime( rumble * (S.monk?0.78:1.0), ac.currentTime, 0.04 );
+    osc1.frequency.setTargetAtTime( rpm, ac.currentTime, 0.05 );
+    osc2.frequency.setTargetAtTime( rpm*0.5, ac.currentTime, 0.06 );
 
-      // haze
-      const haze = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w,h)*0.65);
-      haze.addColorStop(0, "rgba(120,180,255,0.10)");
-      haze.addColorStop(0.45,"rgba(30,70,140,0.06)");
-      haze.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = haze;
-      ctx.fillRect(0,0,w,h);
+    // filter opens under boost
+    filter.frequency.setTargetAtTime( 420 + heat*1200, ac.currentTime, 0.05 );
 
-      for (const cl of clouds){
-        // move toward camera and down slightly like passing under
-        cl.z -= dt*(0.08 + (1-cl.z)*0.22)*forward;
-        cl.p += dt*(0.25 + (1-cl.z)*0.35);
-        if (cl.z <= 0.02){
-          cl.x = Math.random()*2-1;
-          cl.y = Math.random()*1.3-0.15;
-          cl.z = 1;
-          cl.w = Math.random()*0.55+0.25;
-          cl.h = Math.random()*0.14+0.05;
-          cl.p = Math.random()*TAU;
-        }
+    // wind noise
+    noiseGain.gain.setTargetAtTime( (0.02 + heat*0.09) * (S.monk?0.65:1.0), ac.currentTime, 0.08 );
 
-        const depth = (1-cl.z);
-        const scale = 0.38 + depth*1.05;
-        const px = cx + (cl.x+driftX) * w * 0.55 * scale;
-        const py = cy + (cl.y+driftY) * h * 0.52 * scale;
+    // warning beep if wattage very low
+    const warn = (S.wattage < 0.18) ? (0.12 + 0.08*Math.sin(S.t*6)) : 0.0;
+    beepGain.gain.setTargetAtTime( warn, ac.currentTime, 0.04 );
+  }
 
-        const ww = w * cl.w * scale;
-        const hh = h * cl.h * scale;
+  // ===== Input =====
+  function onKey(e, down){
+    const k = e.code;
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","Enter","CapsLock"].includes(k)) e.preventDefault();
 
-        const a = (0.02 + depth*0.11) * (S.monk ? 0.72 : 1);
-        ctx.globalAlpha = a;
-
-        // ribbon made of soft arcs
-        const grad = ctx.createLinearGradient(px-ww*0.5, py, px+ww*0.5, py);
-        grad.addColorStop(0, "rgba(215,227,255,0)");
-        grad.addColorStop(0.2, "rgba(215,227,255,0.22)");
-        grad.addColorStop(0.55,"rgba(215,227,255,0.10)");
-        grad.addColorStop(1, "rgba(215,227,255,0)");
-        ctx.fillStyle = grad;
-
-        ctx.beginPath();
-        const wav = Math.sin(cl.p)*0.22;
-        ctx.ellipse(px, py, ww*0.5, hh*(0.65+wav*0.12), 0, 0, TAU);
-        ctx.fill();
-
-        ctx.globalAlpha = 1;
-      }
+    // start audio on first meaningful action
+    if (down && !S.audioOn && (k==="Space"||k.startsWith("Arrow")||k==="CapsLock"||k==="Enter")){
+      initAudio();
     }
 
-    // =============================
-    // Horizon / forward flight cues
-    // =============================
-    function drawHorizon(w,h){
-      const cx=w*0.5;
-      const horizonY = h*0.52 + (S.pitch * 120) + (S.driftY*0.06);
-      const tilt = S.roll;
+    if (down) S.keys.add(k); else S.keys.delete(k);
 
-      // sky gradient
-      const sky = ctx.createLinearGradient(0,0,0,h);
-      sky.addColorStop(0, "#05070b");
-      sky.addColorStop(0.20, "#0a1224");
-      sky.addColorStop(0.58, "#0b2449");
-      sky.addColorStop(1, "#07132a");
-      ctx.fillStyle = sky;
-      ctx.fillRect(0,0,w,h);
+    if (k==="Space") S.boost = down;
 
-      // horizon line + glow (rotate around center)
-      ctx.save();
-      ctx.translate(cx, horizonY);
-      ctx.rotate(-tilt);
-
-      // glow band
-      const g = ctx.createLinearGradient(0,-60,0,80);
-      g.addColorStop(0, "rgba(120,210,255,0)");
-      g.addColorStop(0.45,"rgba(120,210,255,0.12)");
-      g.addColorStop(0.55,"rgba(255,190,120,0.06)");
-      g.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = g;
-      ctx.fillRect(-w, -80, w*2, 160);
-
-      // line
-      ctx.globalAlpha = 0.22 * (S.monk ? 0.8 : 1);
-      ctx.strokeStyle = "rgba(215,227,255,0.55)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(-w,0);
-      ctx.lineTo(w,0);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-
-      // tick marks
-      ctx.globalAlpha = 0.10;
-      ctx.strokeStyle = "rgba(215,227,255,0.55)";
-      for (let i=-6;i<=6;i++){
-        const x = i*140;
-        const len = (i%2===0) ? 22 : 14;
-        ctx.beginPath();
-        ctx.moveTo(x, -len);
-        ctx.lineTo(x, len);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-
-      ctx.restore();
+    if (down && k==="CapsLock"){
+      S.monk = !S.monk;
+      document.body.classList.toggle("monk", S.monk);
+      ui.modeBadge.textContent = S.monk ? "MONK" : "LIVE";
     }
-
-    // =============================
-    // Aircraft (centered, beautiful silhouette)
-    // =============================
-    function drawShip(w,h){
-      const cx = w*0.5;
-      const cy = h*0.66; // lower third so “sky” dominates
-
-      // subtle camera bob from turbulence
-      const bob = (Math.sin(S.t*0.9)*0.35 + Math.sin(S.t*1.7)*0.2) * (1 - S.wattage) * 6;
-      const sx = cx + S.driftX*0.12;
-      const sy = cy + S.driftY*0.10 + bob;
-
-      // ship attitude rotates the silhouette slightly (roll)
-      const roll = S.roll * 0.65;
-
-      // engine bloom intensity with throttle / boost
-      const heat = clamp(S.throttle + (S.boost?0.55:0), 0, 1);
-      const bloom = 0.20 + heat*0.85;
-
-      // shadow on “air”
-      ctx.save();
-      ctx.translate(sx, sy);
-
-      // soft shadow ellipse
-      ctx.globalAlpha = 0.25;
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.beginPath();
-      ctx.ellipse(0, 58, 260, 32, 0, 0, TAU);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-
-      // ship body
-      ctx.rotate(roll);
-
-      // main hull gradient
-      const hullGrad = ctx.createLinearGradient(-220,-40,220,80);
-      hullGrad.addColorStop(0, "rgba(12,18,30,0.98)");
-      hullGrad.addColorStop(0.45,"rgba(20,28,46,0.98)");
-      hullGrad.addColorStop(0.8, "rgba(8,12,20,0.98)");
-      hullGrad.addColorStop(1, "rgba(5,7,12,0.98)");
-
-      // subtle edge light
-      const rim = "rgba(120,210,255,0.18)";
-
-      // Wing / manta silhouette (monastic, Cirrus-ish)
-      ctx.fillStyle = hullGrad;
-      ctx.strokeStyle = rim;
-      ctx.lineWidth = 1;
-
-      ctx.beginPath();
-      // nose
-      ctx.moveTo(0, -32);
-      // left curve
-      ctx.bezierCurveTo(-110, -30, -220, 16, -310, 80);
-      ctx.bezierCurveTo(-200, 118, -120, 150, 0, 162);
-      // right curve
-      ctx.bezierCurveTo(120, 150, 200, 118, 310, 80);
-      ctx.bezierCurveTo(220, 16, 110, -30, 0, -32);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // inner shadow to give depth
-      ctx.globalAlpha = 0.55;
-      const inner = ctx.createRadialGradient(0,40,30, 0,60,220);
-      inner.addColorStop(0, "rgba(0,0,0,0)");
-      inner.addColorStop(0.6, "rgba(0,0,0,0.28)");
-      inner.addColorStop(1, "rgba(0,0,0,0.55)");
-      ctx.fillStyle = inner;
-      ctx.beginPath();
-      ctx.ellipse(0, 58, 290, 92, 0, 0, TAU);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-
-      // center spine
-      ctx.globalAlpha = 0.35;
-      ctx.strokeStyle = "rgba(215,227,255,0.22)";
-      ctx.beginPath();
-      ctx.moveTo(0, -28);
-      ctx.lineTo(0, 154);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-
-      // cockpit glow
-      const cockpit = ctx.createRadialGradient(0,55,2, 0,55,52);
-      cockpit.addColorStop(0, `rgba(255,190,120,${0.95*bloom})`);
-      cockpit.addColorStop(0.35, `rgba(255,190,120,${0.28*bloom})`);
-      cockpit.addColorStop(1, "rgba(255,190,120,0)");
-      ctx.fillStyle = cockpit;
-      ctx.beginPath();
-      ctx.ellipse(0, 55, 64, 46, 0, 0, TAU);
-      ctx.fill();
-
-      // engine core (small hot dot)
-      const core = ctx.createRadialGradient(0,72,1, 0,72,18);
-      core.addColorStop(0, "rgba(255,240,220,0.95)");
-      core.addColorStop(0.4, `rgba(255,190,120,${0.85*bloom})`);
-      core.addColorStop(1, "rgba(255,190,120,0)");
-      ctx.fillStyle = core;
-      ctx.beginPath();
-      ctx.arc(0, 72, 18, 0, TAU);
-      ctx.fill();
-
-      // engine wake / heat haze lines
-      ctx.globalAlpha = 0.22 + bloom*0.22;
-      ctx.strokeStyle = "rgba(255,190,120,0.55)";
-      for (let i=0;i<5;i++){
-        const s = i/5;
-        const y = 82 + s*70;
-        const wv = 70 + s*120;
-        ctx.beginPath();
-        ctx.moveTo(-wv, y);
-        ctx.quadraticCurveTo(0, y+10*Math.sin(S.t*2.5 + i), wv, y);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-
-      // aiming reticle (centered on ship)
-      ctx.rotate(-roll);
-      ctx.globalAlpha = 0.20;
-      ctx.strokeStyle = "rgba(215,227,255,0.55)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(0, 40, 34, 0, TAU);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-54,40); ctx.lineTo(-20,40);
-      ctx.moveTo(54,40);  ctx.lineTo(20,40);
-      ctx.moveTo(0, -8);  ctx.lineTo(0, 14);
-      ctx.moveTo(0, 86);  ctx.lineTo(0, 64);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-
-      ctx.restore();
-    }
-
-    // =============================
-    // HUD overlay elements drawn on canvas (subtle)
-    // =============================
-    function drawCanvasHUD(w,h){
-      // corner guides / faint frame
-      ctx.globalAlpha = S.monk ? 0.10 : 0.18;
-      ctx.strokeStyle = "rgba(215,227,255,0.45)";
-      ctx.lineWidth = 1;
-
-      const pad = 22;
-      const seg = 18;
-
-      // top-left
-      ctx.beginPath();
-      ctx.moveTo(pad, pad+seg); ctx.lineTo(pad, pad); ctx.lineTo(pad+seg, pad);
-      // top-right
-      ctx.moveTo(w-pad-seg, pad); ctx.lineTo(w-pad, pad); ctx.lineTo(w-pad, pad+seg);
-      // bottom-left
-      ctx.moveTo(pad, h-pad-seg); ctx.lineTo(pad, h-pad); ctx.lineTo(pad+seg, h-pad);
-      // bottom-right
-      ctx.moveTo(w-pad-seg, h-pad); ctx.lineTo(w-pad, h-pad); ctx.lineTo(w-pad, h-pad-seg);
-      ctx.stroke();
-
-      // subtle centerline
-      ctx.globalAlpha = S.monk ? 0.06 : 0.10;
-      ctx.beginPath();
-      ctx.moveTo(w*0.5, h*0.08);
-      ctx.lineTo(w*0.5, h*0.92);
-      ctx.stroke();
-
-      ctx.globalAlpha = 1;
-    }
-
-    // =============================
-    // Flight “physics” (feel)
-    // =============================
-    function updateFlight(dt){
-      // input axes
-      const up = S.keys.has("ArrowUp");
-      const dn = S.keys.has("ArrowDown");
-      const lf = S.keys.has("ArrowLeft");
-      const rt = S.keys.has("ArrowRight");
-
-      // control rates
-      const pitchRate = 1.15;  // rad/s
-      const rollRate  = 1.35;  // rad/s
-      const yawCouple = 0.22;  // heading drift from roll
-
-      // pitch
-      let pIn = (up?1:0) + (dn?-1:0);
-      // roll
-      let rIn = (rt?1:0) + (lf?-1:0);
-
-      // monk mode: slightly calmer controls
-      const calm = S.monk ? 0.72 : 1.0;
-
-      S.pitch += pIn * pitchRate * dt * calm;
-      S.roll  += rIn * rollRate * dt * calm;
-
-      // auto-stabilize a bit (Cirrus feel)
-      S.pitch = lerp(S.pitch, 0, dt * 0.85);
-      S.roll  = lerp(S.roll, 0, dt * 0.55);
-
-      // clamp angles
-      S.pitch = clamp(S.pitch, -0.40, 0.40);
-      S.roll  = clamp(S.roll, -0.70, 0.70);
-
-      // throttle shaping
-      const base = 280;
-      const max = 620;
-      const boostAdd = S.boost ? 160 : 0;
-      S.targetSpeed = base + (max-base)*S.throttle + boostAdd;
-
-      // speed response
-      const accel = (S.targetSpeed - S.speed) * (S.boost ? 1.9 : 1.1);
-      S.speed += accel * dt;
-
-      // altitude changes with pitch
-      const climb = (S.pitch * 4200) + (S.boost ? 150 : 0);
-      S.altitude += climb * dt;
-
-      // heading changes with roll (bank-to-turn)
-      const turn = S.roll * (0.70 + (S.speed/700)) * calm;
-      S.heading += (turn * 52) * dt; // degrees per second-ish
-
-      // drift for parallax (world motion)
-      S.driftX = lerp(S.driftX, S.roll * 180, dt * 1.6);
-      S.driftY = lerp(S.driftY, -S.pitch * 220, dt * 1.6);
-
-      // “G” load feel (for the HUD)
-      const gTarget = 1.0 + Math.abs(S.roll)*0.55 + Math.abs(S.pitch)*0.45 + (S.boost ? 0.15 : 0);
-      S.g = lerp(S.g, gTarget, dt*2.2);
-
-      // wattage & signal cleanliness (aesthetic “game”)
-      // high boost & aggressive attitude costs wattage, monk recovers.
-      const stress = (S.boost ? 0.42 : 0) + (Math.abs(S.roll)+Math.abs(S.pitch))*0.62;
-      const recover = (S.monk ? 0.22 : 0.10);
-      S.wattage += (recover - stress) * dt * 0.35;
-      S.wattage = clamp(S.wattage, 0, 1);
-
-      // signal cleanliness degrades with stress, recovers with steadiness
-      const steady = 1 - clamp(stress,0,1);
-      S.signalClean = lerp(S.signalClean, steady, dt * 0.55);
-      S.signalClean = clamp(S.signalClean, 0, 1);
-
-      // micro throttle auto-breathe (feels alive)
-      const breathe = (Math.sin(S.t*0.5)*0.002 + Math.sin(S.t*0.13)*0.001);
-      S.throttle = clamp(S.throttle + breathe, 0.20, 0.98);
-    }
-
-    // =============================
-    // UI update
-    // =============================
-    function updateUI(){
-      ui.hdg.textContent = fmt3(S.heading);
-      ui.alt.textContent = fmtAlt(S.altitude);
-      ui.spd.textContent = fmtSpd(S.speed);
-      ui.thr.textContent = Math.round(S.throttle*100) + "%";
-
-      ui.pitch.textContent = (S.pitch * 57.2958).toFixed(1) + "°";
-      ui.roll.textContent  = (S.roll  * 57.2958).toFixed(1) + "°";
-      ui.yaw.textContent   = ((S.roll*0.15) * 57.2958).toFixed(1) + "°";
-      ui.g.textContent     = S.g.toFixed(2);
-
-      // wattage bar
-      ui.wattFill.style.width = Math.round(S.wattage*100) + "%";
-
-      // badges
-      ui.wattBadge.textContent = S.wattage > 0.75 ? "STEADY" : (S.wattage > 0.4 ? "WORKING" : "LOW");
-      ui.wattBadge.style.borderColor = S.wattage > 0.75 ? "rgba(120,255,190,.35)" : (S.wattage > 0.4 ? "rgba(255,190,120,.35)" : "rgba(255,120,120,.35)");
-
-      ui.navBadge.textContent = S.boost ? "BOOST" : (S.monk ? "MONK" : "NORM");
-      ui.attBadge.textContent = (Math.abs(S.roll)+Math.abs(S.pitch) < 0.12) ? "STABLE" : "ACTIVE";
-
-      ui.signal.textContent = S.signalClean > 0.78 ? "CLEAN" : (S.signalClean > 0.45 ? "NOISY" : "FRAY");
-      ui.lock.textContent = "FORWARD";
-
-      // mission line shifts with state
-      if (S.monk) ui.missionLine.textContent = "Silence carries farther than noise.";
-      else if (S.boost) ui.missionLine.textContent = "Ignition → Glide → Create.";
-      else ui.missionLine.textContent = "Hold heading. Fly forward. Keep the ember.";
-    }
-
-    // =============================
-    // Main render
-    // =============================
-    function render(){
-      const w = innerWidth, h = innerHeight;
-
-      // base sky + horizon
-      drawHorizon(w,h);
-
-      // forward feel scales with speed/throttle/boost
-      const forward = clamp((S.speed/520) + (S.boost?0.55:0), 0.35, 1.6);
-
-      // stars behind clouds
-      drawStars(w,h,S.dt,forward);
-
-      // clouds/haze
-      drawClouds(w,h,S.dt,forward);
-
-      // subtle “speed tunnel” vignette pulse
-      ctx.globalAlpha = (0.07 + forward*0.06) * (S.monk ? 0.75 : 1);
-      const cx=w*0.5, cy=h*0.44;
-      const ring = ctx.createRadialGradient(cx, cy, Math.min(w,h)*0.06, cx, cy, Math.min(w,h)*0.55);
-      ring.addColorStop(0, "rgba(120,210,255,0.0)");
-      ring.addColorStop(0.35, "rgba(120,210,255,0.08)");
-      ring.addColorStop(0.55, "rgba(255,190,120,0.05)");
-      ring.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = ring;
-      ctx.fillRect(0,0,w,h);
-      ctx.globalAlpha = 1;
-
-      // ship centered
-      drawShip(w,h);
-
-      // faint canvas HUD guides
-      drawCanvasHUD(w,h);
-
-      // tiny “warning” pulse if wattage low
-      if (S.wattage < 0.22){
-        const pulse = 0.18 + 0.12*Math.sin(S.t*6);
-        ctx.globalAlpha = pulse;
-        ctx.fillStyle = "rgba(255,120,120,0.08)";
-        ctx.fillRect(0,0,w,h);
-        ctx.globalAlpha = 1;
-      }
-    }
-
-    // =============================
-    // Loop
-    // =============================
-    let last = performance.now();
-    function tick(now){
-      S.dt = Math.min(0.033, (now-last)/1000);
-      last = now;
-      S.t += S.dt;
-
-      updateFlight(S.dt);
-      updateUI();
-      render();
-
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-
-    // =============================
-    // Tiny “mouse nudge” to feel alive
-    // =============================
-    let mx = 0, my = 0;
-    addEventListener("mousemove", (e)=>{
-      const nx = (e.clientX / innerWidth) * 2 - 1;
-      const ny = (e.clientY / innerHeight) * 2 - 1;
-      mx = lerp(mx, nx, 0.12);
-      my = lerp(my, ny, 0.12);
-
-      // only a whisper of camera drift
-      S.driftX += mx * 0.6;
-      S.driftY += my * 0.4;
-      S.driftX = clamp(S.driftX, -220, 220);
-      S.driftY = clamp(S.driftY, -240, 240);
-    }, {passive:true});
-
-    // =============================
-    // Touch: tap = toggle HUD (mobile)
-    // =============================
-    addEventListener("touchstart", ()=>{
+    if (down && k==="Enter"){
       S.hudVisible = !S.hudVisible;
       ui.hud.style.display = S.hudVisible ? "block" : "none";
-    }, {passive:true});
-  </script>
+    }
+  }
+  addEventListener("keydown", (e)=>onKey(e,true), {passive:false});
+  addEventListener("keyup", (e)=>onKey(e,false), {passive:false});
+
+  // mouse “alive” drift whisper
+  let mx=0,my=0;
+  addEventListener("mousemove", (e)=>{
+    const nx=(e.clientX/innerWidth)*2-1;
+    const ny=(e.clientY/innerHeight)*2-1;
+    mx=lerp(mx,nx,0.10); my=lerp(my,ny,0.10);
+    S.driftX = clamp(S.driftX + mx*0.8, -240, 240);
+    S.driftY = clamp(S.driftY + my*0.5, -260, 260);
+  }, {passive:true});
+
+  addEventListener("touchstart", ()=>{
+    if (!S.audioOn) initAudio();
+    S.hudVisible = !S.hudVisible;
+    ui.hud.style.display = S.hudVisible ? "block" : "none";
+  }, {passive:true});
+
+  // ===== World: stars + clouds =====
+  const stars=[];
+  const STAR_COUNT=640;
+  function initStars(){
+    stars.length=0;
+    for (let i=0;i<STAR_COUNT;i++){
+      stars.push({ x:Math.random()*2-1, y:Math.random()*1.6-0.35, z:Math.random(), s:Math.random()*1.2+0.2, warm:Math.random()<0.08 });
+    }
+  }
+  initStars();
+
+  function drawStars(g,w,h,dt,forward){
+    const cx=w*0.5, cy=h*0.42;
+    const dx=S.driftX*0.0016, dy=S.driftY*0.0016;
+    for (const st of stars){
+      st.z -= dt*(0.55 + (1-st.z)*2.7)*forward;
+      if (st.z<=0.02){
+        st.x=Math.random()*2-1; st.y=Math.random()*1.6-0.35; st.z=1; st.s=Math.random()*1.2+0.2; st.warm=Math.random()<0.08;
+      }
+      const p = 0.12/(st.z+0.06);
+      const x = cx + (st.x+dx)*w*p;
+      const y = cy + (st.y+dy)*h*p;
+
+      const streak = (1.2+(1-st.z)*22)*forward;
+      const lx=(x-cx)*0.0025*streak;
+      const ly=(y-cy)*0.0025*streak;
+
+      const a=Math.min(0.92, 0.10+(1-st.z)*0.92) * (S.monk?0.80:1);
+      g.globalAlpha=a;
+      g.lineWidth=Math.max(1, st.s*(1-st.z)*1.7);
+      g.strokeStyle = st.warm ? "rgba(255,190,120,0.75)" : "rgba(190,220,255,0.80)";
+      g.beginPath(); g.moveTo(x,y); g.lineTo(x+lx,y+ly); g.stroke();
+    }
+    g.globalAlpha=1; g.lineWidth=1;
+  }
+
+  const clouds=[];
+  const CLOUD_COUNT=38;
+  function initClouds(){
+    clouds.length=0;
+    for (let i=0;i<CLOUD_COUNT;i++){
+      clouds.push({ x:Math.random()*2-1, y:Math.random()*1.3-0.15, z:Math.random(), w:Math.random()*0.6+0.25, h:Math.random()*0.14+0.05, p:Math.random()*TAU });
+    }
+  }
+  initClouds();
+
+  function drawClouds(g,w,h,dt,forward){
+    const cx=w*0.5, cy=h*0.55;
+    const driftX=S.driftX*0.0009, driftY=S.driftY*0.0009;
+
+    const haze=g.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*0.70);
+    haze.addColorStop(0,"rgba(120,180,255,0.11)");
+    haze.addColorStop(0.5,"rgba(30,70,140,0.06)");
+    haze.addColorStop(1,"rgba(0,0,0,0)");
+    g.fillStyle=haze; g.fillRect(0,0,w,h);
+
+    for (const cl of clouds){
+      cl.z -= dt*(0.09+(1-cl.z)*0.24)*forward;
+      cl.p += dt*(0.25+(1-cl.z)*0.35);
+      if (cl.z<=0.02){
+        cl.x=Math.random()*2-1; cl.y=Math.random()*1.3-0.15; cl.z=1;
+        cl.w=Math.random()*0.6+0.25; cl.h=Math.random()*0.14+0.05; cl.p=Math.random()*TAU;
+      }
+      const depth=(1-cl.z);
+      const scale=0.38+depth*1.10;
+      const px=cx+(cl.x+driftX)*w*0.55*scale;
+      const py=cy+(cl.y+driftY)*h*0.52*scale;
+      const ww=w*cl.w*scale;
+      const hh=h*cl.h*scale;
+
+      const a=(0.02+depth*0.12)*(S.monk?0.70:1);
+      g.globalAlpha=a;
+
+      const grad=g.createLinearGradient(px-ww*0.5,py,px+ww*0.5,py);
+      grad.addColorStop(0,"rgba(215,227,255,0)");
+      grad.addColorStop(0.18,"rgba(215,227,255,0.22)");
+      grad.addColorStop(0.55,"rgba(215,227,255,0.10)");
+      grad.addColorStop(1,"rgba(215,227,255,0)");
+      g.fillStyle=grad;
+
+      g.beginPath();
+      const wav=Math.sin(cl.p)*0.22;
+      g.ellipse(px,py,ww*0.5,hh*(0.65+wav*0.12),0,0,TAU);
+      g.fill();
+
+      g.globalAlpha=1;
+    }
+  }
+
+  function drawHorizon(g,w,h){
+    const cx=w*0.5;
+    const horizonY=h*0.52 + (S.pitch*120) + (S.driftY*0.06);
+    const tilt=S.roll;
+
+    const sky=g.createLinearGradient(0,0,0,h);
+    sky.addColorStop(0,"#05070b");
+    sky.addColorStop(0.20,"#0a1224");
+    sky.addColorStop(0.58,"#0b2449");
+    sky.addColorStop(1,"#07132a");
+    g.fillStyle=sky; g.fillRect(0,0,w,h);
+
+    g.save();
+    g.translate(cx,horizonY);
+    g.rotate(-tilt);
+
+    const band=g.createLinearGradient(0,-60,0,80);
+    band.addColorStop(0,"rgba(120,210,255,0)");
+    band.addColorStop(0.45,"rgba(120,210,255,0.12)");
+    band.addColorStop(0.55,"rgba(255,190,120,0.06)");
+    band.addColorStop(1,"rgba(0,0,0,0)");
+    g.fillStyle=band; g.fillRect(-w,-80,w*2,160);
+
+    g.globalAlpha=0.22*(S.monk?0.82:1);
+    g.strokeStyle="rgba(215,227,255,0.55)";
+    g.lineWidth=1;
+    g.beginPath(); g.moveTo(-w,0); g.lineTo(w,0); g.stroke();
+    g.globalAlpha=0.10;
+    for (let i=-6;i<=6;i++){
+      const x=i*140, len=(i%2===0)?22:14;
+      g.beginPath(); g.moveTo(x,-len); g.lineTo(x,len); g.stroke();
+    }
+    g.globalAlpha=1;
+    g.restore();
+  }
+
+  // ===== Engine particles =====
+  const particles=[];
+  function spawnParticle(){
+    // emitted from ship engine in screen space; drift “down” like wake
+    const heat = clamp(S.throttle + (S.boost?0.55:0), 0, 1);
+    const rate = 14 + heat*42;
+    const n = Math.floor(rate*S.dt);
+    for (let i=0;i<n;i++){
+      particles.push({
+        x: 0, y: 0,
+        vx: (Math.random()*2-1)*(18+heat*22),
+        vy: (40+Math.random()*55) + heat*110,
+        life: 0.35 + Math.random()*0.35,
+        a: 0.35 + Math.random()*0.25,
+        s: 1.0 + Math.random()*2.4,
+      });
+    }
+  }
+
+  function updateParticles(dt){
+    for (let i=particles.length-1;i>=0;i--){
+      const p=particles[i];
+      p.life -= dt;
+      p.x += p.vx*dt;
+      p.y += p.vy*dt;
+      p.vx *= (1 - dt*1.8);
+      p.vy *= (1 - dt*0.8);
+      if (p.life<=0) particles.splice(i,1);
+    }
+  }
+
+  function drawParticles(g, w, h, shipX, shipY){
+    const heat = clamp(S.throttle + (S.boost?0.55:0), 0, 1);
+    const bloom = 0.18 + heat*0.90;
+    g.save();
+    g.translate(shipX, shipY);
+    g.globalCompositeOperation = "lighter";
+    for (const p of particles){
+      const a = p.a * (p.life/0.7) * (S.monk?0.75:1);
+      g.globalAlpha = a;
+      const rad = 10 + p.s*6;
+      const grd = g.createRadialGradient(p.x, 72+p.y, 1, p.x, 72+p.y, rad);
+      grd.addColorStop(0, `rgba(255,240,220,${0.35*bloom})`);
+      grd.addColorStop(0.35, `rgba(255,190,120,${0.22*bloom})`);
+      grd.addColorStop(1, "rgba(255,190,120,0)");
+      g.fillStyle = grd;
+      g.beginPath();
+      g.arc(p.x, 72+p.y, rad, 0, TAU);
+      g.fill();
+    }
+    g.restore();
+    g.globalAlpha=1;
+    g.globalCompositeOperation="source-over";
+  }
+
+  // ===== Mission gates (rings in “world space”) =====
+  const gates=[];
+  let gateTimer=0;
+  let nextGateDist=1200;
+
+  function spawnGate(){
+    // Gate position in a pseudo world coordinate relative to forward axis
+    // x,y are lateral offsets; z is distance ahead
+    const spread = S.monk ? 0.55 : 0.75;
+    const gx = (Math.random()*2-1) * spread;
+    const gy = (Math.random()*2-1) * spread * 0.55;
+    gates.push({
+      x: gx, y: gy, z: 2200 + Math.random()*1400,
+      r: 0.24 + Math.random()*0.12,
+      hit:false
+    });
+  }
+
+  function updateGates(dt, forward){
+    // Move gates toward camera
+    for (let i=gates.length-1;i>=0;i--){
+      const g=gates[i];
+      g.z -= dt * (forward*720 + 160);
+      if (g.z < 120){
+        // missed if not hit
+        if (!g.hit){
+          S.gatesMiss++;
+          S.wattage = clamp(S.wattage - 0.06, 0, 1);
+          S.signalClean = clamp(S.signalClean - 0.08, 0, 1);
+        }
+        gates.splice(i,1);
+      }
+    }
+
+    gateTimer += dt * (S.monk ? 0.85 : 1.0);
+    // ensure steady cadence
+    if (gateTimer > 1.0){
+      gateTimer = 0;
+      if (gates.length < 4) spawnGate();
+    }
+
+    // collision: if gate near and ship “aligned”
+    // ship alignment in this world: roll affects x, pitch affects y
+    // we define a simple ship aim point based on current drift/attitude
+    const shipAimX = clamp(S.roll * 0.55, -1, 1);
+    const shipAimY = clamp(-S.pitch * 0.75, -1, 1);
+
+    for (const g of gates){
+      if (g.hit) continue;
+      if (g.z < 520 && g.z > 200){
+        const dx = (shipAimX - g.x);
+        const dy = (shipAimY - g.y);
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < (g.r*0.78)){
+          g.hit = true;
+          S.gatesHit++;
+          const bonus = 25 + Math.round(60 * S.signalClean);
+          S.score += bonus;
+          S.wattage = clamp(S.wattage + 0.03, 0, 1);
+          S.signalClean = clamp(S.signalClean + 0.05, 0, 1);
+        }
+      }
+    }
+  }
+
+  function drawGates(g, w, h){
+    const cx=w*0.5, cy=h*0.44;
+    for (const gt of gates){
+      // project: larger when closer
+      const z = gt.z;
+      const p = 900 / (z + 220); // projection scalar
+      const x = cx + (gt.x + S.driftX*0.0006) * w * 0.55 * p;
+      const y = cy + (gt.y + S.driftY*0.0006) * h * 0.45 * p;
+      const r = Math.max(18, gt.r * Math.min(w,h) * 0.45 * p);
+
+      const a = clamp(0.08 + (1200 - z)/1200 * 0.35, 0.08, 0.42) * (S.monk ? 0.75 : 1);
+      g.globalAlpha = a;
+
+      // ring glow
+      g.save();
+      g.translate(x,y);
+
+      g.globalCompositeOperation="lighter";
+      const glow = g.createRadialGradient(0,0,r*0.65, 0,0,r*1.25);
+      if (gt.hit){
+        glow.addColorStop(0, "rgba(120,255,190,0.0)");
+        glow.addColorStop(0.55,"rgba(120,255,190,0.28)");
+        glow.addColorStop(1, "rgba(120,255,190,0.0)");
+      } else {
+        glow.addColorStop(0, "rgba(120,210,255,0.0)");
+        glow.addColorStop(0.55,"rgba(120,210,255,0.26)");
+        glow.addColorStop(1, "rgba(255,190,120,0.0)");
+      }
+
+      g.strokeStyle = gt.hit ? "rgba(120,255,190,0.65)" : "rgba(190,220,255,0.65)";
+      g.lineWidth = Math.max(1, r*0.06);
+      g.beginPath();
+      g.arc(0,0,r,0,TAU);
+      g.stroke();
+
+      g.fillStyle = glow;
+      g.beginPath();
+      g.arc(0,0,r*1.12,0,TAU);
+      g.fill();
+
+      // inner tick to suggest motion
+      g.globalAlpha *= 0.55;
+      g.lineWidth = 1;
+      g.beginPath();
+      g.arc(0,0,r*0.72, S.t*1.4, S.t*1.4 + 0.9);
+      g.stroke();
+
+      g.globalCompositeOperation="source-over";
+      g.restore();
+
+      g.globalAlpha = 1;
+    }
+  }
+
+  // ===== Ship =====
+  function drawShip(g,w,h){
+    const cx=w*0.5;
+    const cy=h*0.66;
+
+    const bob = (Math.sin(S.t*0.9)*0.35 + Math.sin(S.t*1.7)*0.2) * (1 - S.wattage) * 6;
+    const sx = cx + S.driftX*0.12;
+    const sy = cy + S.driftY*0.10 + bob;
+
+    const roll = S.roll * 0.72;
+    const heat = clamp(S.throttle + (S.boost?0.55:0), 0, 1);
+    const bloom = 0.20 + heat*0.90;
+
+    // shadow ellipse
+    g.save();
+    g.translate(sx, sy);
+
+    g.globalAlpha=0.26;
+    g.fillStyle="rgba(0,0,0,0.55)";
+    g.beginPath(); g.ellipse(0,58,270,34,0,0,TAU); g.fill();
+    g.globalAlpha=1;
+
+    g.rotate(roll);
+
+    // hull gradient
+    const hull = g.createLinearGradient(-220,-40,220,80);
+    hull.addColorStop(0,"rgba(12,18,30,0.98)");
+    hull.addColorStop(0.45,"rgba(20,28,46,0.98)");
+    hull.addColorStop(0.8,"rgba(8,12,20,0.98)");
+    hull.addColorStop(1,"rgba(5,7,12,0.98)");
+
+    g.fillStyle=hull;
+    g.strokeStyle="rgba(120,210,255,0.18)";
+    g.lineWidth=1;
+
+    g.beginPath();
+    g.moveTo(0,-32);
+    g.bezierCurveTo(-110,-30,-220,16,-318,82);
+    g.bezierCurveTo(-210,120,-124,152,0,166);
+    g.bezierCurveTo(124,152,210,120,318,82);
+    g.bezierCurveTo(220,16,110,-30,0,-32);
+    g.closePath();
+    g.fill(); g.stroke();
+
+    // depth shadow
+    g.globalAlpha=0.55;
+    const inner=g.createRadialGradient(0,40,30, 0,60,230);
+    inner.addColorStop(0,"rgba(0,0,0,0)");
+    inner.addColorStop(0.6,"rgba(0,0,0,0.28)");
+    inner.addColorStop(1,"rgba(0,0,0,0.58)");
+    g.fillStyle=inner;
+    g.beginPath(); g.ellipse(0,60,300,96,0,0,TAU); g.fill();
+    g.globalAlpha=1;
+
+    // spine
+    g.globalAlpha=0.35;
+    g.strokeStyle="rgba(215,227,255,0.22)";
+    g.beginPath(); g.moveTo(0,-28); g.lineTo(0,158); g.stroke();
+    g.globalAlpha=1;
+
+    // cockpit bloom
+    g.globalCompositeOperation="lighter";
+    const cock=g.createRadialGradient(0,55,2, 0,55,54);
+    cock.addColorStop(0, `rgba(255,190,120,${0.95*bloom})`);
+    cock.addColorStop(0.35, `rgba(255,190,120,${0.28*bloom})`);
+    cock.addColorStop(1, "rgba(255,190,120,0)");
+    g.fillStyle=cock;
+    g.beginPath(); g.ellipse(0,55,66,48,0,0,TAU); g.fill();
+
+    // engine core
+    const core=g.createRadialGradient(0,72,1, 0,72,18);
+    core.addColorStop(0,"rgba(255,240,220,0.95)");
+    core.addColorStop(0.4,`rgba(255,190,120,${0.85*bloom})`);
+    core.addColorStop(1,"rgba(255,190,120,0)");
+    g.fillStyle=core;
+    g.beginPath(); g.arc(0,72,18,0,TAU); g.fill();
+
+    // heat wake lines
+    g.globalAlpha=0.22 + bloom*0.22;
+    g.strokeStyle="rgba(255,190,120,0.55)";
+    for (let i=0;i<6;i++){
+      const s=i/6;
+      const y=82+s*74;
+      const ww=70+s*130;
+      g.beginPath();
+      g.moveTo(-ww,y);
+      g.quadraticCurveTo(0, y+10*Math.sin(S.t*2.7+i), ww,y);
+      g.stroke();
+    }
+    g.globalAlpha=1;
+
+    // reticle (un-rotated)
+    g.rotate(-roll);
+    g.globalAlpha=0.20;
+    g.strokeStyle="rgba(215,227,255,0.55)";
+    g.lineWidth=1;
+    g.beginPath(); g.arc(0,40,34,0,TAU); g.stroke();
+    g.beginPath();
+    g.moveTo(-54,40); g.lineTo(-20,40);
+    g.moveTo(54,40);  g.lineTo(20,40);
+    g.moveTo(0,-8);   g.lineTo(0,14);
+    g.moveTo(0,86);   g.lineTo(0,64);
+    g.stroke();
+    g.globalAlpha=1;
+
+    g.globalCompositeOperation="source-over";
+    g.restore();
+
+    return { sx, sy };
+  }
+
+  function drawCanvasHUD(g,w,h){
+    g.globalAlpha = S.monk ? 0.08 : 0.16;
+    g.strokeStyle="rgba(215,227,255,0.45)";
+    g.lineWidth=1;
+    const pad=22, seg=18;
+
+    g.beginPath();
+    g.moveTo(pad,pad+seg); g.lineTo(pad,pad); g.lineTo(pad+seg,pad);
+    g.moveTo(w-pad-seg,pad); g.lineTo(w-pad,pad); g.lineTo(w-pad,pad+seg);
+    g.moveTo(pad,h-pad-seg); g.lineTo(pad,h-pad); g.lineTo(pad+seg,h-pad);
+    g.moveTo(w-pad-seg,h-pad); g.lineTo(w-pad,h-pad); g.lineTo(w-pad,h-pad-seg);
+    g.stroke();
+
+    g.globalAlpha = S.monk ? 0.05 : 0.09;
+    g.beginPath();
+    g.moveTo(w*0.5,h*0.08); g.lineTo(w*0.5,h*0.92);
+    g.stroke();
+
+    g.globalAlpha=1;
+  }
+
+  // ===== “Physics” =====
+  function updateFlight(dt){
+    const up = S.keys.has("ArrowUp");
+    const dn = S.keys.has("ArrowDown");
+    const lf = S.keys.has("ArrowLeft");
+    const rt = S.keys.has("ArrowRight");
+
+    const calm = S.monk ? 0.72 : 1.0;
+
+    // input -> target rates
+    const pIn = (up?1:0) + (dn?-1:0);
+    const rIn = (rt?1:0) + (lf?-1:0);
+
+    // damped spring controls (feels like mass)
+    const pitchTargetV = pIn * 1.25 * calm;
+    const rollTargetV  = rIn * 1.45 * calm;
+
+    S.pitchV = lerp(S.pitchV, pitchTargetV, dt*5.0);
+    S.rollV  = lerp(S.rollV,  rollTargetV,  dt*5.0);
+
+    S.pitch += S.pitchV * dt;
+    S.roll  += S.rollV  * dt;
+
+    // auto stabilize
+    S.pitch = lerp(S.pitch, 0, dt * 1.05);
+    S.roll  = lerp(S.roll,  0, dt * 0.70);
+
+    // clamp
+    S.pitch = clamp(S.pitch, -0.42, 0.42);
+    S.roll  = clamp(S.roll,  -0.78, 0.78);
+
+    // throttle breath
+    const breathe = (Math.sin(S.t*0.5)*0.002 + Math.sin(S.t*0.13)*0.001);
+    S.throttle = clamp(S.throttle + breathe, 0.22, 0.98);
+
+    // speed
+    const base=280, max=640, boostAdd=S.boost?190:0;
+    S.targetSpeed = base + (max-base)*S.throttle + boostAdd;
+
+    const responsiveness = S.boost ? 2.2 : 1.25;
+    S.speed += (S.targetSpeed - S.speed) * dt * responsiveness;
+
+    // altitude from pitch (subtle)
+    const climb = (S.pitch * 4300) + (S.boost?180:0);
+    S.altitude += climb * dt;
+
+    // bank to turn
+    const turn = S.roll * (0.78 + (S.speed/720)) * calm;
+    S.heading += (turn * 56) * dt;
+
+    // parallax drift
+    S.driftX = lerp(S.driftX, S.roll * 210, dt * 1.8);
+    S.driftY = lerp(S.driftY, -S.pitch * 250, dt * 1.8);
+
+    // wattage + signal
+    const stress = (S.boost ? 0.45 : 0) + (Math.abs(S.roll)+Math.abs(S.pitch))*0.70;
+    const recover = (S.monk ? 0.26 : 0.11);
+    S.wattage = clamp(S.wattage + (recover - stress) * dt * 0.36, 0, 1);
+
+    const steady = 1 - clamp(stress,0,1);
+    S.signalClean = clamp(lerp(S.signalClean, steady, dt * 0.60), 0, 1);
+  }
+
+  // ===== Post: bloom blur (cheap) =====
+  function blurPass(srcCtx, dstCtx, w, h, passes){
+    // simple multi-draw blur (fast enough)
+    dstCtx.clearRect(0,0,w,h);
+    dstCtx.globalAlpha = 1 / (passes*2 + 1);
+    for (let i=-passes;i<=passes;i++){
+      dstCtx.drawImage(srcCtx.canvas, i, 0, w, h);
+      dstCtx.drawImage(srcCtx.canvas, 0, i, w, h);
+    }
+    dstCtx.globalAlpha = 1;
+  }
+
+  // ===== UI =====
+  function updateUI(forward){
+    ui.hdg.textContent = fmt3(S.heading);
+    ui.alt.textContent = fmtAlt(S.altitude);
+    ui.spd.textContent = fmtSpd(S.speed);
+    ui.bst.textContent = S.boost ? "ON" : "OFF";
+    ui.navBadge.textContent = S.boost ? "BOOST" : (S.monk ? "MONK" : "NORM");
+
+    ui.gates.textContent = String(S.gatesHit);
+    ui.miss.textContent  = String(S.gatesMiss);
+    ui.score.textContent = String(S.score).padStart(4,"0");
+
+    // range to next gate (nearest z)
+    let nearest = null;
+    for (const g of gates){
+      if (g.hit) continue;
+      if (nearest===null || g.z < nearest) nearest = g.z;
+    }
+    ui.range.textContent = nearest ? Math.round(nearest) + "m" : "—";
+
+    ui.wattFill.style.width = Math.round(S.wattage*100) + "%";
+    ui.wattBadge.textContent = S.wattage > 0.75 ? "STEADY" : (S.wattage > 0.4 ? "WORKING" : "LOW");
+    ui.wattBadge.style.borderColor = S.wattage > 0.75 ? "rgba(120,255,190,.35)" : (S.wattage > 0.4 ? "rgba(255,190,120,.35)" : "rgba(255,120,120,.35)");
+
+    ui.signal.textContent = S.signalClean > 0.78 ? "CLEAN" : (S.signalClean > 0.45 ? "NOISY" : "FRAY");
+    ui.lock.textContent = "FORWARD";
+
+    if (S.monk) ui.missionLine.textContent = "Silence carries farther than noise.";
+    else if (S.boost) ui.missionLine.textContent = "Ignition → Glide → Create.";
+    else ui.missionLine.textContent = "Thread the gates. Keep the ember.";
+
+    ui.msBadge.textContent = (S.gatesMiss > 0 && (S.gatesHit/(S.gatesHit+S.gatesMiss+1e-6)) < 0.45) ? "HARD" : "RUN";
+  }
+
+  // ===== Render =====
+  function render(){
+    const w = innerWidth, h = innerHeight;
+
+    // Motion blur accumulation (scene only)
+    // Draw a faint dark rect each frame to create trails
+    sctx.globalAlpha = 0.18 + (S.monk ? 0.05 : 0);
+    sctx.fillStyle = "rgba(5,7,11,0.9)";
+    sctx.fillRect(0,0,w,h);
+    sctx.globalAlpha = 1;
+
+    // base horizon + sky (fresh)
+    drawHorizon(sctx,w,h);
+
+    const forward = clamp((S.speed/520) + (S.boost?0.58:0), 0.35, 1.75);
+
+    // stars + clouds
+    drawStars(sctx,w,h,S.dt,forward);
+    drawClouds(sctx,w,h,S.dt,forward);
+
+    // gates
+    drawGates(sctx,w,h);
+
+    // ship
+    spawnParticle();
+    updateParticles(S.dt);
+    const ship = drawShip(sctx,w,h);
+    drawParticles(sctx,w,h, ship.sx, ship.sy);
+
+    // subtle speed tunnel pulse
+    sctx.globalAlpha = (0.06 + forward*0.07) * (S.monk?0.75:1);
+    const cx=w*0.5, cy=h*0.44;
+    const ring = sctx.createRadialGradient(cx,cy,Math.min(w,h)*0.06, cx,cy,Math.min(w,h)*0.58);
+    ring.addColorStop(0,"rgba(120,210,255,0.0)");
+    ring.addColorStop(0.35,"rgba(120,210,255,0.09)");
+    ring.addColorStop(0.55,"rgba(255,190,120,0.06)");
+    ring.addColorStop(1,"rgba(0,0,0,0)");
+    sctx.fillStyle=ring;
+    sctx.fillRect(0,0,w,h);
+    sctx.globalAlpha = 1;
+
+    // canvas HUD guides
+    drawCanvasHUD(sctx,w,h);
+
+    // low wattage warning wash
+    if (S.wattage < 0.22){
+      const pulse = 0.18 + 0.12*Math.sin(S.t*6);
+      sctx.globalAlpha = pulse;
+      sctx.fillStyle = "rgba(255,120,120,0.08)";
+      sctx.fillRect(0,0,w,h);
+      sctx.globalAlpha = 1;
+    }
+
+    // ===== Bloom pass =====
+    // extract bright-ish: just downsample scene into bloom1 with a lighter blend
+    b1.clearRect(0,0,bloom1.width,bloom1.height);
+    b1.globalAlpha = 0.75;
+    b1.drawImage(scene, 0, 0, bloom1.width, bloom1.height);
+    b1.globalAlpha = 1;
+
+    // blur into bloom2
+    b2.clearRect(0,0,bloom2.width,bloom2.height);
+    blurPass(b1, b2, bloom2.width, bloom2.height, 4);
+
+    // ===== Composite to screen =====
+    ctx.clearRect(0,0,w,h);
+
+    // main
+    ctx.globalAlpha = 1;
+    ctx.drawImage(scene, 0, 0, w, h);
+
+    // bloom add
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = (S.monk ? 0.45 : 0.62);
+    ctx.drawImage(bloom2.canvas, 0, 0, w, h);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+
+    return forward;
+  }
+
+  // ===== Loop =====
+  let last = performance.now();
+  function tick(now){
+    S.dt = Math.min(0.033, (now-last)/1000);
+    last = now;
+    S.t += S.dt;
+
+    updateFlight(S.dt);
+
+    const forward = clamp((S.speed/520) + (S.boost?0.58:0), 0.35, 1.75);
+    updateGates(S.dt, forward);
+
+    const fwd = render();
+    updateUI(fwd);
+    updateAudio();
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
 </body>
 </html>
