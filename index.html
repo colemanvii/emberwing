@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Emberwing — Cruise</title>
+  <style>
+    :root{
+      --bg0:#05060a;
+      --bg1:#071021;
+      --bg2:#0b2a55;
+      --bg3:#0f4a86;
+      --hud:rgba(245,246,255,.085);
+      --hud2:rgba(245,246,255,.13);
+      --ember:rgba(255,140,70,.95);
+      --ember2:rgba(255,95,35,.55);
+      --text:rgba(245,246,255,.60);
+      --text2:rgba(245,246,255,.42);
+      --grain:rgba(255,255,255,.05);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:#000;
+      color:#fff;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      overflow:hidden;
+    }
+
+    /* ---- STAGE ---- */
+    .stage{
+      position:relative;
+      width:100vw;
+      height:100vh;
+      overflow:hidden;
+      background:
+        radial-gradient(1200px 700px at 50% 20%, rgba(255,255,255,.06), transparent 55%),
+        linear-gradient(to bottom, var(--bg0) 0%, var(--bg1) 18%, var(--bg2) 55%, var(--bg3) 100%);
+      filter:saturate(1.02) contrast(1.03);
+    }
+
+    /* Subtle film grain */
+    .grain{
+      pointer-events:none;
+      position:absolute; inset:-20%;
+      background:
+        repeating-linear-gradient(0deg, transparent 0 2px, rgba(255,255,255,.02) 2px 3px),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      mix-blend-mode:overlay;
+      opacity:.12;
+      transform:rotate(1deg);
+      animation: grain 7s steps(2,end) infinite;
+    }
+    @keyframes grain{ 0%{transform:translate3d(0,0,0) rotate(1deg)} 100%{transform:translate3d(-3%,2%,0) rotate(1deg)} }
+
+    /* Haze / altitude vignette */
+    .vignette{
+      pointer-events:none;
+      position:absolute; inset:0;
+      background:
+        radial-gradient(1100px 700px at 50% 35%, transparent 40%, rgba(0,0,0,.35) 100%),
+        radial-gradient(900px 500px at 50% 0%, rgba(255,255,255,.03), transparent 60%);
+      opacity:.9;
+    }
+
+    /* ---- CLOUD FIELD ---- */
+    .sky{
+      position:absolute; inset:0;
+    }
+    .cloudband{
+      position:absolute;
+      left:-20%;
+      width:140%;
+      height:75%;
+      top:35%;
+      filter: blur(0.4px);
+      opacity:.9;
+      transform:translate3d(0,0,0);
+      will-change: transform;
+      animation: drift 28s linear infinite;
+    }
+    .cloudband::before,
+    .cloudband::after{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        radial-gradient(500px 240px at 18% 62%, rgba(255,255,255,.22), transparent 62%),
+        radial-gradient(520px 260px at 40% 58%, rgba(255,255,255,.18), transparent 62%),
+        radial-gradient(560px 280px at 62% 64%, rgba(255,255,255,.14), transparent 64%),
+        radial-gradient(520px 260px at 82% 60%, rgba(255,255,255,.12), transparent 62%),
+        radial-gradient(900px 420px at 50% 80%, rgba(255,255,255,.07), transparent 70%);
+      mix-blend-mode: screen;
+    }
+    .cloudband::after{
+      opacity:.55;
+      filter: blur(7px);
+      transform: translate3d(0,14px,0) scale(1.02);
+    }
+    .cloudband.two{
+      top:44%;
+      opacity:.65;
+      filter: blur(1px);
+      animation-duration: 40s;
+      animation-direction: reverse;
+      transform: translate3d(0,0,0) scale(1.05);
+    }
+    .cloudband.three{
+      top:52%;
+      opacity:.45;
+      filter: blur(2px);
+      animation-duration: 56s;
+      transform: translate3d(0,0,0) scale(1.08);
+    }
+    @keyframes drift{
+      0%{ transform:translate3d(0,0,0) }
+      100%{ transform:translate3d(10%, -1.5%, 0) }
+    }
+
+    /* Subtle high cirrus */
+    .cirrus{
+      position:absolute; inset:0;
+      pointer-events:none;
+      opacity:.22;
+      background:
+        radial-gradient(900px 260px at 55% 20%, rgba(255,255,255,.10), transparent 65%),
+        radial-gradient(780px 220px at 35% 18%, rgba(255,255,255,.08), transparent 64%),
+        radial-gradient(1000px 280px at 70% 12%, rgba(255,255,255,.06), transparent 66%);
+      filter: blur(1.5px);
+    }
+
+    /* ---- CRAFT ---- */
+    .craftWrap{
+      position:absolute;
+      left:56%;
+      top:28%;
+      width:360px;
+      height:220px;
+      transform:translate3d(-50%,-50%,0);
+      opacity:.92;
+      pointer-events:none;
+      will-change: transform;
+    }
+
+    .craft{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      transform:rotate(2deg);
+      filter: drop-shadow(0 18px 28px rgba(0,0,0,.35));
+    }
+
+    /* Simple flying-wing silhouette in SVG */
+    .craft svg{ width:100%; height:100%; opacity:.92; }
+    .ember{
+      position:absolute;
+      width:10px; height:10px;
+      left:51.5%;
+      top:57%;
+      transform:translate(-50%,-50%);
+      border-radius:999px;
+      background: radial-gradient(circle, var(--ember) 0%, rgba(255,160,90,.75) 22%, rgba(255,120,60,.35) 45%, transparent 70%);
+      box-shadow:
+        0 0 18px 3px var(--ember2),
+        0 0 44px 10px rgba(255,120,60,.12);
+      opacity:.95;
+      animation: emberPulse 6.5s ease-in-out infinite;
+    }
+    @keyframes emberPulse{
+      0%,100%{ transform:translate(-50%,-50%) scale(.95); opacity:.78 }
+      50%{ transform:translate(-50%,-50%) scale(1.10); opacity:.98 }
+    }
+
+    /* Contrail as calligraphy (fades) */
+    .contrail{
+      pointer-events:none;
+      position:absolute;
+      left:48%;
+      top:33%;
+      width:420px;
+      height:260px;
+      transform:translate3d(-50%,-50%,0) rotate(-10deg);
+      opacity:.18;
+      filter: blur(.6px);
+      will-change: transform, opacity;
+    }
+    .contrail svg{ width:100%; height:100%;}
+    .contrail path{
+      stroke: rgba(245,246,255,.7);
+      stroke-width: 1.6;
+      fill:none;
+      stroke-linecap:round;
+      stroke-dasharray: 6 10;
+      animation: trailFade 18s linear infinite;
+    }
+    @keyframes trailFade{
+      0%{ stroke-dashoffset: 0; opacity:.22 }
+      70%{ opacity:.14 }
+      100%{ stroke-dashoffset: 220; opacity:.06 }
+    }
+
+    /* ---- HUD (nudges) ---- */
+    .hud{
+      position:absolute; inset:0;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity 700ms ease;
+    }
+    .stage.awake .hud{ opacity:1; }
+
+    .hudLine{
+      position:absolute;
+      top:10%;
+      bottom:10%;
+      width:1px;
+      background: linear-gradient(to bottom, transparent 0%, var(--hud) 18%, var(--hud) 82%, transparent 100%);
+      filter: blur(.15px);
+    }
+    .hudLine.left{ left:28px; }
+    .hudLine.right{ right:28px; }
+
+    .hudArc{
+      position:absolute;
+      left:50%;
+      bottom:26px;
+      width:min(520px, 78vw);
+      height:84px;
+      transform:translateX(-50%);
+      border:1px solid transparent;
+      border-bottom-color: var(--hud);
+      border-left-color: transparent;
+      border-right-color: transparent;
+      border-radius: 0 0 999px 999px / 0 0 120px 120px;
+      opacity:.9;
+      filter: blur(.1px);
+    }
+
+    .tick{
+      position:absolute;
+      bottom:24px;
+      left:50%;
+      width:1px;
+      height:12px;
+      background: linear-gradient(to top, transparent 0%, var(--hud2) 55%, transparent 100%);
+      transform:translateX(-50%);
+      opacity:.6;
+    }
+
+    .status{
+      position:absolute;
+      left:26px;
+      bottom:26px;
+      font-size:12px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color:var(--text2);
+      user-select:none;
+      opacity:.0;
+      transition: opacity 1000ms ease;
+    }
+    .stage.awake .status{ opacity:.9; }
+
+    /* ---- TOUCH TARGETS (invisible) ---- */
+    .controls{
+      position:absolute; inset:0;
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      pointer-events:auto;
+    }
+    .zone{
+      position:relative;
+      cursor:default;
+      background:transparent;
+      border:none;
+      outline:none;
+      padding:0;
+    }
+    .zone:active{ cursor:grabbing; }
+
+    /* ---- Small help hint (monastic) ---- */
+    .hint{
+      position:absolute;
+      right:26px;
+      bottom:26px;
+      font-size:12px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--text2);
+      opacity:0;
+      transition: opacity 900ms ease;
+      user-select:none;
+    }
+    .stage.awake .hint{ opacity:.55; }
+  </style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="sky" id="sky">
+      <div class="cirrus"></div>
+      <div class="cloudband one"></div>
+      <div class="cloudband two"></div>
+      <div class="cloudband three"></div>
+    </div>
+
+    <div class="contrail" id="contrail">
+      <svg viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M40,190 C120,120 210,140 270,95 C330,50 360,35 392,24" />
+      </svg>
+    </div>
+
+    <div class="craftWrap" id="craftWrap">
+      <div class="craft" id="craft">
+        <svg viewBox="0 0 360 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- flying-wing silhouette -->
+          <path d="M38 132
+                   C92 96, 140 78, 182 72
+                   C222 66, 262 76, 322 102
+                   C316 114, 302 126, 280 134
+                   C248 146, 220 154, 182 164
+                   C152 156, 126 154, 92 150
+                   C66 146, 50 140, 38 132 Z"
+                fill="rgba(10,12,18,.72)"/>
+          <path d="M72 132
+                   C116 104, 150 90, 182 86
+                   C214 82, 246 92, 296 114
+                   C286 122, 268 130, 246 136
+                   C220 144, 206 150, 182 156
+                   C162 150, 144 148, 118 144
+                   C96 140, 82 136, 72 132 Z"
+                fill="rgba(255,255,255,.04)"/>
+        </svg>
+        <div class="ember" id="ember"></div>
+      </div>
+    </div>
+
+    <div class="hud" id="hud">
+      <div class="hudLine left"></div>
+      <div class="hudLine right"></div>
+      <div class="hudArc"></div>
+      <div class="tick"></div>
+      <div class="status" id="status">CRUISE — ALTITUDE STABLE</div>
+      <div class="hint">tap edges to nudge</div>
+    </div>
+
+    <!-- Invisible interaction zones -->
+    <div class="controls" aria-label="controls">
+      <button class="zone" id="leftZone" aria-label="nudge left"></button>
+      <button class="zone" id="centerZone" aria-label="steady"></button>
+      <button class="zone" id="rightZone" aria-label="nudge right"></button>
+    </div>
+
+    <div class="grain"></div>
+    <div class="vignette"></div>
+  </div>
+
+  <script>
+    // Emberwing: "planes fly themselves" — you only nudge.
+    const stage = document.getElementById('stage');
+    const craftWrap = document.getElementById('craftWrap');
+    const contrail = document.getElementById('contrail');
+    const status = document.getElementById('status');
+    const ember = document.getElementById('ember');
+
+    const leftZone = document.getElementById('leftZone');
+    const rightZone = document.getElementById('rightZone');
+    const centerZone = document.getElementById('centerZone');
+
+    // State: heading is the plane's gentle bias. You can nudge it.
+    let heading = 0;        // current heading bias (deg)
+    let targetHeading = 0;  // where we are softly trending
+    let bank = 0;           // visual bank
+    let targetBank = 0;
+
+    // Autopilot drift (slow, inevitable)
+    let t = 0;
+
+    // Wake HUD when user is present
+    let awakeTimer = null;
+    function awaken(){
+      stage.classList.add('awake');
+      clearTimeout(awakeTimer);
+      awakeTimer = setTimeout(()=>stage.classList.remove('awake'), 2400);
+    }
+    ['pointermove','pointerdown','keydown','touchstart'].forEach(ev=>{
+      window.addEventListener(ev, awaken, {passive:true});
+    });
+    awaken();
+
+    // One-time status fade after opening
+    setTimeout(()=>{ status.style.opacity = ".0"; }, 4200);
+
+    // Nudge strength (small by design)
+    const NUDGE = 0.85;  // degrees
+    function nudge(dir){
+      awaken();
+      targetHeading += dir * NUDGE;
+      // keep it monastic: bounded range (no sharp turns)
+      targetHeading = Math.max(-6.5, Math.min(6.5, targetHeading));
+      // bank is a little more immediate, but still smoothed
+      targetBank += dir * 0.6;
+      targetBank = Math.max(-5.5, Math.min(5.5, targetBank));
+      // ember brightens subtly when inputs are sparse, dims with frantic stacks
+      pulseEmber();
+    }
+
+    // Gentle ember feedback without "sounds"
+    let emberCool = 0;
+    function pulseEmber(){
+      const now = performance.now();
+      const frantic: boolean = (now - emberCool) < 260;
+      emberCool = now;
+
+      // If frantic, slightly reduce glow; if calm, slightly increase.
+      const scale = frantic ? 0.92 : 1.06;
+      ember.animate(
+        [
+          { transform: "translate(-50%,-50%) scale(1)" },
+          { transform: `translate(-50%,-50%) scale(${scale})` },
+          { transform: "translate(-50%,-50%) scale(1)" }
+        ],
+        { duration: 900, easing: "cubic-bezier(.2,.7,.2,1)" }
+      );
+
+      ember.style.opacity = frantic ? ".72" : ".95";
+      setTimeout(()=>{ ember.style.opacity = ".90"; }, 500);
+    }
+
+    leftZone.addEventListener('pointerdown', ()=>nudge(-1));
+    rightZone.addEventListener('pointerdown', ()=>nudge( 1));
+    centerZone.addEventListener('pointerdown', ()=>{ awaken(); targetHeading *= 0.88; targetBank *= 0.80; });
+
+    // Keyboard: subtle, optional
+    window.addEventListener('keydown', (e)=>{
+      if(e.key === 'ArrowLeft') nudge(-1);
+      if(e.key === 'ArrowRight') nudge( 1);
+      if(e.key === ' '){ awaken(); targetHeading *= 0.88; targetBank *= 0.80; }
+    });
+
+    // Animation loop: autopilot smoothing + slow atmospheric drift
+    function loop(){
+      t += 0.0016;
+
+      // Autopilot: slow natural drift (barely)
+      const drift = Math.sin(t) * 0.45;
+
+      // Smooth current toward target (critically damped-ish)
+      heading += (targetHeading - heading) * 0.032;
+      bank    += (targetBank    - bank)    * 0.040;
+
+      // Autopilot slowly relaxes targetBank back to 0 (plane flies itself)
+      targetBank *= 0.985;
+
+      // Visual: craft slides slightly with heading, never dramatic
+      const x = (-heading * 2.2) + (drift * 6);
+      const y = (Math.cos(t*0.8) * 2.2);
+
+      craftWrap.style.transform =
+        `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0) rotate(${bank}deg)`;
+
+      // Contrail drifts opposite, faintly
+      contrail.style.transform =
+        `translate3d(calc(-50% + ${-x*0.55}px), calc(-50% + ${y*0.2}px), 0) rotate(-10deg)`;
+
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>
