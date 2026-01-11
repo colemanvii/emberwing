@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Emberwing — Cruise (Playable)</title>
+  <title>Emberwing — Cruise (Keys)</title>
   <style>
     :root{
       --ink:#05060a;
@@ -23,8 +23,6 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       color:white;
     }
-
-    /* Fullscreen canvas */
     canvas{
       position:fixed;
       inset:0;
@@ -34,8 +32,6 @@
       background: radial-gradient(1200px 700px at 50% 15%, rgba(255,255,255,.05), transparent 60%),
                   linear-gradient(to bottom, #05060a 0%, #081228 24%, #0b2a55 58%, #0f4a86 100%);
     }
-
-    /* HUD overlay */
     .hud{
       position:fixed;
       inset:0;
@@ -102,9 +98,25 @@
       color:var(--text2);
       opacity:.55;
       user-select:none;
+      text-align:right;
+      line-height:1.6;
     }
 
-    /* Ember mark (center-bottom) */
+    .toast{
+      position:absolute;
+      left:50%;
+      top:14%;
+      transform:translateX(-50%);
+      font-size:12px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:rgba(245,246,255,.55);
+      opacity:0;
+      transition: opacity 600ms ease;
+      user-select:none;
+    }
+    .toast.on{ opacity:.95; }
+
     .ember{
       position:absolute;
       left:50%;
@@ -118,13 +130,13 @@
         0 0 44px 10px rgba(255,120,60,.12);
       opacity:.85;
       animation: pulse 6.5s ease-in-out infinite;
+      will-change: transform, opacity;
     }
     @keyframes pulse{
       0%,100%{ transform:translateX(-50%) scale(.95); opacity:.70 }
       50%{ transform:translateX(-50%) scale(1.10); opacity:.95 }
     }
 
-    /* Subtle grain */
     .grain{
       position:fixed; inset:-20%;
       pointer-events:none;
@@ -136,16 +148,6 @@
       animation: grain 7s steps(2,end) infinite;
     }
     @keyframes grain{ 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(-3%,2%,0)} }
-
-    /* Click zones to nudge (mobile + mouse) */
-    .zones{
-      position:fixed; inset:0;
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      pointer-events:auto;
-    }
-    .zone{ background:transparent; border:0; padding:0; }
-    .zone:active{ cursor:grabbing; }
   </style>
 </head>
 <body>
@@ -162,47 +164,44 @@
       ALT <b id="alt">—</b>
       HDG <b id="hdg">—</b>
       THR <b id="thr">—</b>
+      ASST <b id="asst">HI</b>
     </div>
 
-    <div class="hint">W/S pitch · A/D roll · Q/E yaw · ↑/↓ throttle · tap edges to nudge</div>
-    <div class="ember"></div>
+    <div class="hint">
+      ↑↓ pitch · ←→ bank<br/>
+      SPACE steady · ENTER ignite<br/>
+      CAPS assist
+    </div>
+
+    <div class="toast" id="toast">GLIDE CONFIRMED</div>
+    <div class="ember" id="ember"></div>
   </div>
 
   <div class="grain"></div>
 
-  <div class="zones" aria-label="controls">
-    <button class="zone" id="zL" aria-label="nudge left"></button>
-    <button class="zone" id="zC" aria-label="steady"></button>
-    <button class="zone" id="zR" aria-label="nudge right"></button>
-  </div>
-
 <script>
 (() => {
-  // ----- DOM -----
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d', { alpha: false });
 
-  const hud = document.getElementById('hud');
-  const spdEl = document.getElementById('spd');
-  const altEl = document.getElementById('alt');
-  const hdgEl = document.getElementById('hdg');
-  const thrEl = document.getElementById('thr');
+  const spdEl  = document.getElementById('spd');
+  const altEl  = document.getElementById('alt');
+  const hdgEl  = document.getElementById('hdg');
+  const thrEl  = document.getElementById('thr');
+  const asstEl = document.getElementById('asst');
+  const toast  = document.getElementById('toast');
+  const ember  = document.getElementById('ember');
 
-  const zL = document.getElementById('zL');
-  const zC = document.getElementById('zC');
-  const zR = document.getElementById('zR');
-
-  // ----- Resize -----
   function resize(){
     const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.width  = Math.floor(window.innerWidth * dpr);
     canvas.height = Math.floor(window.innerHeight * dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
   }
   window.addEventListener('resize', resize);
   resize();
 
-  // ----- Presence (HUD wakes) -----
+  // HUD wake
   let awakeTimer = null;
   function awaken(){
     document.body.classList.add('awake');
@@ -214,73 +213,104 @@
   });
   awaken();
 
-  // ----- Input -----
+  // Keys
   const keys = new Set();
   window.addEventListener('keydown', (e) => {
-    keys.add(e.key.toLowerCase());
-  });
+    const k = e.key;
+    keys.add(k);
+
+    // Caps toggles assist
+    if (k === 'CapsLock') {
+      assistHigh = !assistHigh;
+      asstEl.textContent = assistHigh ? 'HI' : 'LO';
+      softEmber(assistHigh ? 1.05 : 0.95);
+    }
+
+    // Enter = ignition / commit
+    if (k === 'Enter') {
+      throttle = Math.max(throttle, 0.72);
+      showToast('GLIDE CONFIRMED');
+      softEmber(1.10);
+    }
+
+    // Space = steady
+    if (k === ' ') {
+      steady();
+      showToast('STEADY');
+      softEmber(1.03);
+      e.preventDefault();
+    }
+  }, { passive:false });
+
   window.addEventListener('keyup', (e) => {
-    keys.delete(e.key.toLowerCase());
+    keys.delete(e.key);
   });
 
-  // Nudges: small, because plane flies itself
-  const NUDGE = 0.9;
-  function nudge(dir){
-    awaken();
-    targetRoll += dir * NUDGE * 0.10;
-    targetYaw  += dir * NUDGE * 0.06;
-  }
-  zL.addEventListener('pointerdown', ()=>nudge(-1));
-  zR.addEventListener('pointerdown', ()=>nudge( 1));
-  zC.addEventListener('pointerdown', ()=>{
-    awaken();
-    targetPitch *= 0.8; targetRoll *= 0.8; targetYaw *= 0.8;
-  });
+  // Assist (planes fly themselves)
+  let assistHigh = true;
 
-  // ----- Flight State (simple, stable, game-feel) -----
-  // Angles in radians
-  let pitch = 0;     // nose up/down
-  let roll  = 0;     // bank
-  let yaw   = 0;     // heading
+  // Flight state
+  let pitch = 0, roll = 0, yaw = 0;
+  let targetPitch = 0, targetRoll = 0;
 
-  let targetPitch = 0;
-  let targetRoll  = 0;
-  let targetYaw   = 0;
-
-  let throttle = 0.55;   // 0..1
-  let speed = 220;       // arbitrary units
-  let altitude = 38000;  // feet-ish
-  let vspeed = 0;        // vertical speed
-
-  // World position (for cloud parallax)
+  let throttle = 0.58;   // 0..1
+  let speed = 220;
+  let altitude = 38000;
+  let vspeed = 0;
   let px = 0, py = 0;
 
-  // Tuning: “glide” not twitch
-  const maxPitch = 0.28; // ~16 deg
-  const maxRoll  = 0.55; // ~32 deg
-  const yawRate  = 0.55; // responsiveness
+  // Limits (glide)
+  const maxPitch = 0.28; // ~16deg
+  const maxRoll  = 0.55; // ~32deg
 
-  // ----- Procedural cloud field (2 layers of soft blobs) -----
-  function rand(seed){ // deterministic-ish
+  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+  function lerp(a,b,t){ return a + (b-a)*t; }
+
+  function steady(){
+    // hands-off: pull targets toward zero and damp vertical energy
+    targetPitch *= 0.35;
+    targetRoll  *= 0.35;
+    vspeed      *= 0.55;
+  }
+
+  let toastTimer = null;
+  function showToast(text){
+    toast.textContent = text;
+    toast.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toast.classList.remove('on'), 900);
+  }
+
+  function softEmber(scale){
+    ember.animate(
+      [
+        { transform:"translateX(-50%) scale(1)" },
+        { transform:`translateX(-50%) scale(${scale})` },
+        { transform:"translateX(-50%) scale(1)" }
+      ],
+      { duration: 700, easing:"cubic-bezier(.2,.7,.2,1)" }
+    );
+  }
+
+  // Procedural clouds
+  function rand(seed){
     const x = Math.sin(seed) * 10000;
     return x - Math.floor(x);
   }
   const clouds = [];
-  const COUNT = 120;
+  const COUNT = 130;
   for(let i=0;i<COUNT;i++){
     const s = i * 12.345;
     clouds.push({
-      x: (rand(s) * 2 - 1) * 2200,
-      y: (rand(s+1) * 2 - 1) * 1400,
-      r: 40 + rand(s+2) * 220,
+      x: (rand(s) * 2 - 1) * 2400,
+      y: (rand(s+1) * 2 - 1) * 1600,
+      r: 40 + rand(s+2) * 240,
       l: rand(s+3) < 0.5 ? 0 : 1,
       a: 0.04 + rand(s+4) * 0.10
     });
   }
 
-  // ----- Rendering helpers -----
   function drawSky(w,h){
-    // gradient + high altitude hush
     const g = ctx.createLinearGradient(0,0,0,h);
     g.addColorStop(0, '#05060a');
     g.addColorStop(0.22,'#081228');
@@ -289,7 +319,6 @@
     ctx.fillStyle = g;
     ctx.fillRect(0,0,w,h);
 
-    // faint bright cap
     const cap = ctx.createRadialGradient(w*0.5,h*0.15, 0, w*0.5,h*0.15, Math.max(w,h)*0.8);
     cap.addColorStop(0,'rgba(255,255,255,0.05)');
     cap.addColorStop(1,'rgba(255,255,255,0)');
@@ -298,16 +327,12 @@
   }
 
   function drawHorizon(w,h){
-    // Horizon tilt from roll, vertical shift from pitch
     const cx = w/2, cy = h/2;
-    const tilt = roll;
     const lift = pitch * (h*0.9);
-
     ctx.save();
     ctx.translate(cx, cy + lift);
-    ctx.rotate(-tilt);
+    ctx.rotate(-roll);
 
-    // Thin atmospheric line (barely there)
     ctx.strokeStyle = 'rgba(245,246,255,0.07)';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -315,7 +340,6 @@
     ctx.lineTo( w, 0);
     ctx.stroke();
 
-    // Slight haze band
     const haze = ctx.createLinearGradient(0,-120,0,160);
     haze.addColorStop(0,'rgba(255,255,255,0.00)');
     haze.addColorStop(0.50,'rgba(255,255,255,0.03)');
@@ -328,13 +352,9 @@
 
   function drawClouds(w,h){
     const cx = w/2, cy = h/2;
-
-    // Parallax: forward motion moves clouds downward; roll/pitch bias lateral shift
     const forward = speed * 0.18;
-    const driftX = Math.sin(yaw) * forward * 0.15;
 
-    // Base offsets from world position
-    const ox = px * 0.06 + driftX;
+    const ox = px * 0.06;
     const oy = py * 0.06 + forward;
 
     for(const c of clouds){
@@ -342,8 +362,7 @@
       const x = cx + (c.x - ox*layerMul) + roll*120*layerMul;
       const y = cy + (c.y - oy*layerMul) + pitch*240*layerMul + h*0.25;
 
-      // Wrap
-      if(x < -500 || x > w+500 || y < -500 || y > h+900) continue;
+      if(x < -600 || x > w+600 || y < -600 || y > h+1000) continue;
 
       const rg = ctx.createRadialGradient(x,y, 0, x,y, c.r);
       rg.addColorStop(0, `rgba(255,255,255,${c.a})`);
@@ -356,17 +375,11 @@
   }
 
   function drawCraft(w,h){
-    // Minimal silhouette, center-ish, slightly off
-    const cx = w*0.56;
-    const cy = h*0.30;
-
+    const cx = w*0.56, cy = h*0.30;
     ctx.save();
     ctx.translate(cx, cy);
-
-    // Small response to roll/pitch (camera-coupled)
     ctx.rotate(roll*0.25);
 
-    // Craft body
     ctx.fillStyle = 'rgba(10,12,18,0.55)';
     ctx.beginPath();
     ctx.moveTo(-120, 22);
@@ -377,7 +390,6 @@
     ctx.closePath();
     ctx.fill();
 
-    // Ember core
     const ex = 6, ey = 16;
     const eg = ctx.createRadialGradient(ex,ey,0, ex,ey, 26);
     eg.addColorStop(0,'rgba(255,140,70,0.95)');
@@ -391,16 +403,14 @@
     ctx.restore();
   }
 
-  function drawContrail(w,h){
-    // Very faint, curves with yaw
-    const cx = w*0.56;
-    const cy = h*0.30;
+  function drawContrail(w,h,now){
+    const cx = w*0.56, cy = h*0.30;
     ctx.save();
     ctx.globalAlpha = 0.14;
     ctx.strokeStyle = 'rgba(245,246,255,0.75)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([6,10]);
-    ctx.lineDashOffset = performance.now() * -0.02;
+    ctx.lineDashOffset = now * -0.02;
 
     ctx.beginPath();
     ctx.moveTo(cx-8, cy+18);
@@ -409,55 +419,64 @@
     ctx.restore();
   }
 
-  // ----- Simulation -----
+  // Sim loop
   let last = performance.now();
-  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
-  function lerp(a,b,t){ return a + (b-a)*t; }
+  let t = 0;
 
   function step(now){
     const dt = Math.min(0.033, (now - last) / 1000);
     last = now;
+    t += dt;
 
-    // Inputs (gentle, not arcade twitch)
-    const pitchIn = (keys.has('w') ? 1 : 0) + (keys.has('arrowup') ? 1 : 0) - (keys.has('s') ? 1 : 0) - (keys.has('arrowdown') ? 1 : 0);
-    const rollIn  = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0);
-    const yawIn   = (keys.has('e') ? 1 : 0) - (keys.has('q') ? 1 : 0);
+    // Arrow keys as basic directional buttons
+    const up    = keys.has('ArrowUp');
+    const down  = keys.has('ArrowDown');
+    const left  = keys.has('ArrowLeft');
+    const right = keys.has('ArrowRight');
+    const space = keys.has(' ');
 
-    // Throttle (↑/↓) already used for pitch; use R/F for throttle + optional Shift/Ctrl
-    const thrIn = (keys.has('r') ? 1 : 0) - (keys.has('f') ? 1 : 0) + (keys.has('shift') ? 1 : 0) - (keys.has('control') ? 1 : 0);
+    // Each press nudges targets; assist determines how fast we recenter
+    const pitchNudge = (up ? 1 : 0) - (down ? 1 : 0);
+    const rollNudge  = (right ? 1 : 0) - (left ? 1 : 0);
 
-    // Targets are nudges, clamped
-    targetPitch = clamp(targetPitch + pitchIn * dt * 0.55, -maxPitch, maxPitch);
-    targetRoll  = clamp(targetRoll  + rollIn  * dt * 0.85, -maxRoll,  maxRoll);
-    targetYaw   = clamp(targetYaw   + yawIn   * dt * 0.55, -0.9, 0.9);
+    // Nudge speed (small, steady)
+    const nudgeRatePitch = 0.42;
+    const nudgeRateRoll  = 0.65;
 
-    // Autostabilization: targets relax toward 0 slowly (plane flies itself)
-    const relax = 0.92;
-    targetPitch *= Math.pow(relax, dt*60);
-    targetRoll  *= Math.pow(relax, dt*60);
-    targetYaw   *= Math.pow(relax, dt*60);
+    targetPitch = clamp(targetPitch + pitchNudge * dt * nudgeRatePitch, -maxPitch, maxPitch);
+    targetRoll  = clamp(targetRoll  + rollNudge  * dt * nudgeRateRoll,  -maxRoll,  maxRoll);
 
-    // Throttle changes slowly
-    throttle = clamp(throttle + thrIn * dt * 0.25, 0.0, 1.0);
+    if (space) steady();
 
-    // Actual angles ease toward target (smooth, weighty)
-    pitch = lerp(pitch, targetPitch, 1 - Math.pow(0.86, dt*60));
-    roll  = lerp(roll,  targetRoll,  1 - Math.pow(0.82, dt*60));
-    yaw   += (targetYaw * yawRate) * dt;
+    // Autostabilize targets (plane flies itself)
+    const relaxPerSec = assistHigh ? 2.2 : 0.9; // HIGH = returns faster to center
+    const relax = Math.exp(-relaxPerSec * dt);
+    targetPitch *= relax;
+    targetRoll  *= relax;
 
-    // Speed responds to throttle; add slight drag with bank/pitch
+    // Actual angles ease toward targets
+    const pitchEase = 1 - Math.pow(assistHigh ? 0.82 : 0.90, dt*60);
+    const rollEase  = 1 - Math.pow(assistHigh ? 0.78 : 0.88, dt*60);
+    pitch = lerp(pitch, targetPitch, pitchEase);
+    roll  = lerp(roll,  targetRoll,  rollEase);
+
+    // Heading changes gently with bank (coordinated turn feel)
+    const turnRate = assistHigh ? 0.35 : 0.55;
+    yaw += (roll * turnRate) * dt;
+
+    // Speed responds to throttle; simple drag
     const drag = 0.0025 + Math.abs(roll)*0.004 + Math.abs(pitch)*0.006;
     speed += ((throttle*520) - speed) * dt * 0.7;
     speed -= speed * drag * dt * 60;
     speed = clamp(speed, 80, 520);
 
-    // Vertical speed from pitch (scaled), with damping
+    // Altitude responds to pitch
     vspeed += (pitch * speed * 0.32) * dt * 60;
-    vspeed *= Math.pow(0.90, dt*60);
+    vspeed *= Math.pow(assistHigh ? 0.90 : 0.94, dt*60);
     altitude += vspeed * dt * 2.0;
     altitude = clamp(altitude, 5000, 65000);
 
-    // World movement (forward along yaw)
+    // World forward motion
     const forward = speed * dt * 0.9;
     px += Math.cos(yaw) * forward;
     py += Math.sin(yaw) * forward;
@@ -467,20 +486,19 @@
     drawSky(w,h);
     drawHorizon(w,h);
     drawClouds(w,h);
-    drawContrail(w,h);
+    drawContrail(w,h,now);
     drawCraft(w,h);
 
     // HUD readouts (proof of life)
-    spdEl.textContent = Math.round(speed).toString();
-    altEl.textContent = Math.round(altitude).toString();
+    spdEl.textContent = String(Math.round(speed));
+    altEl.textContent = String(Math.round(altitude));
     const hdgDeg = ((yaw * 180/Math.PI) % 360 + 360) % 360;
-    hdgEl.textContent = Math.round(hdgDeg).toString().padStart(3,'0');
-    thrEl.textContent = Math.round(throttle*100).toString().padStart(2,'0') + '%';
+    hdgEl.textContent = String(Math.round(hdgDeg)).padStart(3,'0');
+    thrEl.textContent = String(Math.round(throttle*100)).padStart(2,'0') + '%';
 
     requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
-
 })();
 </script>
 </body>
