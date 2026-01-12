@@ -1,666 +1,800 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>EMBERWING // HAVEN</title>
-<style>
-  :root{
-    --bg0:#05070b;
-    --bg1:#071225;
-    --bg2:#123a66;
-    --bg3:#4f9ac6;
-    --ink:#dbe7ff;
-    --muted:rgba(219,231,255,.72);
-    --dim:rgba(219,231,255,.46);
-    --line:rgba(219,231,255,.14);
-    --glass0:rgba(10,16,30,.38);
-    --glass1:rgba(10,16,30,.16);
-    --shadow:rgba(0,0,0,.55);
-    --warm:rgba(255,210,160,.9);
-    --cool:rgba(140,220,255,.85);
-    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-    --r:14px;
-  }
-  html,body{height:100%;margin:0;overflow:hidden;background:var(--bg0);color:var(--ink);}
-  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;}
-  /* HUD */
-  #hud{
-    position:fixed; inset:0; pointer-events:none; user-select:none;
-    font-family:var(--sans); letter-spacing:.2px;
-  }
-  .glass{
-    background:linear-gradient(180deg,var(--glass0),var(--glass1));
-    border:1px solid var(--line);
-    border-radius:var(--r);
-    box-shadow:0 18px 55px var(--shadow);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-  .topbar{
-    position:absolute; left:18px; right:18px; top:14px;
-    display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
-  }
-  .brand{
-    padding:12px 14px; max-width:min(640px,62vw);
-    display:flex; flex-direction:column; gap:6px;
-  }
-  .title{
-    font-family:var(--mono); font-size:12px; text-transform:uppercase;
-    display:flex; align-items:center; gap:10px; color:rgba(219,231,255,.92);
-  }
-  .dot{
-    width:8px;height:8px;border-radius:999px;
-    background:radial-gradient(circle at 30% 30%, rgba(255,220,180,1), rgba(255,190,120,.18));
-    box-shadow:0 0 16px rgba(255,190,120,.45);
-  }
-  .badge{
-    font-family:var(--mono); font-size:10px; padding:3px 8px;
-    border-radius:999px; border:1px solid var(--line);
-    color:rgba(219,231,255,.82); background:rgba(10,16,30,.14);
-    margin-left:6px;
-  }
-  .subtitle{font-size:12.5px;color:var(--muted);line-height:1.25}
-  .subtitle b{color:rgba(219,231,255,.92);font-weight:600}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EMBERWING // HAVEN</title>
+  <style>
+    :root{
+      --bg0:#071019;
+      --bg1:#0a1b2b;
+      --sky0:#0b1f33;
+      --sky1:#1b3f5f;
+      --sky2:#a6c7df;
+      --ink:rgba(235,245,255,.88);
+      --muted:rgba(235,245,255,.55);
+      --dim:rgba(235,245,255,.28);
+      --glass:rgba(10,16,22,.25);
+      --glass2:rgba(10,16,22,.35);
+      --line:rgba(235,245,255,.12);
+      --line2:rgba(235,245,255,.08);
+      --accent:rgba(140,200,255,.9);
+      --good:rgba(165,235,205,.85);
+      --warn:rgba(255,225,160,.85);
+    }
 
-  .rightstack{display:flex; gap:10px; align-items:flex-start;}
-  .panel{padding:12px 14px; min-width:220px;}
-  .hdr{
-    font-family:var(--mono); font-size:11px; text-transform:uppercase;
-    color:rgba(219,231,255,.82);
-    display:flex; justify-content:space-between; margin-bottom:10px;
-  }
-  .kv{
-    display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-items:center;
-    font-size:12.5px;
-  }
-  .k{color:var(--dim); font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.5px;}
-  .v{color:rgba(219,231,255,.94); font-family:var(--mono); font-size:12px; font-variant-numeric: tabular-nums;}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 800px at 50% 10%, #102a42 0%, var(--bg1) 45%, var(--bg0) 100%);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: var(--ink);
+      overflow:hidden;
+    }
 
-  .bottom{
-    position:absolute; left:18px; right:18px; bottom:16px;
-    display:flex; justify-content:space-between; gap:12px; align-items:flex-end;
-  }
-  .help{
-    padding:10px 12px; max-width:min(760px,70vw);
-    display:flex; flex-wrap:wrap; gap:10px 12px; align-items:center;
-    color:var(--muted); font-size:12.5px;
-  }
-  .key{
-    font-family:var(--mono); font-size:11px; padding:3px 8px;
-    border-radius:10px; border:1px solid rgba(219,231,255,.20);
-    color:rgba(219,231,255,.86); background:rgba(10,16,30,.16);
-  }
-  .status{padding:12px 14px; min-width:320px;}
-  .big{
-    font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.6px;
-    display:flex; justify-content:space-between; gap:10px; margin-bottom:8px;
-    color:rgba(219,231,255,.92);
-  }
-  .bar{
-    height:8px; border-radius:999px; background:rgba(219,231,255,.10);
-    border:1px solid rgba(219,231,255,.14); overflow:hidden; position:relative;
-  }
-  .fill{
-    position:absolute; inset:0; width:50%;
-    background:linear-gradient(90deg, rgba(140,220,255,.18), rgba(140,220,255,.78));
-    box-shadow:0 0 20px rgba(140,220,255,.35);
-  }
+    /* stage */
+    #stage{
+      position:fixed;
+      inset:0;
+    }
+    canvas{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block;
+    }
 
-  /* monk: quieter, never invisible */
-  body.monk #hud .glass{opacity:.62; filter:saturate(.85);}
-  body.monk #hud .help{opacity:.35;}
+    /* subtle vignette + glass */
+    #veil{
+      position:absolute; inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(1200px 900px at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,.12) 55%, rgba(0,0,0,.35) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,.22) 0%, rgba(0,0,0,.08) 35%, rgba(0,0,0,.28) 100%);
+      mix-blend-mode: multiply;
+    }
 
-  /* grain + vignette */
-  #grain{
-    position:fixed; inset:0; pointer-events:none; opacity:.06; mix-blend-mode: overlay;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
-    background-size:260px 260px;
-  }
-  #vignette{
-    position:fixed; inset:-2px; pointer-events:none;
-    background: radial-gradient(1200px 760px at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,.25) 58%, rgba(0,0,0,.62) 100%);
-  }
+    /* top bar */
+    .topbar{
+      position:absolute;
+      left:18px; right:18px; top:14px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      pointer-events:none;
+    }
 
-  @media (max-width: 980px){
-    .panel{display:none;}
-    .status{min-width:260px;}
-    .brand{max-width:78vw;}
-  }
-</style>
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-width:340px;
+    }
+
+    .brandRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      pointer-events:none;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:99px;
+      background: rgba(255,255,255,.22);
+      box-shadow: 0 0 22px rgba(140,200,255,.25);
+    }
+    .title{
+      letter-spacing:.18em;
+      font-size:12px;
+      opacity:.92;
+      white-space:nowrap;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(10,16,22,.18);
+      color: var(--muted);
+      font-size:11px;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      pointer-events:none;
+    }
+
+    .mission{
+      max-width:520px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--line2);
+      background: linear-gradient(to bottom, rgba(10,16,22,.20), rgba(10,16,22,.08));
+      box-shadow: 0 20px 60px rgba(0,0,0,.18);
+      color: rgba(235,245,255,.72);
+      font-size:12px;
+      line-height:1.35;
+      letter-spacing:.04em;
+      backdrop-filter: blur(10px);
+    }
+    .mission b{color:rgba(235,245,255,.88); font-weight:600}
+    .mission .jp{opacity:.65}
+
+    /* HUD cluster */
+    .hudWrap{
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+      justify-content:flex-end;
+      pointer-events:none;
+    }
+
+    .panel{
+      width:280px;
+      border-radius:16px;
+      border:1px solid var(--line2);
+      background: linear-gradient(to bottom, rgba(10,16,22,.22), rgba(10,16,22,.10));
+      box-shadow: 0 18px 55px rgba(0,0,0,.22);
+      backdrop-filter: blur(10px);
+      padding:12px 12px 10px;
+    }
+    .panelHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:10px;
+      gap:10px;
+    }
+    .panelHeader .label{
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      opacity:.62;
+    }
+    .panelHeader .mode{
+      font-size:10px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      padding:5px 9px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      color: rgba(235,245,255,.62);
+      background: rgba(10,16,22,.18);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px 10px;
+      font-size:12px;
+    }
+    .k{opacity:.55; letter-spacing:.08em}
+    .v{
+      text-align:right;
+      opacity:.92;
+      letter-spacing:.06em;
+    }
+    .v.muted{opacity:.70}
+    .divider{
+      height:1px;
+      margin:10px 0;
+      background: linear-gradient(to right, rgba(235,245,255,0), var(--line), rgba(235,245,255,0));
+    }
+
+    /* bottom-left controls */
+    .controls{
+      position:absolute;
+      left:18px;
+      bottom:18px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      max-width:640px;
+      pointer-events:none;
+      opacity:.72;
+    }
+    .chip{
+      pointer-events:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid var(--line2);
+      background: rgba(10,16,22,.20);
+      color: rgba(235,245,255,.62);
+      font-size:11px;
+      letter-spacing:.10em;
+      text-transform:lowercase;
+      backdrop-filter: blur(8px);
+    }
+    .key{
+      padding:3px 8px;
+      border-radius:8px;
+      border:1px solid rgba(235,245,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(235,245,255,.82);
+      font-size:10px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+    }
+
+    /* bottom-right wattage */
+    .wattage{
+      position:absolute;
+      right:18px;
+      bottom:18px;
+      width:330px;
+      border-radius:16px;
+      border:1px solid var(--line2);
+      background: linear-gradient(to bottom, rgba(10,16,22,.22), rgba(10,16,22,.10));
+      box-shadow: 0 18px 55px rgba(0,0,0,.22);
+      backdrop-filter: blur(10px);
+      padding:12px;
+      pointer-events:none;
+    }
+    .wRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:10px;
+      gap:10px;
+    }
+    .wRow .label{
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      opacity:.62;
+    }
+    .wRow .state{
+      font-size:10px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      padding:5px 9px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      color: rgba(235,245,255,.60);
+      background: rgba(10,16,22,.18);
+    }
+    .bar{
+      height:10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(235,245,255,.10);
+      overflow:hidden;
+    }
+    .fill{
+      height:100%;
+      width:50%;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(140,200,255,.0), rgba(140,200,255,.65), rgba(165,235,205,.55));
+      filter: blur(.0px);
+    }
+    .wGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px 10px;
+      margin-top:10px;
+      font-size:12px;
+    }
+
+    /* subtle horizon reticle */
+    .reticle{
+      position:absolute;
+      left:50%;
+      top:52%;
+      width:min(520px, 68vw);
+      height:160px;
+      transform:translate(-50%,-50%);
+      pointer-events:none;
+      opacity:.35;
+      filter: drop-shadow(0 10px 22px rgba(0,0,0,.22));
+    }
+    .reticle:before{
+      content:"";
+      position:absolute; inset:0;
+      border-radius:999px;
+      background:
+        radial-gradient(circle at 50% 55%, rgba(235,245,255,.10) 0%, rgba(235,245,255,.05) 22%, rgba(235,245,255,0) 55%),
+        linear-gradient(to right, rgba(235,245,255,0), rgba(235,245,255,.12), rgba(235,245,255,0));
+      mask:
+        radial-gradient(circle at 50% 55%, #000 0%, #000 24%, transparent 25%),
+        linear-gradient(#000,#000);
+      -webkit-mask:
+        radial-gradient(circle at 50% 55%, #000 0%, #000 24%, transparent 25%),
+        linear-gradient(#000,#000);
+      opacity:.9;
+    }
+    .reticle .ring{
+      position:absolute;
+      left:50%;
+      top:58%;
+      width:120px; height:120px;
+      transform:translate(-50%,-50%);
+      border-radius:999px;
+      border:1px solid rgba(235,245,255,.16);
+      box-shadow: 0 0 0 1px rgba(235,245,255,.06) inset;
+    }
+    .reticle .ring.small{
+      width:62px; height:62px;
+      opacity:.65;
+    }
+
+    /* HUD toggle fade */
+    .hudHidden .panel,
+    .hudHidden .wattage,
+    .hudHidden .controls{
+      opacity:0;
+      transform: translateY(6px);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .panel,.wattage,.controls{
+      transition: opacity .25s ease, transform .25s ease;
+    }
+
+    /* responsive */
+    @media (max-width: 920px){
+      .hudWrap{display:none}
+      .mission{max-width: 80vw}
+      .wattage{width: min(360px, calc(100vw - 36px))}
+      .reticle{opacity:.28}
+    }
+  </style>
 </head>
-<body class="monk">
-<canvas id="c"></canvas>
+<body>
+  <div id="stage">
+    <canvas id="sky"></canvas>
+    <canvas id="cloudsFar"></canvas>
+    <canvas id="cloudsNear"></canvas>
+    <canvas id="land"></canvas>
+    <div id="veil"></div>
 
-<div id="hud" aria-hidden="true">
-  <div class="topbar">
-    <div class="brand glass">
-      <div class="title"><span class="dot"></span> EMBERWING // HAVEN <span class="badge" id="modeBadge">MONK</span></div>
-      <div class="subtitle">Mission: <b>forward flight, steady hands.</b> <span id="missionLine">ゆっくりと。今ここ。</span></div>
-    </div>
-
-    <div class="rightstack">
-      <div class="panel glass">
-        <div class="hdr"><span>NAV</span><span class="badge" id="navBadge">MONK</span></div>
-        <div class="kv">
-          <div class="k">HDG</div><div class="v" id="hdg">000</div>
-          <div class="k">ALT</div><div class="v" id="alt">00000</div>
-          <div class="k">SPD</div><div class="v" id="spd">000</div>
-          <div class="k">BOOST</div><div class="v" id="bst">OFF</div>
+    <div class="topbar">
+      <div class="brand">
+        <div class="brandRow">
+          <div class="dot"></div>
+          <div class="title">EMBERWING&nbsp;//&nbsp;HAVEN</div>
+          <div class="pill">MONK</div>
+        </div>
+        <div class="mission">
+          <b>Mission:</b> forward flight, steady hands. <span class="jp">ゆっくりと。今ここ。</span>
         </div>
       </div>
 
-      <div class="panel glass">
-        <div class="hdr"><span>MISSION</span><span class="badge" id="msBadge">FLOW</span></div>
-        <div class="kv">
-          <div class="k">GATES</div><div class="v" id="gates">0</div>
-          <div class="k">MISS</div><div class="v" id="miss">0</div>
-          <div class="k">SCORE</div><div class="v" id="score">0000</div>
-          <div class="k">RANGE</div><div class="v" id="range">—</div>
+      <div class="hudWrap">
+        <div class="panel" id="panelNav">
+          <div class="panelHeader">
+            <div class="label">NAV</div>
+            <div class="mode" id="modeTag">FLOW</div>
+          </div>
+          <div class="grid">
+            <div class="k">HDG</div><div class="v" id="hdg">000</div>
+            <div class="k">ALT</div><div class="v" id="alt">00000</div>
+            <div class="k">SPD</div><div class="v" id="spd">000</div>
+            <div class="k">BOOST</div><div class="v muted" id="boost">OFF</div>
+          </div>
+          <div class="divider"></div>
+          <div class="grid">
+            <div class="k">PITCH</div><div class="v" id="pitch">0.0</div>
+            <div class="k">ROLL</div><div class="v" id="roll">0.0</div>
+          </div>
+        </div>
+
+        <div class="panel" id="panelMission">
+          <div class="panelHeader">
+            <div class="label">MISSION</div>
+            <div class="mode" id="monkTag">STEADY</div>
+          </div>
+          <div class="grid">
+            <div class="k">GATES</div><div class="v" id="gates">0</div>
+            <div class="k">MISS</div><div class="v" id="miss">0</div>
+            <div class="k">SCORE</div><div class="v" id="score">0000</div>
+            <div class="k">RANGE</div><div class="v" id="range">0.0km</div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="bottom">
-    <div class="help glass" id="help">
-      <span class="key">↑/↓</span> pitch
-      <span class="key">←/→</span> roll
-      <span class="key">SPACE</span> boost
-      <span class="key">CAPS</span> monk
-      <span class="key">ENTER</span> HUD
+    <div class="reticle">
+      <div class="ring"></div>
+      <div class="ring small"></div>
     </div>
 
-    <div class="status glass">
-      <div class="big"><span>WATTAGE</span><span class="badge" id="wattBadge">STEADY</span></div>
-      <div class="bar"><div class="fill" id="wattFill"></div></div>
-      <div class="kv" style="margin-top:10px">
-        <div class="k">SIGNAL</div><div class="v" id="signal">CLEAN</div>
+    <div class="controls" id="controls">
+      <div class="chip"><span class="key">↑/↓</span> pitch</div>
+      <div class="chip"><span class="key">←/→</span> roll</div>
+      <div class="chip"><span class="key">space</span> boost</div>
+      <div class="chip"><span class="key">caps</span> monk</div>
+      <div class="chip"><span class="key">enter</span> hud</div>
+    </div>
+
+    <div class="wattage" id="wattagePanel">
+      <div class="wRow">
+        <div class="label">WATTAGE</div>
+        <div class="state" id="wState">CLEAN</div>
+      </div>
+      <div class="bar"><div class="fill" id="wFill"></div></div>
+      <div class="wGrid">
+        <div class="k">SIGNAL</div><div class="v" id="signal">CLEAR</div>
         <div class="k">LOCK</div><div class="v" id="lock">FORWARD</div>
       </div>
     </div>
   </div>
-</div>
-
-<div id="grain"></div>
-<div id="vignette"></div>
 
 <script>
 (() => {
-  const canvas = document.getElementById("c");
-  const ctx = canvas.getContext("2d", { alpha:false });
+  // ---------- sizing ----------
+  const cvsSky = document.getElementById('sky');
+  const cvsFar = document.getElementById('cloudsFar');
+  const cvsNear = document.getElementById('cloudsNear');
+  const cvsLand = document.getElementById('land');
+  const ctxSky = cvsSky.getContext('2d');
+  const ctxFar = cvsFar.getContext('2d');
+  const ctxNear = cvsNear.getContext('2d');
+  const ctxLand = cvsLand.getContext('2d');
 
-  const $ = (id)=>document.getElementById(id);
-  const ui = {
-    modeBadge:$("modeBadge"), missionLine:$("missionLine"),
-    navBadge:$("navBadge"), msBadge:$("msBadge"),
-    hdg:$("hdg"), alt:$("alt"), spd:$("spd"), bst:$("bst"),
-    gates:$("gates"), miss:$("miss"), score:$("score"), range:$("range"),
-    wattFill:$("wattFill"), wattBadge:$("wattBadge"), signal:$("signal"), lock:$("lock"),
-    hud: $("hud"), help: $("help")
-  };
-
-  const TAU = Math.PI*2;
-  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const lerp=(a,b,t)=>a+(b-a)*t;
-  const fmt3=(n)=>String(Math.round(((n%360)+360)%360)).padStart(3,"0");
-  const fmtAlt=(n)=>String(Math.round(n)).padStart(5,"0");
-  const fmtSpd=(n)=>String(Math.round(n)).padStart(3,"0");
-
-  const S = {
-    t:0, dt:0,
-    monk:true, hudVisible:true,
-    keys:new Set(),
-
-    // flight
-    pitch:0, roll:0,
-    heading:0,
-    altitude:38100,
-    throttle:0.72,
-    boost:false,
-    speed:760,
-    targetSpeed:760,
-
-    // camera sway
-    swayX:0, swayY:0,
-
-    // mission
-    gatesHit:0, gatesMiss:0, score:0,
-    wattage:0.86, signalClean:1.0,
-
-    // gentle real feel
-    pitchRate:0, rollRate:0,
-    wind:0
-  };
+  const DPR = () => Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  let W=0,H=0,dpr=1;
 
   function resize(){
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
-  }
-  addEventListener("resize", resize, {passive:true});
-  resize();
-
-  function onKey(e, down){
-    const k=e.code;
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","CapsLock","Enter"].includes(k)) e.preventDefault();
-    if (down) S.keys.add(k); else S.keys.delete(k);
-    if (k==="Space") S.boost = down;
-
-    if (down && k==="CapsLock"){
-      S.monk = !S.monk;
-      document.body.classList.toggle("monk", S.monk);
-      ui.modeBadge.textContent = S.monk ? "MONK" : "LIVE";
-      ui.navBadge.textContent  = S.boost ? "BOOST" : (S.monk ? "MONK" : "NORM");
-      ui.missionLine.textContent = S.monk ? "ゆっくりと。今ここ。" : "Ignition → Glide → Create.";
-    }
-    if (down && k==="Enter"){
-      S.hudVisible = !S.hudVisible;
-      ui.hud.style.display = S.hudVisible ? "block" : "none";
-    }
-  }
-  addEventListener("keydown",(e)=>onKey(e,true),{passive:false});
-  addEventListener("keyup",(e)=>onKey(e,false),{passive:false});
-
-  // ---------- Atmosphere (Haven sky) ----------
-  function drawSky(){
-    const w=canvas.width, h=canvas.height;
-
-    // pitch shifts horizon; roll tilts it
-    const horizonY = h*0.53 + S.pitch*120;
-
-    // serene gradient (clear, not muddy)
-    const sky = ctx.createLinearGradient(0,0,0,h);
-    sky.addColorStop(0.00, "#05070b");
-    sky.addColorStop(0.16, "#071225");
-    sky.addColorStop(0.42, "#13355f");
-    sky.addColorStop(0.70, "#4f9ac6");
-    sky.addColorStop(1.00, "#0a2343");
-    ctx.fillStyle = sky;
-    ctx.fillRect(0,0,w,h);
-
-    // painterly glow
-    const glow = ctx.createRadialGradient(w*0.52,h*0.28,0, w*0.52,h*0.28, Math.max(w,h)*0.95);
-    glow.addColorStop(0,"rgba(255,245,235,0.10)");
-    glow.addColorStop(0.55,"rgba(185,235,255,0.08)");
-    glow.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle = glow;
-    ctx.fillRect(0,0,w,h);
-
-    // horizon band + line (tilted)
-    ctx.save();
-    ctx.translate(w*0.5, horizonY);
-    ctx.rotate(-S.roll*0.62);
-
-    const band = ctx.createLinearGradient(0,-80,0,140);
-    band.addColorStop(0,"rgba(255,255,255,0)");
-    band.addColorStop(0.45,"rgba(190,235,255,0.16)");
-    band.addColorStop(0.62,"rgba(255,210,170,0.09)");
-    band.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle = band;
-    ctx.fillRect(-w,-110,w*2,260);
-
-    ctx.globalAlpha = 0.34;
-    ctx.strokeStyle = "rgba(220,245,255,0.78)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-w,0); ctx.lineTo(w,0);
-    ctx.stroke();
-
-    ctx.restore();
-    ctx.globalAlpha = 1;
-  }
-
-  // ---------- Forward motion cues (NOT rain) ----------
-  const flow=[];
-  const FLOW=720;
-  function initFlow(){
-    flow.length=0;
-    for (let i=0;i<FLOW;i++) flow.push({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random(),s:Math.random()*1.2+0.2});
-  }
-  initFlow();
-
-  function drawFlow(dt, forward){
-    const w=canvas.width, h=canvas.height;
-    const cx=w*0.5, cy=h*0.46;                 // vanishing point
-    const sp = 0.95 + forward*2.05;
-
-    for (const f of flow){
-      f.z -= dt*(0.92 + (1-f.z)*3.8)*sp;
-      if (f.z<=0.02){ f.x=Math.random()*2-1; f.y=Math.random()*2-1; f.z=1; f.s=Math.random()*1.2+0.2; }
-
-      const p = 0.23/(f.z+0.06);
-      const x = cx + (f.x + S.swayX*0.0011) * w * p;
-      const y = cy + (f.y + S.swayY*0.0011) * h * p;
-
-      const dx = x - cx;
-      const dy = y - cy;
-      const L  = (18 + (1-f.z)*90) * sp * p;
-
-      ctx.globalAlpha = (0.05 + (1-f.z)*0.22) * (S.monk?0.82:1);
-      ctx.strokeStyle = "rgba(205,235,255,0.86)";
-      ctx.lineWidth   = Math.max(1, f.s*(1-f.z)*1.5);
-
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + dx*0.08*L, y + dy*0.08*L);
-      ctx.stroke();
-    }
-    ctx.globalAlpha=1; ctx.lineWidth=1;
-  }
-
-  // ---------- Gates ----------
-  const gates=[];
-  let gateTimer=0;
-  function spawnGate(){
-    const spread = S.monk ? 0.54 : 0.74;
-    gates.push({
-      x:(Math.random()*2-1)*spread,
-      y:(Math.random()*2-1)*spread*0.52,
-      z: 2200 + Math.random()*1600,
-      r: 0.24 + Math.random()*0.12,
-      hit:false
+    dpr = DPR();
+    W = Math.floor(window.innerWidth);
+    H = Math.floor(window.innerHeight);
+    [cvsSky, cvsFar, cvsNear, cvsLand].forEach(c => {
+      c.width = Math.floor(W * dpr);
+      c.height = Math.floor(H * dpr);
+      c.style.width = W + "px";
+      c.style.height = H + "px";
+    });
+    // crisp lines
+    [ctxSky, ctxFar, ctxNear, ctxLand].forEach(ctx => {
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.imageSmoothingEnabled = true;
     });
   }
+  window.addEventListener('resize', resize, {passive:true});
+  resize();
 
-  function updateGates(dt, forward){
-    for (let i=gates.length-1;i>=0;i--){
-      const g=gates[i];
-      g.z -= dt*(forward*940 + 260);
-      if (g.z < 120){
-        if (!g.hit){
-          S.gatesMiss++;
-          S.wattage = clamp(S.wattage - 0.06, 0, 1);
-          S.signalClean = clamp(S.signalClean - 0.08, 0, 1);
-        }
-        gates.splice(i,1);
-      }
-    }
-    gateTimer += dt*(S.monk ? 0.95 : 1.0);
-    if (gateTimer > 0.95){
-      gateTimer = 0;
-      if (gates.length < 4) spawnGate();
-    }
+  // ---------- simple value noise ----------
+  function hash2(x,y){
+    // deterministic pseudo-random 0..1
+    const s = Math.sin(x*127.1 + y*311.7) * 43758.5453123;
+    return s - Math.floor(s);
+  }
+  function smoothstep(t){ return t*t*(3-2*t); }
+  function lerp(a,b,t){ return a + (b-a)*t; }
 
-    // "aim" at center: subtle control
-    const aimX = clamp(S.roll*0.55 + S.wind*0.06, -1, 1);
-    const aimY = clamp(-S.pitch*0.75, -1, 1);
-
-    for (const g of gates){
-      if (g.hit) continue;
-      if (g.z < 520 && g.z > 200){
-        const dx = aimX - g.x;
-        const dy = aimY - g.y;
-        if (Math.hypot(dx,dy) < g.r*0.78){
-          g.hit = true;
-          S.gatesHit++;
-          S.score += 28 + Math.round(70 * S.signalClean);
-          S.wattage = clamp(S.wattage + 0.03, 0, 1);
-          S.signalClean = clamp(S.signalClean + 0.05, 0, 1);
-        }
-      }
-    }
+  function noise2(x,y){
+    const xi = Math.floor(x), yi = Math.floor(y);
+    const xf = x - xi, yf = y - yi;
+    const v00 = hash2(xi, yi);
+    const v10 = hash2(xi+1, yi);
+    const v01 = hash2(xi, yi+1);
+    const v11 = hash2(xi+1, yi+1);
+    const u = smoothstep(xf);
+    const v = smoothstep(yf);
+    return lerp(lerp(v00,v10,u), lerp(v01,v11,u), v);
   }
 
-  function drawGates(){
-    const w=canvas.width, h=canvas.height;
-    const cx=w*0.5, cy=h*0.46;
-    for (const gt of gates){
-      const p = 920/(gt.z+220);
-      const x = cx + (gt.x + S.swayX*0.0007) * w * 0.56 * p;
-      const y = cy + (gt.y + S.swayY*0.0007) * h * 0.46 * p;
-      const r = Math.max(18, gt.r * Math.min(w,h) * 0.48 * p);
-
-      const a = clamp(0.10 + (1400-gt.z)/1400*0.40, 0.10, 0.45) * (S.monk?0.82:1);
-      ctx.globalAlpha = a;
-
-      ctx.save();
-      ctx.translate(x,y);
-      ctx.globalCompositeOperation="lighter";
-
-      const glow = ctx.createRadialGradient(0,0,r*0.65, 0,0,r*1.25);
-      glow.addColorStop(0, "rgba(140,220,255,0)");
-      glow.addColorStop(0.55,"rgba(140,220,255,0.26)");
-      glow.addColorStop(1, "rgba(255,190,120,0)");
-      ctx.fillStyle = glow;
-
-      ctx.strokeStyle = gt.hit ? "rgba(120,255,190,0.82)" : "rgba(200,230,255,0.82)";
-      ctx.lineWidth = Math.max(1, r*0.06);
-      ctx.beginPath(); ctx.arc(0,0,r,0,TAU); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0,0,r*1.12,0,TAU); ctx.fill();
-
-      ctx.globalCompositeOperation="source-over";
-      ctx.restore();
-
-      ctx.globalAlpha = 1;
+  function fbm(x,y){
+    let v=0, a=0.55, f=1.0;
+    for(let i=0;i<5;i++){
+      v += a * noise2(x*f, y*f);
+      f *= 2.0;
+      a *= 0.5;
     }
+    return v;
   }
 
-  // ---------- Instruments (clean attitude overlay) ----------
-  function drawAttitude(){
-    const w=canvas.width, h=canvas.height;
-    const cx=w*0.5, cy=h*0.52;
-    const radius = Math.min(w,h)*0.15;
+  // ---------- sim state ----------
+  const state = {
+    t: 0,
+    pitch: 0,  // -1..1
+    roll: 0,   // -1..1
+    hdg: 358,
+    alt: 38168,
+    spd: 112,
+    boost: false,
+    monk: true,
+    hud: true,
+    gates: 1,
+    miss: 0,
+    score: 95,
+    range: 0.318,
+    // internal drift
+    driftX: 0,
+    driftY: 0,
+    wattage: 0.72
+  };
 
-    const pxPerDeg = radius*0.18;
-    const pitchDeg = clamp(S.pitch * 18, -26, 26);
-    const rollRad  = clamp(S.roll * 0.62, -0.85, 0.85);
+  // ---------- UI hooks ----------
+  const $ = (id)=>document.getElementById(id);
+  const ui = {
+    hdg: $('hdg'), alt:$('alt'), spd:$('spd'), boost:$('boost'),
+    pitch:$('pitch'), roll:$('roll'),
+    gates:$('gates'), miss:$('miss'), score:$('score'), range:$('range'),
+    wFill:$('wFill'), wState:$('wState'), modeTag:$('modeTag'), monkTag:$('monkTag'),
+    signal:$('signal'), lock:$('lock'),
+  };
 
-    // pitch ladder rotates with roll; shifts with pitch
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(-rollRad);
-    ctx.translate(0, pitchDeg * pxPerDeg);
-
-    ctx.globalAlpha = S.monk ? 0.22 : 0.26;
-    ctx.strokeStyle = "rgba(220,245,255,0.85)";
-    ctx.fillStyle   = "rgba(220,245,255,0.85)";
-    ctx.lineWidth = 1;
-
-    for (let d=-25; d<=25; d+=5){
-      if (d===0) continue;
-      const y = -d * pxPerDeg;
-      const len = (d%10===0) ? radius*0.88 : radius*0.60;
-      ctx.beginPath();
-      ctx.moveTo(-len, y);
-      ctx.lineTo( len, y);
-      ctx.stroke();
-
-      if (d%10===0){
-        ctx.globalAlpha = S.monk ? 0.18 : 0.22;
-        ctx.font = "11px " + getComputedStyle(document.documentElement).getPropertyValue('--mono');
-        ctx.textAlign="left"; ctx.textBaseline="middle";
-        ctx.fillText(String(Math.abs(d)), len+8, y);
-        ctx.textAlign="right";
-        ctx.fillText(String(Math.abs(d)), -len-8, y);
-        ctx.globalAlpha = S.monk ? 0.22 : 0.26;
-      }
-    }
-
-    // zero line
-    ctx.globalAlpha = S.monk ? 0.26 : 0.30;
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(-radius*0.92, 0);
-    ctx.lineTo( radius*0.92, 0);
-    ctx.stroke();
-    ctx.restore();
-
-    // fixed reference marks (center)
-    ctx.globalAlpha = S.monk ? 0.22 : 0.26;
-    ctx.strokeStyle = "rgba(220,245,255,0.85)";
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(cx-26, cy); ctx.lineTo(cx-6, cy);
-    ctx.moveTo(cx+6,  cy); ctx.lineTo(cx+26, cy);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-
-  // ---------- Cockpit framing (NO plane) ----------
-  function drawCockpit(){
-    const w=canvas.width, h=canvas.height;
-
-    // mild vibration (disciplined)
-    const vib = (S.boost ? 0.9 : 0.25) + (S.speed/1200)*0.35;
-    const shake = (0.7 - S.wattage)*0.8 + vib*0.25;
-    const ox = Math.sin(S.t*16)*shake + S.swayX*0.02;
-    const oy = Math.cos(S.t*18)*shake + S.swayY*0.02;
-
-    // canopy vignette + frame suggestion
-    ctx.save();
-    ctx.translate(ox, oy);
-
-    // canopy edges
-    ctx.globalAlpha = 0.80;
-    const v = ctx.createRadialGradient(w*0.5,h*0.48, Math.min(w,h)*0.20, w*0.5,h*0.55, Math.min(w,h)*0.98);
-    v.addColorStop(0,"rgba(0,0,0,0)");
-    v.addColorStop(0.58,"rgba(0,0,0,0)");
-    v.addColorStop(1,"rgba(0,0,0,0.58)");
-    ctx.fillStyle = v;
-    ctx.fillRect(0,0,w,h);
-
-    // subtle canopy rib lines
-    ctx.globalAlpha = 0.18;
-    ctx.strokeStyle = "rgba(219,231,255,0.45)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(w*0.22, 0);
-    ctx.quadraticCurveTo(w*0.34, h*0.18, w*0.38, h*0.46);
-    ctx.moveTo(w*0.78, 0);
-    ctx.quadraticCurveTo(w*0.66, h*0.18, w*0.62, h*0.46);
-    ctx.stroke();
-
-    // dash silhouette (heavy)
-    ctx.globalAlpha = 0.98;
-    ctx.fillStyle = "rgba(6,9,14,0.94)";
-    ctx.beginPath();
-    ctx.moveTo(0, h*0.78);
-    ctx.quadraticCurveTo(w*0.5, h*0.62, w, h*0.78);
-    ctx.lineTo(w, h);
-    ctx.lineTo(0, h);
-    ctx.closePath();
-    ctx.fill();
-
-    // dash edge highlight
-    ctx.globalAlpha = 0.18;
-    ctx.strokeStyle = "rgba(219,231,255,0.78)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, h*0.78);
-    ctx.quadraticCurveTo(w*0.5, h*0.62, w, h*0.78);
-    ctx.stroke();
-
-    // windshield glare (warm/cool)
-    ctx.globalAlpha = 0.14;
-    const g = ctx.createRadialGradient(w*0.64,h*0.18,0, w*0.64,h*0.18, Math.max(w,h)*0.62);
-    g.addColorStop(0,"rgba(255,245,235,0.40)");
-    g.addColorStop(0.3,"rgba(185,235,255,0.16)");
-    g.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,w,h);
-
-    ctx.restore();
-    ctx.globalAlpha = 1;
-  }
-
-  // ---------- Flight model (subtle hands, strong forward) ----------
-  function updateFlight(dt){
-    const up=S.keys.has("ArrowUp"), dn=S.keys.has("ArrowDown");
-    const lf=S.keys.has("ArrowLeft"), rt=S.keys.has("ArrowRight");
-
-    const calm = S.monk ? 0.88 : 1.0;
-    const pIn = (up?1:0) + (dn?-1:0);
-    const rIn = (rt?1:0) + (lf?-1:0);
-
-    // tiny inertia to feel like surfaces
-    const pitchTarget = pIn * 0.22 * calm;
-    const rollTarget  = rIn * 0.34 * calm;
-
-    S.pitchRate += (pitchTarget - S.pitch) * dt * 10.0;
-    S.rollRate  += (rollTarget  - S.roll ) * dt * 10.0;
-    S.pitchRate *= (1 - dt*5.2);
-    S.rollRate  *= (1 - dt*5.2);
-
-    S.pitch += S.pitchRate * dt * 6.0;
-    S.roll  += S.rollRate  * dt * 6.0;
-
-    // speed: always forward, boost is punchy
-    const base=780, max=1040, boostAdd=S.boost?380:0;
-    S.targetSpeed = base + (max-base)*S.throttle + boostAdd;
-    const resp = S.boost ? 3.2 : 1.9;
-    S.speed += (S.targetSpeed - S.speed) * dt * resp;
-
-    // altitude + heading
-    S.altitude += (S.pitch*2800 + (S.boost?220:0)) * dt;
-    const turn = S.roll * (0.62 + (S.speed/1100)) * calm;
-    S.heading += (turn*48) * dt;
-
-    // wind drift (slow)
-    S.wind = Math.sin(S.t*0.13) * 0.45;
-
-    // camera sway is smaller than control deflection
-    S.swayX = lerp(S.swayX, (S.roll*180 + S.wind*22), dt*2.4);
-    S.swayY = lerp(S.swayY, (-S.pitch*220), dt*2.4);
-
-    // meters
-    const stress=(S.boost?0.35:0)+(Math.abs(S.roll)+Math.abs(S.pitch))*0.46;
-    const recover=(S.monk?0.24:0.12);
-    S.wattage = clamp(S.wattage + (recover-stress)*dt*0.34, 0,1);
-
-    const steady = 1 - clamp(stress,0,1);
-    S.signalClean = clamp(lerp(S.signalClean, steady, dt*0.60), 0,1);
-  }
+  function fmt3(n){ return String(Math.round(n)).padStart(3,'0'); }
+  function fmt5(n){ return String(Math.round(n)).padStart(5,'0'); }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
   function updateUI(){
-    ui.hdg.textContent = fmt3(S.heading);
-    ui.alt.textContent = fmtAlt(S.altitude);
-    ui.spd.textContent = fmtSpd(S.speed);
-    ui.bst.textContent = S.boost ? "ON" : "OFF";
-    ui.navBadge.textContent = S.boost ? "BOOST" : (S.monk ? "MONK" : "NORM");
+    ui.hdg.textContent = fmt3((state.hdg%360+360)%360);
+    ui.alt.textContent = fmt5(state.alt);
+    ui.spd.textContent = fmt3(state.spd);
+    ui.boost.textContent = state.boost ? "ON" : "OFF";
+    ui.pitch.textContent = (state.pitch*6).toFixed(1);
+    ui.roll.textContent = (state.roll*12).toFixed(1);
 
-    ui.gates.textContent = String(S.gatesHit);
-    ui.miss.textContent  = String(S.gatesMiss);
-    ui.score.textContent = String(S.score).padStart(4,"0");
+    ui.gates.textContent = state.gates;
+    ui.miss.textContent = state.miss;
+    ui.score.textContent = String(state.score).padStart(4,'0');
+    ui.range.textContent = state.range.toFixed(1) + "km";
 
-    let nearest=null;
-    for (const g of gates){ if (!g.hit && (nearest===null || g.z<nearest)) nearest=g.z; }
-    ui.range.textContent = nearest ? Math.round(nearest)+"m" : "—";
+    ui.wFill.style.width = (state.wattage*100).toFixed(0) + "%";
 
-    ui.wattFill.style.width = Math.round(S.wattage*100) + "%";
-    ui.wattBadge.textContent = S.wattage>0.75 ? "STEADY" : (S.wattage>0.4 ? "WORKING" : "LOW");
-    ui.signal.textContent = S.signalClean>0.78 ? "CLEAN" : (S.signalClean>0.45 ? "NOISY" : "FRAY");
+    // status language
+    const clean = state.wattage > 0.62;
+    ui.wState.textContent = clean ? "CLEAN" : "THIN";
+    ui.signal.textContent = clean ? "CLEAR" : "NOISY";
     ui.lock.textContent = "FORWARD";
-    ui.msBadge.textContent = "FLOW";
+
+    ui.modeTag.textContent = state.monk ? "FLOW" : "GO";
+    ui.monkTag.textContent = state.monk ? "STEADY" : "IGNITE";
   }
 
-  // ---------- Loop ----------
-  let last = performance.now();
-  function tick(now){
-    S.dt = Math.min(0.033, (now-last)/1000);
-    last = now;
-    S.t += S.dt;
+  // ---------- controls ----------
+  const keys = new Set();
+  window.addEventListener('keydown', (e) => {
+    if (e.code === "Enter"){ state.hud = !state.hud; document.body.classList.toggle('hudHidden', !state.hud); }
+    if (e.code === "CapsLock"){ state.monk = !state.monk; }
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+    keys.add(e.code);
+  }, {passive:false});
 
-    updateFlight(S.dt);
+  window.addEventListener('keyup', (e) => {
+    keys.delete(e.code);
+  }, {passive:true});
 
-    const forward = clamp((S.speed/820) + (S.boost?0.78:0), 0.85, 2.70);
-    updateGates(S.dt, forward);
+  // ---------- rendering helpers ----------
+  function drawSky(){
+    const g = ctxSky.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, "#071421");
+    g.addColorStop(0.35, "#0b2a44");
+    g.addColorStop(0.68, "#2c5c80");
+    g.addColorStop(1, "#b9d6ea");
+    ctxSky.fillStyle = g;
+    ctxSky.fillRect(0,0,W,H);
 
-    drawSky();
-    drawFlow(S.dt, forward);
-    drawGates();
+    // soft sun haze (O'Keeffe calm)
+    const cx = W*0.62, cy = H*0.34;
+    const r = Math.min(W,H)*0.55;
+    const rg = ctxSky.createRadialGradient(cx,cy, 0, cx,cy, r);
+    rg.addColorStop(0, "rgba(220,245,255,0.18)");
+    rg.addColorStop(0.45, "rgba(220,245,255,0.08)");
+    rg.addColorStop(1, "rgba(220,245,255,0)");
+    ctxSky.fillStyle = rg;
+    ctxSky.fillRect(0,0,W,H);
 
-    // overlay instruments + cockpit frame
-    drawAttitude();
-    drawCockpit();
+    // faint high-altitude texture (very subtle)
+    ctxSky.globalAlpha = 0.08;
+    ctxSky.fillStyle = "rgba(255,255,255,0.7)";
+    for(let i=0;i<6;i++){
+      const y = (H*0.10) + i*H*0.07;
+      const w = W*(0.9 + Math.sin(state.t*0.08+i)*0.02);
+      ctxSky.beginPath();
+      ctxSky.ellipse(W*0.45, y, w*0.6, H*0.05, 0, 0, Math.PI*2);
+      ctxSky.fill();
+    }
+    ctxSky.globalAlpha = 1;
+  }
+
+  function drawCloudLayer(ctx, depth, speed, softness){
+    ctx.clearRect(0,0,W,H);
+
+    // horizon position reacts gently to pitch
+    const horizon = H*(0.60 + state.pitch*0.02);
+    const driftX = state.driftX * depth;
+    const driftY = state.driftY * depth;
+
+    // we render a handful of broad cloud "banks" using fbm
+    const bands = 7;
+    for(let b=0;b<bands;b++){
+      const yBase = horizon - H*(0.22 + b*0.045) + driftY*0.25;
+      const amp = H*(0.05 + b*0.006);
+      const alpha = 0.18 - b*0.014;
+      const scale = 0.0035 * (1/depth);
+      const time = state.t * speed;
+
+      ctx.beginPath();
+      const left = -W*0.1, right = W*1.1;
+      ctx.moveTo(left, yBase);
+
+      const steps = 40;
+      for(let i=0;i<=steps;i++){
+        const x = lerp(left, right, i/steps);
+        const n = fbm((x+driftX)*scale + time*0.20, (b*20.0)*0.02 + time*0.05);
+        const y = yBase + (n-0.5)*amp;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(right, yBase + H*0.5);
+      ctx.lineTo(left, yBase + H*0.5);
+      ctx.closePath();
+
+      // cloud fill
+      const cg = ctx.createLinearGradient(0, yBase-amp*1.2, 0, yBase+H*0.22);
+      cg.addColorStop(0, `rgba(235,248,255,${alpha*0.9})`);
+      cg.addColorStop(0.55, `rgba(235,248,255,${alpha*0.55})`);
+      cg.addColorStop(1, `rgba(235,248,255,0)`);
+      ctx.fillStyle = cg;
+      ctx.fill();
+
+      // soften edges
+      ctx.globalAlpha = softness;
+      ctx.strokeStyle = "rgba(255,255,255,0.22)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // gentle directional cue: tiny, slow motes (no streaks)
+    ctx.globalAlpha = 0.08;
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    const moteCount = depth < 0.7 ? 22 : 10;
+    for(let i=0;i<moteCount;i++){
+      const px = (i*173 + (state.t*40*speed)*1000) % (W+80) - 40;
+      const py = horizon - H*(0.28) + ((i*97)%120) - 60;
+      const r = depth < 0.7 ? 1.6 : 1.2;
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawLand(){
+    ctxLand.clearRect(0,0,W,H);
+
+    const horizon = H*(0.62 + state.pitch*0.02);
+    const roll = state.roll * 0.045; // gentle tilt only
+    const tilt = roll;
+
+    // land base gradient (austere)
+    const g = ctxLand.createLinearGradient(0,horizon,0,H);
+    g.addColorStop(0, "rgba(8,14,18,0.10)");
+    g.addColorStop(0.18, "rgba(6,10,14,0.55)");
+    g.addColorStop(1, "rgba(0,0,0,0.88)");
+    ctxLand.fillStyle = g;
+
+    // draw a slightly curved "earth" silhouette
+    ctxLand.beginPath();
+    const curve = H*0.14;
+    ctxLand.moveTo(0, H);
+    ctxLand.quadraticCurveTo(W*0.5, horizon+curve, W, H);
+    ctxLand.lineTo(W, H);
+    ctxLand.lineTo(0, H);
+    ctxLand.closePath();
+    ctxLand.fill();
+
+    // distant mountains: very subtle ridges near horizon for orientation
+    ctxLand.save();
+    ctxLand.translate(W/2, horizon);
+    ctxLand.rotate(tilt);
+    ctxLand.translate(-W/2, -horizon);
+
+    ctxLand.globalAlpha = 0.22;
+    ctxLand.fillStyle = "rgba(0,0,0,0.75)";
+    ctxLand.beginPath();
+    const yBase = horizon + 18;
+    ctxLand.moveTo(-20, yBase);
+    const steps = 50;
+    for(let i=0;i<=steps;i++){
+      const x = lerp(-20, W+20, i/steps);
+      const n = fbm((x + state.driftX*0.6)*0.004, 7.2);
+      const y = yBase + (n-0.5)*28;
+      ctxLand.lineTo(x,y);
+    }
+    ctxLand.lineTo(W+20, H);
+    ctxLand.lineTo(-20, H);
+    ctxLand.closePath();
+    ctxLand.fill();
+    ctxLand.globalAlpha = 1;
+
+    // horizon line (soft, not harsh)
+    const hg = ctxLand.createLinearGradient(0,horizon-8,0,horizon+34);
+    hg.addColorStop(0, "rgba(255,255,255,0)");
+    hg.addColorStop(0.4, "rgba(255,255,255,0.10)");
+    hg.addColorStop(1, "rgba(255,255,255,0)");
+    ctxLand.fillStyle = hg;
+    ctxLand.fillRect(0, horizon-8, W, 44);
+
+    ctxLand.restore();
+
+    // faint cockpit lip / dash shadow (keeps “craft” without showing a plane)
+    const cg = ctxLand.createRadialGradient(W*0.5, H*1.08, H*0.25, W*0.5, H*1.08, H*0.95);
+    cg.addColorStop(0, "rgba(0,0,0,0.95)");
+    cg.addColorStop(0.55, "rgba(0,0,0,0.70)");
+    cg.addColorStop(1, "rgba(0,0,0,0)");
+    ctxLand.fillStyle = cg;
+    ctxLand.fillRect(0, H*0.58, W, H*0.42);
+  }
+
+  // ---------- sim update ----------
+  function step(dt){
+    state.t += dt;
+
+    // inputs -> gentle response
+    const pitchIn = (keys.has("ArrowUp") ? -1 : 0) + (keys.has("ArrowDown") ? 1 : 0);
+    const rollIn  = (keys.has("ArrowLeft") ? -1 : 0) + (keys.has("ArrowRight") ? 1 : 0);
+    state.boost = keys.has("Space");
+
+    const monkFactor = state.monk ? 0.55 : 1.0;
+    const resp = 0.060 * monkFactor;
+    const damp = 0.92;
+
+    state.pitch = clamp(state.pitch*damp + pitchIn*resp, -1, 1);
+    state.roll  = clamp(state.roll*damp  + rollIn*resp, -1, 1);
+
+    // forward motion: conveyed by slow drift + range increment (no warp)
+    const baseSpd = state.monk ? 102 : 125;
+    const boostAdd = state.boost ? (state.monk ? 18 : 28) : 0;
+    const targetSpd = baseSpd + boostAdd;
+
+    state.spd = Math.round(state.spd + (targetSpd - state.spd)*0.06);
+
+    // heading changes from roll, tiny
+    state.hdg += state.roll * (state.monk ? 0.25 : 0.40);
+
+    // altitude changes from pitch, tiny
+    state.alt = Math.round(state.alt + (-state.pitch) * (state.monk ? 6 : 10));
+
+    // drift field
+    const forward = (state.spd / 120) * (state.boost ? 1.15 : 1.0);
+    state.driftX += (state.roll * 0.35 + 0.12) * forward;
+    state.driftY += (state.pitch * 0.22) * forward;
+
+    // range + score (game feel)
+    state.range += forward * dt * 0.06;
+    state.score += Math.floor(forward * dt * (state.monk ? 0.45 : 0.7));
+
+    // wattage: monk steadies, boost drains a touch
+    let w = state.wattage;
+    w += (state.monk ? 0.0009 : -0.0003) * (dt*60);
+    if(state.boost) w -= 0.0012 * (dt*60);
+    // turbulence penalty if yanking controls
+    const yank = (Math.abs(pitchIn)+Math.abs(rollIn)) > 0 ? 1 : 0;
+    if(!state.monk && yank) w -= 0.0007*(dt*60);
+    state.wattage = clamp(w, 0.18, 0.96);
 
     updateUI();
-    requestAnimationFrame(tick);
   }
 
-  // seed
-  spawnGate(); spawnGate();
-  requestAnimationFrame(tick);
+  // ---------- main loop ----------
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(0.05, (now-last)/1000);
+    last = now;
+
+    step(dt);
+
+    // render calm: sky static, clouds drift, land anchors
+    drawSky();
+    drawCloudLayer(ctxFar, 0.95, 0.012, 0.10);
+    drawCloudLayer(ctxNear, 0.55, 0.020, 0.14);
+    drawLand();
+
+    requestAnimationFrame(loop);
+  }
+
+  // initial HUD state
+  document.body.classList.toggle('hudHidden', !state.hud);
+  updateUI();
+  requestAnimationFrame(loop);
 })();
 </script>
 </body>
