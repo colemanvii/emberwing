@@ -1,51 +1,133 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>EMBERWING // CIRRUS x HAVEN</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>EMBERWING // HAVEN</title>
 <style>
   :root{
-    --ink:#d7e3ff; --muted:rgba(215,227,255,.75); --dim:rgba(215,227,255,.45);
-    --line:rgba(215,227,255,.16);
-    --shadow:rgba(0,0,0,.45);
-    --radius:14px;
-    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --bg0:#05070b;
+    --bg1:#071225;
+    --bg2:#123a66;
+    --bg3:#4f9ac6;
+    --ink:#dbe7ff;
+    --muted:rgba(219,231,255,.72);
+    --dim:rgba(219,231,255,.46);
+    --line:rgba(219,231,255,.14);
+    --glass0:rgba(10,16,30,.38);
+    --glass1:rgba(10,16,30,.16);
+    --shadow:rgba(0,0,0,.55);
+    --warm:rgba(255,210,160,.9);
+    --cool:rgba(140,220,255,.85);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
     --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    --r:14px;
   }
-  html,body{height:100%; margin:0; overflow:hidden; background:#05070b; color:var(--ink);}
-  canvas{position:fixed; inset:0; width:100%; height:100%; display:block;}
-
-  #hud{position:fixed; inset:0; pointer-events:none; user-select:none; font-family:var(--sans);}
-  .topbar{position:absolute; left:20px; right:20px; top:16px; display:flex; justify-content:space-between; gap:14px;}
-  .brand,.panel,.status{
-    padding:12px 14px; border-radius:var(--radius);
-    background: linear-gradient(180deg, rgba(10,16,30,.42), rgba(10,16,30,.18));
+  html,body{height:100%;margin:0;overflow:hidden;background:var(--bg0);color:var(--ink);}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;}
+  /* HUD */
+  #hud{
+    position:fixed; inset:0; pointer-events:none; user-select:none;
+    font-family:var(--sans); letter-spacing:.2px;
+  }
+  .glass{
+    background:linear-gradient(180deg,var(--glass0),var(--glass1));
     border:1px solid var(--line);
-    box-shadow:0 18px 50px var(--shadow);
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-radius:var(--r);
+    box-shadow:0 18px 55px var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
-  .brand{max-width:min(560px,52vw); display:flex; flex-direction:column; gap:6px;}
-  .title{font-family:var(--mono); font-size:12px; text-transform:uppercase; display:flex; gap:10px; align-items:center; color:rgba(215,227,255,.92);}
-  .dot{width:8px;height:8px;border-radius:999px; background:radial-gradient(circle at 30% 30%, rgba(255,210,160,1), rgba(255,190,120,.18)); box-shadow:0 0 14px rgba(255,190,120,.45);}
-  .subtitle{font-size:12.5px; color:var(--muted);}
-  .rightstack{display:flex; gap:12px; align-items:flex-start;}
-  .panel{min-width:220px;}
-  .hdr{font-family:var(--mono); font-size:11px; text-transform:uppercase; color:rgba(215,227,255,.82); display:flex; justify-content:space-between; margin-bottom:10px;}
-  .badge{font-family:var(--mono); font-size:10px; padding:3px 8px; border-radius:999px; border:1px solid var(--line); color:rgba(215,227,255,.82); background:rgba(10,16,30,.14);}
-  .kv{display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-items:center; font-size:12.5px;}
+  .topbar{
+    position:absolute; left:18px; right:18px; top:14px;
+    display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
+  }
+  .brand{
+    padding:12px 14px; max-width:min(640px,62vw);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .title{
+    font-family:var(--mono); font-size:12px; text-transform:uppercase;
+    display:flex; align-items:center; gap:10px; color:rgba(219,231,255,.92);
+  }
+  .dot{
+    width:8px;height:8px;border-radius:999px;
+    background:radial-gradient(circle at 30% 30%, rgba(255,220,180,1), rgba(255,190,120,.18));
+    box-shadow:0 0 16px rgba(255,190,120,.45);
+  }
+  .badge{
+    font-family:var(--mono); font-size:10px; padding:3px 8px;
+    border-radius:999px; border:1px solid var(--line);
+    color:rgba(219,231,255,.82); background:rgba(10,16,30,.14);
+    margin-left:6px;
+  }
+  .subtitle{font-size:12.5px;color:var(--muted);line-height:1.25}
+  .subtitle b{color:rgba(219,231,255,.92);font-weight:600}
+
+  .rightstack{display:flex; gap:10px; align-items:flex-start;}
+  .panel{padding:12px 14px; min-width:220px;}
+  .hdr{
+    font-family:var(--mono); font-size:11px; text-transform:uppercase;
+    color:rgba(219,231,255,.82);
+    display:flex; justify-content:space-between; margin-bottom:10px;
+  }
+  .kv{
+    display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-items:center;
+    font-size:12.5px;
+  }
   .k{color:var(--dim); font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.5px;}
-  .v{color:rgba(215,227,255,.94); font-family:var(--mono); font-size:12px; font-variant-numeric:tabular-nums;}
+  .v{color:rgba(219,231,255,.94); font-family:var(--mono); font-size:12px; font-variant-numeric: tabular-nums;}
 
-  .bottom{position:absolute; left:20px; right:20px; bottom:18px; display:flex; justify-content:flex-end;}
-  .status{min-width:300px;}
-  .big{font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.6px; display:flex; justify-content:space-between; margin-bottom:8px;}
-  .bar{height:8px; border-radius:999px; background:rgba(215,227,255,.10); border:1px solid rgba(215,227,255,.14); overflow:hidden;}
-  .fill{height:100%; width:50%; background:linear-gradient(90deg, rgba(120,210,255,.18), rgba(120,210,255,.78)); box-shadow:0 0 18px rgba(120,210,255,.35);}
+  .bottom{
+    position:absolute; left:18px; right:18px; bottom:16px;
+    display:flex; justify-content:space-between; gap:12px; align-items:flex-end;
+  }
+  .help{
+    padding:10px 12px; max-width:min(760px,70vw);
+    display:flex; flex-wrap:wrap; gap:10px 12px; align-items:center;
+    color:var(--muted); font-size:12.5px;
+  }
+  .key{
+    font-family:var(--mono); font-size:11px; padding:3px 8px;
+    border-radius:10px; border:1px solid rgba(219,231,255,.20);
+    color:rgba(219,231,255,.86); background:rgba(10,16,30,.16);
+  }
+  .status{padding:12px 14px; min-width:320px;}
+  .big{
+    font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.6px;
+    display:flex; justify-content:space-between; gap:10px; margin-bottom:8px;
+    color:rgba(219,231,255,.92);
+  }
+  .bar{
+    height:8px; border-radius:999px; background:rgba(219,231,255,.10);
+    border:1px solid rgba(219,231,255,.14); overflow:hidden; position:relative;
+  }
+  .fill{
+    position:absolute; inset:0; width:50%;
+    background:linear-gradient(90deg, rgba(140,220,255,.18), rgba(140,220,255,.78));
+    box-shadow:0 0 20px rgba(140,220,255,.35);
+  }
 
-  /* Monk mode: quieter, still readable */
-  body.monk #hud .brand, body.monk #hud .panel, body.monk #hud .status{opacity:.62; filter:saturate(.85);}
-  @media (max-width:980px){ .panel{display:none;} .brand{max-width:72vw;} }
+  /* monk: quieter, never invisible */
+  body.monk #hud .glass{opacity:.62; filter:saturate(.85);}
+  body.monk #hud .help{opacity:.35;}
+
+  /* grain + vignette */
+  #grain{
+    position:fixed; inset:0; pointer-events:none; opacity:.06; mix-blend-mode: overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+    background-size:260px 260px;
+  }
+  #vignette{
+    position:fixed; inset:-2px; pointer-events:none;
+    background: radial-gradient(1200px 760px at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,.25) 58%, rgba(0,0,0,.62) 100%);
+  }
+
+  @media (max-width: 980px){
+    .panel{display:none;}
+    .status{min-width:260px;}
+    .brand{max-width:78vw;}
+  }
 </style>
 </head>
 <body class="monk">
@@ -53,12 +135,13 @@
 
 <div id="hud" aria-hidden="true">
   <div class="topbar">
-    <div class="brand">
-      <div class="title"><span class="dot"></span> EMBERWING // CIRRUS x HAVEN <span class="badge" id="modeBadge">MONK</span></div>
+    <div class="brand glass">
+      <div class="title"><span class="dot"></span> EMBERWING // HAVEN <span class="badge" id="modeBadge">MONK</span></div>
       <div class="subtitle">Mission: <b>forward flight, steady hands.</b> <span id="missionLine">ゆっくりと。今ここ。</span></div>
     </div>
+
     <div class="rightstack">
-      <div class="panel">
+      <div class="panel glass">
         <div class="hdr"><span>NAV</span><span class="badge" id="navBadge">MONK</span></div>
         <div class="kv">
           <div class="k">HDG</div><div class="v" id="hdg">000</div>
@@ -67,7 +150,8 @@
           <div class="k">BOOST</div><div class="v" id="bst">OFF</div>
         </div>
       </div>
-      <div class="panel">
+
+      <div class="panel glass">
         <div class="hdr"><span>MISSION</span><span class="badge" id="msBadge">FLOW</span></div>
         <div class="kv">
           <div class="k">GATES</div><div class="v" id="gates">0</div>
@@ -80,7 +164,15 @@
   </div>
 
   <div class="bottom">
-    <div class="status">
+    <div class="help glass" id="help">
+      <span class="key">↑/↓</span> pitch
+      <span class="key">←/→</span> roll
+      <span class="key">SPACE</span> boost
+      <span class="key">CAPS</span> monk
+      <span class="key">ENTER</span> HUD
+    </div>
+
+    <div class="status glass">
       <div class="big"><span>WATTAGE</span><span class="badge" id="wattBadge">STEADY</span></div>
       <div class="bar"><div class="fill" id="wattFill"></div></div>
       <div class="kv" style="margin-top:10px">
@@ -91,6 +183,9 @@
   </div>
 </div>
 
+<div id="grain"></div>
+<div id="vignette"></div>
+
 <script>
 (() => {
   const canvas = document.getElementById("c");
@@ -99,10 +194,11 @@
   const $ = (id)=>document.getElementById(id);
   const ui = {
     modeBadge:$("modeBadge"), missionLine:$("missionLine"),
+    navBadge:$("navBadge"), msBadge:$("msBadge"),
     hdg:$("hdg"), alt:$("alt"), spd:$("spd"), bst:$("bst"),
     gates:$("gates"), miss:$("miss"), score:$("score"), range:$("range"),
-    msBadge:$("msBadge"), navBadge:$("navBadge"),
-    wattFill:$("wattFill"), wattBadge:$("wattBadge"), signal:$("signal"), lock:$("lock")
+    wattFill:$("wattFill"), wattBadge:$("wattBadge"), signal:$("signal"), lock:$("lock"),
+    hud: $("hud"), help: $("help")
   };
 
   const TAU = Math.PI*2;
@@ -114,76 +210,98 @@
 
   const S = {
     t:0, dt:0,
-    monk:true,
+    monk:true, hudVisible:true,
     keys:new Set(),
+
+    // flight
     pitch:0, roll:0,
     heading:0,
     altitude:38100,
-    throttle:0.70,
+    throttle:0.72,
     boost:false,
-    speed:680,
-    targetSpeed:680,
-    driftX:0, driftY:0,
+    speed:760,
+    targetSpeed:760,
+
+    // camera sway
+    swayX:0, swayY:0,
+
+    // mission
     gatesHit:0, gatesMiss:0, score:0,
-    wattage:0.86, signalClean:1.0
+    wattage:0.86, signalClean:1.0,
+
+    // gentle real feel
+    pitchRate:0, rollRate:0,
+    wind:0
   };
 
-  function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+  function resize(){
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+  }
   addEventListener("resize", resize, {passive:true});
   resize();
 
   function onKey(e, down){
     const k=e.code;
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","CapsLock"].includes(k)) e.preventDefault();
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","CapsLock","Enter"].includes(k)) e.preventDefault();
     if (down) S.keys.add(k); else S.keys.delete(k);
     if (k==="Space") S.boost = down;
+
     if (down && k==="CapsLock"){
       S.monk = !S.monk;
       document.body.classList.toggle("monk", S.monk);
       ui.modeBadge.textContent = S.monk ? "MONK" : "LIVE";
-      ui.navBadge.textContent = S.monk ? "MONK" : (S.boost ? "BOOST" : "NORM");
+      ui.navBadge.textContent  = S.boost ? "BOOST" : (S.monk ? "MONK" : "NORM");
       ui.missionLine.textContent = S.monk ? "ゆっくりと。今ここ。" : "Ignition → Glide → Create.";
+    }
+    if (down && k==="Enter"){
+      S.hudVisible = !S.hudVisible;
+      ui.hud.style.display = S.hudVisible ? "block" : "none";
     }
   }
   addEventListener("keydown",(e)=>onKey(e,true),{passive:false});
   addEventListener("keyup",(e)=>onKey(e,false),{passive:false});
 
-  // --- Sky + horizon ---
+  // ---------- Atmosphere (Haven sky) ----------
   function drawSky(){
     const w=canvas.width, h=canvas.height;
-    const horizonY = h*0.52 + S.pitch*110;
 
+    // pitch shifts horizon; roll tilts it
+    const horizonY = h*0.53 + S.pitch*120;
+
+    // serene gradient (clear, not muddy)
     const sky = ctx.createLinearGradient(0,0,0,h);
     sky.addColorStop(0.00, "#05070b");
-    sky.addColorStop(0.18, "#081427");
-    sky.addColorStop(0.44, "#143a6a");
-    sky.addColorStop(0.70, "#4e97c4");
+    sky.addColorStop(0.16, "#071225");
+    sky.addColorStop(0.42, "#13355f");
+    sky.addColorStop(0.70, "#4f9ac6");
     sky.addColorStop(1.00, "#0a2343");
     ctx.fillStyle = sky;
     ctx.fillRect(0,0,w,h);
 
-    const glow = ctx.createRadialGradient(w*0.52,h*0.30,0, w*0.52,h*0.30, Math.max(w,h)*0.9);
+    // painterly glow
+    const glow = ctx.createRadialGradient(w*0.52,h*0.28,0, w*0.52,h*0.28, Math.max(w,h)*0.95);
     glow.addColorStop(0,"rgba(255,245,235,0.10)");
     glow.addColorStop(0.55,"rgba(185,235,255,0.08)");
     glow.addColorStop(1,"rgba(0,0,0,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0,0,w,h);
 
-    // horizon band + line (tilt with roll)
+    // horizon band + line (tilted)
     ctx.save();
     ctx.translate(w*0.5, horizonY);
-    ctx.rotate(-S.roll*0.55);
+    ctx.rotate(-S.roll*0.62);
 
-    const band = ctx.createLinearGradient(0,-70,0,110);
+    const band = ctx.createLinearGradient(0,-80,0,140);
     band.addColorStop(0,"rgba(255,255,255,0)");
-    band.addColorStop(0.45,"rgba(190,235,255,0.14)");
-    band.addColorStop(0.60,"rgba(255,210,170,0.08)");
+    band.addColorStop(0.45,"rgba(190,235,255,0.16)");
+    band.addColorStop(0.62,"rgba(255,210,170,0.09)");
     band.addColorStop(1,"rgba(0,0,0,0)");
     ctx.fillStyle = band;
-    ctx.fillRect(-w,-90,w*2,220);
+    ctx.fillRect(-w,-110,w*2,260);
 
-    ctx.globalAlpha = 0.30;
-    ctx.strokeStyle = "rgba(215,227,255,0.78)";
+    ctx.globalAlpha = 0.34;
+    ctx.strokeStyle = "rgba(220,245,255,0.78)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(-w,0); ctx.lineTo(w,0);
@@ -193,119 +311,148 @@
     ctx.globalAlpha = 1;
   }
 
-  // --- Speed streaks ---
-  const flow = [];
-  const FLOW = 620;
-  for (let i=0;i<FLOW;i++) flow.push({x:Math.random()*2-1, y:Math.random()*2-1, z:Math.random(), s:Math.random()*1.2+0.2});
+  // ---------- Forward motion cues (NOT rain) ----------
+  const flow=[];
+  const FLOW=720;
+  function initFlow(){
+    flow.length=0;
+    for (let i=0;i<FLOW;i++) flow.push({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random(),s:Math.random()*1.2+0.2});
+  }
+  initFlow();
 
   function drawFlow(dt, forward){
     const w=canvas.width, h=canvas.height;
-    const cx=w*0.5, cy=h*0.42;
-    const sp = 1.05 + forward*2.25;
+    const cx=w*0.5, cy=h*0.46;                 // vanishing point
+    const sp = 0.95 + forward*2.05;
 
     for (const f of flow){
-      f.z -= dt*(0.95 + (1-f.z)*3.7)*sp;
+      f.z -= dt*(0.92 + (1-f.z)*3.8)*sp;
       if (f.z<=0.02){ f.x=Math.random()*2-1; f.y=Math.random()*2-1; f.z=1; f.s=Math.random()*1.2+0.2; }
-      const p = 0.16/(f.z+0.06);
-      const x = cx + (f.x + S.driftX*0.0011) * w * p;
-      const y = cy + (f.y + S.driftY*0.0011) * h * p;
-      const len = (12 + (1-f.z)*62) * sp;
 
-      ctx.globalAlpha = (0.05 + (1-f.z)*0.26) * (S.monk?0.86:1);
-      ctx.strokeStyle = "rgba(205,235,255,0.85)";
-      ctx.lineWidth = Math.max(1, f.s*(1-f.z)*1.7);
+      const p = 0.23/(f.z+0.06);
+      const x = cx + (f.x + S.swayX*0.0011) * w * p;
+      const y = cy + (f.y + S.swayY*0.0011) * h * p;
+
+      const dx = x - cx;
+      const dy = y - cy;
+      const L  = (18 + (1-f.z)*90) * sp * p;
+
+      ctx.globalAlpha = (0.05 + (1-f.z)*0.22) * (S.monk?0.82:1);
+      ctx.strokeStyle = "rgba(205,235,255,0.86)";
+      ctx.lineWidth   = Math.max(1, f.s*(1-f.z)*1.5);
+
       ctx.beginPath();
-      ctx.moveTo(x,y);
-      ctx.lineTo(x, y + len*p);
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + dx*0.08*L, y + dy*0.08*L);
       ctx.stroke();
     }
     ctx.globalAlpha=1; ctx.lineWidth=1;
   }
 
-  // --- Gates ---
+  // ---------- Gates ----------
   const gates=[];
   let gateTimer=0;
   function spawnGate(){
-    const spread = S.monk ? 0.55 : 0.75;
-    gates.push({ x:(Math.random()*2-1)*spread, y:(Math.random()*2-1)*spread*0.55, z:2200+Math.random()*1400, r:0.24+Math.random()*0.12, hit:false });
+    const spread = S.monk ? 0.54 : 0.74;
+    gates.push({
+      x:(Math.random()*2-1)*spread,
+      y:(Math.random()*2-1)*spread*0.52,
+      z: 2200 + Math.random()*1600,
+      r: 0.24 + Math.random()*0.12,
+      hit:false
+    });
   }
+
   function updateGates(dt, forward){
     for (let i=gates.length-1;i>=0;i--){
       const g=gates[i];
-      g.z -= dt*(forward*900 + 260);
+      g.z -= dt*(forward*940 + 260);
       if (g.z < 120){
-        if (!g.hit){ S.gatesMiss++; S.wattage=clamp(S.wattage-0.06,0,1); S.signalClean=clamp(S.signalClean-0.08,0,1); }
+        if (!g.hit){
+          S.gatesMiss++;
+          S.wattage = clamp(S.wattage - 0.06, 0, 1);
+          S.signalClean = clamp(S.signalClean - 0.08, 0, 1);
+        }
         gates.splice(i,1);
       }
     }
-    gateTimer += dt*(S.monk?0.95:1);
-    if (gateTimer>0.95){ gateTimer=0; if (gates.length<4) spawnGate(); }
+    gateTimer += dt*(S.monk ? 0.95 : 1.0);
+    if (gateTimer > 0.95){
+      gateTimer = 0;
+      if (gates.length < 4) spawnGate();
+    }
 
-    const aimX = clamp(S.roll*0.52,-1,1);
-    const aimY = clamp(-S.pitch*0.72,-1,1);
+    // "aim" at center: subtle control
+    const aimX = clamp(S.roll*0.55 + S.wind*0.06, -1, 1);
+    const aimY = clamp(-S.pitch*0.75, -1, 1);
+
     for (const g of gates){
       if (g.hit) continue;
-      if (g.z<520 && g.z>200){
-        const dx=aimX-g.x, dy=aimY-g.y;
+      if (g.z < 520 && g.z > 200){
+        const dx = aimX - g.x;
+        const dy = aimY - g.y;
         if (Math.hypot(dx,dy) < g.r*0.78){
-          g.hit=true; S.gatesHit++; S.score += 28 + Math.round(70*S.signalClean);
-          S.wattage=clamp(S.wattage+0.03,0,1); S.signalClean=clamp(S.signalClean+0.05,0,1);
+          g.hit = true;
+          S.gatesHit++;
+          S.score += 28 + Math.round(70 * S.signalClean);
+          S.wattage = clamp(S.wattage + 0.03, 0, 1);
+          S.signalClean = clamp(S.signalClean + 0.05, 0, 1);
         }
       }
     }
   }
+
   function drawGates(){
     const w=canvas.width, h=canvas.height;
-    const cx=w*0.5, cy=h*0.44;
+    const cx=w*0.5, cy=h*0.46;
     for (const gt of gates){
-      const p = 900/(gt.z+220);
-      const x = cx + (gt.x + S.driftX*0.0006) * w * 0.55 * p;
-      const y = cy + (gt.y + S.driftY*0.0006) * h * 0.45 * p;
-      const r = Math.max(18, gt.r * Math.min(w,h) * 0.45 * p);
+      const p = 920/(gt.z+220);
+      const x = cx + (gt.x + S.swayX*0.0007) * w * 0.56 * p;
+      const y = cy + (gt.y + S.swayY*0.0007) * h * 0.46 * p;
+      const r = Math.max(18, gt.r * Math.min(w,h) * 0.48 * p);
 
-      const a = clamp(0.10 + (1200-gt.z)/1200*0.40, 0.10, 0.44) * (S.monk?0.82:1);
+      const a = clamp(0.10 + (1400-gt.z)/1400*0.40, 0.10, 0.45) * (S.monk?0.82:1);
       ctx.globalAlpha = a;
+
       ctx.save();
       ctx.translate(x,y);
       ctx.globalCompositeOperation="lighter";
 
       const glow = ctx.createRadialGradient(0,0,r*0.65, 0,0,r*1.25);
-      glow.addColorStop(0, "rgba(120,210,255,0)");
-      glow.addColorStop(0.55,"rgba(120,210,255,0.28)");
+      glow.addColorStop(0, "rgba(140,220,255,0)");
+      glow.addColorStop(0.55,"rgba(140,220,255,0.26)");
       glow.addColorStop(1, "rgba(255,190,120,0)");
-      ctx.fillStyle=glow;
+      ctx.fillStyle = glow;
 
-      ctx.strokeStyle = gt.hit ? "rgba(120,255,190,0.80)" : "rgba(190,220,255,0.80)";
+      ctx.strokeStyle = gt.hit ? "rgba(120,255,190,0.82)" : "rgba(200,230,255,0.82)";
       ctx.lineWidth = Math.max(1, r*0.06);
       ctx.beginPath(); ctx.arc(0,0,r,0,TAU); ctx.stroke();
       ctx.beginPath(); ctx.arc(0,0,r*1.12,0,TAU); ctx.fill();
 
       ctx.globalCompositeOperation="source-over";
       ctx.restore();
-      ctx.globalAlpha=1;
+
+      ctx.globalAlpha = 1;
     }
   }
 
-  // --- Attitude indicator overlay (real) ---
+  // ---------- Instruments (clean attitude overlay) ----------
   function drawAttitude(){
     const w=canvas.width, h=canvas.height;
     const cx=w*0.5, cy=h*0.52;
-    const radius = Math.min(w,h)*0.16;
+    const radius = Math.min(w,h)*0.15;
 
-    // convert pitch to pixels for ladder
-    const pxPerDeg = radius*0.18; // tuned
-    const pitchDeg = clamp(S.pitch * 18, -25, 25); // “feel degrees”
-    const rollRad  = clamp(S.roll * 0.55, -0.75, 0.75);
+    const pxPerDeg = radius*0.18;
+    const pitchDeg = clamp(S.pitch * 18, -26, 26);
+    const rollRad  = clamp(S.roll * 0.62, -0.85, 0.85);
 
+    // pitch ladder rotates with roll; shifts with pitch
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(-rollRad);
-
-    // ladder group shifted by pitch
     ctx.translate(0, pitchDeg * pxPerDeg);
 
-    // ladder lines every 5°
-    ctx.globalAlpha = S.monk ? 0.28 : 0.34;
+    ctx.globalAlpha = S.monk ? 0.22 : 0.26;
     ctx.strokeStyle = "rgba(220,245,255,0.85)";
     ctx.fillStyle   = "rgba(220,245,255,0.85)";
     ctx.lineWidth = 1;
@@ -313,199 +460,151 @@
     for (let d=-25; d<=25; d+=5){
       if (d===0) continue;
       const y = -d * pxPerDeg;
-      const len = (d%10===0) ? radius*0.90 : radius*0.62;
+      const len = (d%10===0) ? radius*0.88 : radius*0.60;
       ctx.beginPath();
       ctx.moveTo(-len, y);
       ctx.lineTo( len, y);
       ctx.stroke();
 
       if (d%10===0){
-        ctx.globalAlpha = (S.monk ? 0.22 : 0.28);
+        ctx.globalAlpha = S.monk ? 0.18 : 0.22;
         ctx.font = "11px " + getComputedStyle(document.documentElement).getPropertyValue('--mono');
         ctx.textAlign="left"; ctx.textBaseline="middle";
         ctx.fillText(String(Math.abs(d)), len+8, y);
         ctx.textAlign="right";
         ctx.fillText(String(Math.abs(d)), -len-8, y);
-        ctx.globalAlpha = S.monk ? 0.28 : 0.34;
+        ctx.globalAlpha = S.monk ? 0.22 : 0.26;
       }
     }
 
-    // 0-line bolder
-    ctx.globalAlpha = S.monk ? 0.32 : 0.40;
+    // zero line
+    ctx.globalAlpha = S.monk ? 0.26 : 0.30;
     ctx.lineWidth = 1.4;
     ctx.beginPath();
     ctx.moveTo(-radius*0.92, 0);
     ctx.lineTo( radius*0.92, 0);
     ctx.stroke();
-
     ctx.restore();
 
-    // roll arc (outside)
-    ctx.save();
-    ctx.translate(cx, cy);
+    // fixed reference marks (center)
     ctx.globalAlpha = S.monk ? 0.22 : 0.26;
-    ctx.strokeStyle = "rgba(220,245,255,0.8)";
-    ctx.lineWidth = 1;
-
-    const arcR = radius*1.22;
-    ctx.beginPath();
-    ctx.arc(0,0,arcR, Math.PI*1.08, Math.PI*1.92);
-    ctx.stroke();
-
-    // tick marks
-    const ticks = [-60,-45,-30,-20,-10,0,10,20,30,45,60];
-    for (const t of ticks){
-      const a = (t/180)*Math.PI;
-      const ang = -a; // conventional
-      const inner = arcR - (Math.abs(t)%30===0 ? 12 : 7);
-      const outer = arcR + 2;
-      ctx.beginPath();
-      ctx.moveTo(Math.sin(ang)*inner, -Math.cos(ang)*inner);
-      ctx.lineTo(Math.sin(ang)*outer, -Math.cos(ang)*outer);
-      ctx.stroke();
-    }
-
-    // little roll pointer
-    ctx.globalAlpha = S.monk ? 0.30 : 0.38;
-    ctx.fillStyle = "rgba(255,210,160,0.75)";
-    ctx.beginPath();
-    ctx.moveTo(0, -arcR-10);
-    ctx.lineTo(-6, -arcR+2);
-    ctx.lineTo(6, -arcR+2);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-
-    // fixed aircraft reference (center)
-    ctx.globalAlpha = S.monk ? 0.30 : 0.36;
     ctx.strokeStyle = "rgba(220,245,255,0.85)";
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.moveTo(cx-26, cy);
-    ctx.lineTo(cx-6, cy);
-    ctx.moveTo(cx+6, cy);
-    ctx.lineTo(cx+26, cy);
+    ctx.moveTo(cx-26, cy); ctx.lineTo(cx-6, cy);
+    ctx.moveTo(cx+6,  cy); ctx.lineTo(cx+26, cy);
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
 
-  // --- Cockpit POV ---
+  // ---------- Cockpit framing (NO plane) ----------
   function drawCockpit(){
     const w=canvas.width, h=canvas.height;
-    const cx=w*0.5, cy=h*0.56;
 
-    // tiny vibration tied to speed/boost (disciplined)
-    const vib = (S.boost ? 1 : 0) * 0.8 + (S.speed/1000)*0.25;
-    const shake = (0.7 - S.wattage) * 0.9 + vib*0.25;
+    // mild vibration (disciplined)
+    const vib = (S.boost ? 0.9 : 0.25) + (S.speed/1200)*0.35;
+    const shake = (0.7 - S.wattage)*0.8 + vib*0.25;
+    const ox = Math.sin(S.t*16)*shake + S.swayX*0.02;
+    const oy = Math.cos(S.t*18)*shake + S.swayY*0.02;
 
-    // canopy frame mask
+    // canopy vignette + frame suggestion
     ctx.save();
-    ctx.translate(cx, cy);
-    ctx.translate(Math.sin(S.t*18)*shake, Math.cos(S.t*22)*shake);
+    ctx.translate(ox, oy);
 
-    ctx.globalAlpha = 0.92;
-    ctx.fillStyle = "rgba(5,8,14,0.82)";
-    ctx.beginPath();
-    ctx.moveTo(-w*0.58, -h*0.12);
-    ctx.quadraticCurveTo(0, -h*0.46, w*0.58, -h*0.12);
-    ctx.lineTo(w*0.58, h*0.60);
-    ctx.quadraticCurveTo(0, h*0.74, -w*0.58, h*0.60);
-    ctx.closePath();
-    ctx.fill();
-
-    // cut out windshield (clear view)
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.globalAlpha = 1;
-    ctx.beginPath();
-    ctx.moveTo(-w*0.46, -h*0.08);
-    ctx.quadraticCurveTo(0, -h*0.36, w*0.46, -h*0.08);
-    ctx.lineTo(w*0.36, h*0.44);
-    ctx.quadraticCurveTo(0, h*0.56, -w*0.36, h*0.44);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.globalCompositeOperation = "source-over";
-    ctx.restore();
-
-    // windshield glare
-    const glare = ctx.createRadialGradient(w*0.62,h*0.18,0, w*0.62,h*0.18, Math.max(w,h)*0.65);
-    glare.addColorStop(0,"rgba(255,245,235,0.10)");
-    glare.addColorStop(0.35,"rgba(185,235,255,0.06)");
-    glare.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle = glare;
+    // canopy edges
+    ctx.globalAlpha = 0.80;
+    const v = ctx.createRadialGradient(w*0.5,h*0.48, Math.min(w,h)*0.20, w*0.5,h*0.55, Math.min(w,h)*0.98);
+    v.addColorStop(0,"rgba(0,0,0,0)");
+    v.addColorStop(0.58,"rgba(0,0,0,0)");
+    v.addColorStop(1,"rgba(0,0,0,0.58)");
+    ctx.fillStyle = v;
     ctx.fillRect(0,0,w,h);
 
-    // instrument panel (bottom)
-    ctx.save();
-    ctx.globalAlpha = 0.97;
-    ctx.fillStyle = "rgba(8,12,20,0.92)";
+    // subtle canopy rib lines
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = "rgba(219,231,255,0.45)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(w*0.22, 0);
+    ctx.quadraticCurveTo(w*0.34, h*0.18, w*0.38, h*0.46);
+    ctx.moveTo(w*0.78, 0);
+    ctx.quadraticCurveTo(w*0.66, h*0.18, w*0.62, h*0.46);
+    ctx.stroke();
+
+    // dash silhouette (heavy)
+    ctx.globalAlpha = 0.98;
+    ctx.fillStyle = "rgba(6,9,14,0.94)";
     ctx.beginPath();
     ctx.moveTo(0, h*0.78);
-    ctx.quadraticCurveTo(w*0.5, h*0.64, w, h*0.78);
+    ctx.quadraticCurveTo(w*0.5, h*0.62, w, h*0.78);
     ctx.lineTo(w, h);
     ctx.lineTo(0, h);
     ctx.closePath();
     ctx.fill();
 
-    // panel top edge highlight
+    // dash edge highlight
     ctx.globalAlpha = 0.18;
-    ctx.strokeStyle = "rgba(215,227,255,0.7)";
+    ctx.strokeStyle = "rgba(219,231,255,0.78)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, h*0.78);
-    ctx.quadraticCurveTo(w*0.5, h*0.64, w, h*0.78);
+    ctx.quadraticCurveTo(w*0.5, h*0.62, w, h*0.78);
     ctx.stroke();
 
-    // G1000-ish screens (minimal)
-    ctx.globalAlpha = 0.92;
-    ctx.fillStyle = "rgba(14,22,36,0.92)";
-    const sw = w*0.22, sh = h*0.16, gap = w*0.03;
-    const y  = h*0.80;
-    ctx.fillRect(w*0.50 - gap/2 - sw, y, sw, sh);
-    ctx.fillRect(w*0.50 + gap/2,       y, sw, sh);
-
-    // soft screen glow
-    ctx.globalAlpha = 0.28;
-    ctx.fillStyle = "rgba(120,210,255,0.20)";
-    ctx.fillRect(w*0.50 - gap/2 - sw, y, sw, sh);
-    ctx.fillRect(w*0.50 + gap/2,       y, sw, sh);
+    // windshield glare (warm/cool)
+    ctx.globalAlpha = 0.14;
+    const g = ctx.createRadialGradient(w*0.64,h*0.18,0, w*0.64,h*0.18, Math.max(w,h)*0.62);
+    g.addColorStop(0,"rgba(255,245,235,0.40)");
+    g.addColorStop(0.3,"rgba(185,235,255,0.16)");
+    g.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
 
     ctx.restore();
     ctx.globalAlpha = 1;
   }
 
+  // ---------- Flight model (subtle hands, strong forward) ----------
   function updateFlight(dt){
     const up=S.keys.has("ArrowUp"), dn=S.keys.has("ArrowDown");
     const lf=S.keys.has("ArrowLeft"), rt=S.keys.has("ArrowRight");
 
-    const calm = S.monk ? 0.86 : 1.0;
+    const calm = S.monk ? 0.88 : 1.0;
     const pIn = (up?1:0) + (dn?-1:0);
     const rIn = (rt?1:0) + (lf?-1:0);
 
-    // subtle hands, strong forward
-    const pitchTarget = pIn * 0.24 * calm;
+    // tiny inertia to feel like surfaces
+    const pitchTarget = pIn * 0.22 * calm;
     const rollTarget  = rIn * 0.34 * calm;
 
-    S.pitch = lerp(S.pitch, pitchTarget, dt*7.8);
-    S.roll  = lerp(S.roll,  rollTarget,  dt*7.8);
+    S.pitchRate += (pitchTarget - S.pitch) * dt * 10.0;
+    S.rollRate  += (rollTarget  - S.roll ) * dt * 10.0;
+    S.pitchRate *= (1 - dt*5.2);
+    S.rollRate  *= (1 - dt*5.2);
 
-    const base=720, max=980, boostAdd=S.boost?360:0;
+    S.pitch += S.pitchRate * dt * 6.0;
+    S.roll  += S.rollRate  * dt * 6.0;
+
+    // speed: always forward, boost is punchy
+    const base=780, max=1040, boostAdd=S.boost?380:0;
     S.targetSpeed = base + (max-base)*S.throttle + boostAdd;
-
-    const resp = S.boost ? 3.0 : 1.8;
+    const resp = S.boost ? 3.2 : 1.9;
     S.speed += (S.targetSpeed - S.speed) * dt * resp;
 
-    S.altitude += (S.pitch*3000 + (S.boost?240:0)) * dt;
+    // altitude + heading
+    S.altitude += (S.pitch*2800 + (S.boost?220:0)) * dt;
+    const turn = S.roll * (0.62 + (S.speed/1100)) * calm;
+    S.heading += (turn*48) * dt;
 
-    const turn = S.roll * (0.68 + (S.speed/980)) * calm;
-    S.heading += (turn*52)*dt;
+    // wind drift (slow)
+    S.wind = Math.sin(S.t*0.13) * 0.45;
 
-    // drift as camera sway
-    S.driftX = lerp(S.driftX, S.roll*170, dt*2.6);
-    S.driftY = lerp(S.driftY, -S.pitch*210, dt*2.6);
+    // camera sway is smaller than control deflection
+    S.swayX = lerp(S.swayX, (S.roll*180 + S.wind*22), dt*2.4);
+    S.swayY = lerp(S.swayY, (-S.pitch*220), dt*2.4);
 
-    const stress=(S.boost?0.38:0)+(Math.abs(S.roll)+Math.abs(S.pitch))*0.50;
+    // meters
+    const stress=(S.boost?0.35:0)+(Math.abs(S.roll)+Math.abs(S.pitch))*0.46;
     const recover=(S.monk?0.24:0.12);
     S.wattage = clamp(S.wattage + (recover-stress)*dt*0.34, 0,1);
 
@@ -524,30 +623,34 @@
     ui.miss.textContent  = String(S.gatesMiss);
     ui.score.textContent = String(S.score).padStart(4,"0");
 
-    let nearest=null; for (const g of gates){ if (!g.hit && (nearest===null || g.z<nearest)) nearest=g.z; }
+    let nearest=null;
+    for (const g of gates){ if (!g.hit && (nearest===null || g.z<nearest)) nearest=g.z; }
     ui.range.textContent = nearest ? Math.round(nearest)+"m" : "—";
 
-    ui.wattFill.style.width = Math.round(S.wattage*100)+"%";
-    ui.wattBadge.textContent = S.wattage>0.75?"STEADY":(S.wattage>0.4?"WORKING":"LOW");
-    ui.signal.textContent = S.signalClean>0.78?"CLEAN":(S.signalClean>0.45?"NOISY":"FRAY");
+    ui.wattFill.style.width = Math.round(S.wattage*100) + "%";
+    ui.wattBadge.textContent = S.wattage>0.75 ? "STEADY" : (S.wattage>0.4 ? "WORKING" : "LOW");
+    ui.signal.textContent = S.signalClean>0.78 ? "CLEAN" : (S.signalClean>0.45 ? "NOISY" : "FRAY");
     ui.lock.textContent = "FORWARD";
     ui.msBadge.textContent = "FLOW";
   }
 
-  let last=performance.now();
+  // ---------- Loop ----------
+  let last = performance.now();
   function tick(now){
-    S.dt=Math.min(0.033,(now-last)/1000);
-    last=now; S.t+=S.dt;
+    S.dt = Math.min(0.033, (now-last)/1000);
+    last = now;
+    S.t += S.dt;
 
     updateFlight(S.dt);
-    const forward = clamp((S.speed/760)+(S.boost?0.78:0), 0.75, 2.55);
+
+    const forward = clamp((S.speed/820) + (S.boost?0.78:0), 0.85, 2.70);
     updateGates(S.dt, forward);
 
     drawSky();
     drawFlow(S.dt, forward);
     drawGates();
 
-    // cockpit + instruments
+    // overlay instruments + cockpit frame
     drawAttitude();
     drawCockpit();
 
@@ -555,7 +658,7 @@
     requestAnimationFrame(tick);
   }
 
-  // seed a few gates
+  // seed
   spawnGate(); spawnGate();
   requestAnimationFrame(tick);
 })();
