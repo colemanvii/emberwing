@@ -6,482 +6,298 @@
   <title>EMBERWING // HAVEN</title>
   <style>
     :root{
-      --bg0:#071019;
-      --bg1:#0a1b2b;
-      --sky0:#0b1f33;
-      --sky1:#1b3f5f;
-      --sky2:#a6c7df;
-      --ink:rgba(235,245,255,.88);
-      --muted:rgba(235,245,255,.55);
-      --dim:rgba(235,245,255,.28);
-      --glass:rgba(10,16,22,.25);
-      --glass2:rgba(10,16,22,.35);
-      --line:rgba(235,245,255,.12);
-      --line2:rgba(235,245,255,.08);
-      --accent:rgba(140,200,255,.9);
-      --good:rgba(165,235,205,.85);
-      --warn:rgba(255,225,160,.85);
+      --ink:rgba(236,246,255,.9);
+      --muted:rgba(236,246,255,.58);
+      --dim:rgba(236,246,255,.28);
+      --glass:rgba(12,16,20,.22);
+      --glass2:rgba(12,16,20,.34);
+      --line:rgba(236,246,255,.11);
+      --line2:rgba(236,246,255,.07);
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
-      background: radial-gradient(1200px 800px at 50% 10%, #102a42 0%, var(--bg1) 45%, var(--bg0) 100%);
+      background:#070d13;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       color: var(--ink);
       overflow:hidden;
     }
 
-    /* stage */
-    #stage{
-      position:fixed;
-      inset:0;
-    }
-    canvas{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      display:block;
-    }
+    #stage{position:fixed; inset:0}
+    canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
 
-    /* subtle vignette + glass */
+    /* calm finishing veil */
     #veil{
-      position:absolute; inset:0;
-      pointer-events:none;
+      position:absolute; inset:0; pointer-events:none;
       background:
-        radial-gradient(1200px 900px at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,.12) 55%, rgba(0,0,0,.35) 100%),
-        linear-gradient(to bottom, rgba(0,0,0,.22) 0%, rgba(0,0,0,.08) 35%, rgba(0,0,0,.28) 100%);
-      mix-blend-mode: multiply;
+        radial-gradient(900px 600px at 50% 20%, rgba(255,255,255,.06) 0%, rgba(255,255,255,0) 60%),
+        radial-gradient(1200px 900px at 50% 60%, rgba(0,0,0,0) 0%, rgba(0,0,0,.18) 58%, rgba(0,0,0,.36) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,.22) 0%, rgba(0,0,0,.05) 36%, rgba(0,0,0,.26) 100%);
+      mix-blend-mode:multiply;
     }
 
-    /* top bar */
     .topbar{
-      position:absolute;
-      left:18px; right:18px; top:14px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:14px;
+      position:absolute; left:18px; right:18px; top:14px;
+      display:flex; justify-content:space-between; gap:14px;
       pointer-events:none;
     }
 
-    .brand{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      min-width:340px;
-    }
-
-    .brandRow{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      pointer-events:none;
-    }
-    .dot{
-      width:8px; height:8px; border-radius:99px;
-      background: rgba(255,255,255,.22);
-      box-shadow: 0 0 22px rgba(140,200,255,.25);
-    }
-    .title{
-      letter-spacing:.18em;
-      font-size:12px;
-      opacity:.92;
-      white-space:nowrap;
-    }
+    .brand{display:flex; flex-direction:column; gap:10px; min-width:340px}
+    .brandRow{display:flex; align-items:center; gap:10px}
+    .dot{width:8px; height:8px; border-radius:99px; background:rgba(255,255,255,.22); box-shadow:0 0 22px rgba(170,220,255,.22)}
+    .title{letter-spacing:.18em; font-size:12px; opacity:.92; white-space:nowrap}
     .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:6px 10px;
-      border-radius:999px;
+      display:inline-flex; align-items:center;
+      padding:6px 10px; border-radius:999px;
       border:1px solid var(--line);
-      background: rgba(10,16,22,.18);
-      color: var(--muted);
-      font-size:11px;
-      letter-spacing:.14em;
-      text-transform:uppercase;
-      pointer-events:none;
+      background:rgba(12,16,20,.18);
+      color:var(--muted);
+      font-size:11px; letter-spacing:.14em; text-transform:uppercase;
     }
-
     .mission{
-      max-width:520px;
+      max-width:540px;
       padding:10px 12px;
       border-radius:14px;
       border:1px solid var(--line2);
-      background: linear-gradient(to bottom, rgba(10,16,22,.20), rgba(10,16,22,.08));
-      box-shadow: 0 20px 60px rgba(0,0,0,.18);
-      color: rgba(235,245,255,.72);
-      font-size:12px;
-      line-height:1.35;
-      letter-spacing:.04em;
+      background:linear-gradient(to bottom, rgba(12,16,20,.22), rgba(12,16,20,.08));
+      box-shadow:0 18px 60px rgba(0,0,0,.20);
+      color:rgba(236,246,255,.72);
+      font-size:12px; line-height:1.35; letter-spacing:.04em;
       backdrop-filter: blur(10px);
     }
-    .mission b{color:rgba(235,245,255,.88); font-weight:600}
+    .mission b{color:rgba(236,246,255,.9); font-weight:600}
     .mission .jp{opacity:.65}
 
-    /* HUD cluster */
-    .hudWrap{
-      display:flex;
-      gap:14px;
-      align-items:flex-start;
-      justify-content:flex-end;
-      pointer-events:none;
-    }
-
+    .hudWrap{display:flex; gap:14px; align-items:flex-start; justify-content:flex-end; pointer-events:none}
     .panel{
       width:280px;
       border-radius:16px;
       border:1px solid var(--line2);
-      background: linear-gradient(to bottom, rgba(10,16,22,.22), rgba(10,16,22,.10));
-      box-shadow: 0 18px 55px rgba(0,0,0,.22);
+      background:linear-gradient(to bottom, rgba(12,16,20,.22), rgba(12,16,20,.10));
+      box-shadow:0 18px 55px rgba(0,0,0,.22);
       backdrop-filter: blur(10px);
       padding:12px 12px 10px;
     }
-    .panelHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:10px;
-      gap:10px;
-    }
-    .panelHeader .label{
-      font-size:11px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      opacity:.62;
-    }
-    .panelHeader .mode{
-      font-size:10px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      padding:5px 9px;
-      border-radius:999px;
+    .panelHeader{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:10px}
+    .label{font-size:11px; letter-spacing:.18em; text-transform:uppercase; opacity:.62}
+    .mode{
+      font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+      padding:5px 9px; border-radius:999px;
       border:1px solid var(--line);
-      color: rgba(235,245,255,.62);
-      background: rgba(10,16,22,.18);
+      color:rgba(236,246,255,.62);
+      background:rgba(12,16,20,.18);
     }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:8px 10px;
-      font-size:12px;
-    }
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; font-size:12px}
     .k{opacity:.55; letter-spacing:.08em}
-    .v{
-      text-align:right;
-      opacity:.92;
-      letter-spacing:.06em;
-    }
+    .v{text-align:right; opacity:.92; letter-spacing:.06em}
     .v.muted{opacity:.70}
-    .divider{
-      height:1px;
-      margin:10px 0;
-      background: linear-gradient(to right, rgba(235,245,255,0), var(--line), rgba(235,245,255,0));
-    }
+    .divider{height:1px; margin:10px 0; background:linear-gradient(to right, rgba(236,246,255,0), var(--line), rgba(236,246,255,0))}
 
-    /* bottom-left controls */
     .controls{
-      position:absolute;
-      left:18px;
-      bottom:18px;
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      max-width:640px;
-      pointer-events:none;
-      opacity:.72;
+      position:absolute; left:18px; bottom:18px;
+      display:flex; gap:8px; flex-wrap:wrap; max-width:680px;
+      pointer-events:none; opacity:.70;
     }
     .chip{
-      pointer-events:none;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
+      display:inline-flex; align-items:center; gap:8px;
       padding:7px 10px;
       border-radius:999px;
       border:1px solid var(--line2);
-      background: rgba(10,16,22,.20);
-      color: rgba(235,245,255,.62);
-      font-size:11px;
-      letter-spacing:.10em;
-      text-transform:lowercase;
+      background:rgba(12,16,20,.20);
+      color:rgba(236,246,255,.62);
+      font-size:11px; letter-spacing:.10em; text-transform:lowercase;
       backdrop-filter: blur(8px);
     }
     .key{
-      padding:3px 8px;
-      border-radius:8px;
-      border:1px solid rgba(235,245,255,.12);
-      background: rgba(255,255,255,.04);
-      color: rgba(235,245,255,.82);
-      font-size:10px;
-      letter-spacing:.16em;
-      text-transform:uppercase;
+      padding:3px 8px; border-radius:8px;
+      border:1px solid rgba(236,246,255,.12);
+      background:rgba(255,255,255,.04);
+      color:rgba(236,246,255,.84);
+      font-size:10px; letter-spacing:.16em; text-transform:uppercase;
     }
 
-    /* bottom-right wattage */
     .wattage{
-      position:absolute;
-      right:18px;
-      bottom:18px;
-      width:330px;
+      position:absolute; right:18px; bottom:18px; width:330px;
       border-radius:16px;
       border:1px solid var(--line2);
-      background: linear-gradient(to bottom, rgba(10,16,22,.22), rgba(10,16,22,.10));
-      box-shadow: 0 18px 55px rgba(0,0,0,.22);
+      background:linear-gradient(to bottom, rgba(12,16,20,.22), rgba(12,16,20,.10));
+      box-shadow:0 18px 55px rgba(0,0,0,.22);
       backdrop-filter: blur(10px);
-      padding:12px;
-      pointer-events:none;
+      padding:12px; pointer-events:none;
     }
-    .wRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:10px;
-      gap:10px;
-    }
-    .wRow .label{
-      font-size:11px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      opacity:.62;
-    }
-    .wRow .state{
-      font-size:10px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      padding:5px 9px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      color: rgba(235,245,255,.60);
-      background: rgba(10,16,22,.18);
-    }
+    .wRow{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:10px}
     .bar{
-      height:10px;
-      border-radius:999px;
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(235,245,255,.10);
+      height:10px; border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(236,246,255,.10);
       overflow:hidden;
     }
     .fill{
-      height:100%;
-      width:50%;
-      border-radius:999px;
-      background: linear-gradient(90deg, rgba(140,200,255,.0), rgba(140,200,255,.65), rgba(165,235,205,.55));
-      filter: blur(.0px);
+      height:100%; width:50%; border-radius:999px;
+      background:linear-gradient(90deg, rgba(150,210,255,.0), rgba(150,210,255,.62), rgba(170,240,210,.52));
     }
-    .wGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:8px 10px;
-      margin-top:10px;
-      font-size:12px;
-    }
+    .wGrid{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; margin-top:10px; font-size:12px}
 
-    /* subtle horizon reticle */
-    .reticle{
+    /* minimal horizon cue (no nausea) */
+    .hCue{
       position:absolute;
       left:50%;
-      top:52%;
-      width:min(520px, 68vw);
-      height:160px;
+      top:57%;
+      width:min(720px, 86vw);
+      height:120px;
       transform:translate(-50%,-50%);
       pointer-events:none;
-      opacity:.35;
-      filter: drop-shadow(0 10px 22px rgba(0,0,0,.22));
+      opacity:.22;
+      filter: drop-shadow(0 14px 28px rgba(0,0,0,.22));
     }
-    .reticle:before{
+    .hCue:before{
       content:"";
-      position:absolute; inset:0;
-      border-radius:999px;
-      background:
-        radial-gradient(circle at 50% 55%, rgba(235,245,255,.10) 0%, rgba(235,245,255,.05) 22%, rgba(235,245,255,0) 55%),
-        linear-gradient(to right, rgba(235,245,255,0), rgba(235,245,255,.12), rgba(235,245,255,0));
-      mask:
-        radial-gradient(circle at 50% 55%, #000 0%, #000 24%, transparent 25%),
-        linear-gradient(#000,#000);
-      -webkit-mask:
-        radial-gradient(circle at 50% 55%, #000 0%, #000 24%, transparent 25%),
-        linear-gradient(#000,#000);
-      opacity:.9;
+      position:absolute; left:0; right:0; top:50%;
+      height:1px;
+      background:linear-gradient(to right, rgba(236,246,255,0), rgba(236,246,255,.16), rgba(236,246,255,0));
     }
-    .reticle .ring{
-      position:absolute;
-      left:50%;
-      top:58%;
-      width:120px; height:120px;
+    .hCue:after{
+      content:"";
+      position:absolute; left:50%; top:50%;
+      width:6px; height:6px; border-radius:99px;
       transform:translate(-50%,-50%);
-      border-radius:999px;
-      border:1px solid rgba(235,245,255,.16);
-      box-shadow: 0 0 0 1px rgba(235,245,255,.06) inset;
-    }
-    .reticle .ring.small{
-      width:62px; height:62px;
-      opacity:.65;
+      background:rgba(236,246,255,.18);
+      box-shadow:0 0 0 10px rgba(236,246,255,.03);
     }
 
-    /* HUD toggle fade */
     .hudHidden .panel,
     .hudHidden .wattage,
-    .hudHidden .controls{
-      opacity:0;
-      transform: translateY(6px);
-      transition: opacity .25s ease, transform .25s ease;
-    }
-    .panel,.wattage,.controls{
-      transition: opacity .25s ease, transform .25s ease;
-    }
+    .hudHidden .controls{opacity:0; transform:translateY(6px); transition:.22s ease}
+    .panel,.wattage,.controls{transition:.22s ease}
 
-    /* responsive */
     @media (max-width: 920px){
       .hudWrap{display:none}
-      .mission{max-width: 80vw}
-      .wattage{width: min(360px, calc(100vw - 36px))}
-      .reticle{opacity:.28}
+      .mission{max-width:80vw}
+      .wattage{width:min(360px, calc(100vw - 36px))}
+      .hCue{opacity:.18}
     }
   </style>
 </head>
 <body>
-  <div id="stage">
-    <canvas id="sky"></canvas>
-    <canvas id="cloudsFar"></canvas>
-    <canvas id="cloudsNear"></canvas>
-    <canvas id="land"></canvas>
-    <div id="veil"></div>
+<div id="stage">
+  <canvas id="scene"></canvas>
+  <div id="veil"></div>
 
-    <div class="topbar">
-      <div class="brand">
-        <div class="brandRow">
-          <div class="dot"></div>
-          <div class="title">EMBERWING&nbsp;//&nbsp;HAVEN</div>
-          <div class="pill">MONK</div>
-        </div>
-        <div class="mission">
-          <b>Mission:</b> forward flight, steady hands. <span class="jp">ゆっくりと。今ここ。</span>
-        </div>
+  <div class="topbar">
+    <div class="brand">
+      <div class="brandRow">
+        <div class="dot"></div>
+        <div class="title">EMBERWING&nbsp;//&nbsp;HAVEN</div>
+        <div class="pill">MONK</div>
       </div>
-
-      <div class="hudWrap">
-        <div class="panel" id="panelNav">
-          <div class="panelHeader">
-            <div class="label">NAV</div>
-            <div class="mode" id="modeTag">FLOW</div>
-          </div>
-          <div class="grid">
-            <div class="k">HDG</div><div class="v" id="hdg">000</div>
-            <div class="k">ALT</div><div class="v" id="alt">00000</div>
-            <div class="k">SPD</div><div class="v" id="spd">000</div>
-            <div class="k">BOOST</div><div class="v muted" id="boost">OFF</div>
-          </div>
-          <div class="divider"></div>
-          <div class="grid">
-            <div class="k">PITCH</div><div class="v" id="pitch">0.0</div>
-            <div class="k">ROLL</div><div class="v" id="roll">0.0</div>
-          </div>
-        </div>
-
-        <div class="panel" id="panelMission">
-          <div class="panelHeader">
-            <div class="label">MISSION</div>
-            <div class="mode" id="monkTag">STEADY</div>
-          </div>
-          <div class="grid">
-            <div class="k">GATES</div><div class="v" id="gates">0</div>
-            <div class="k">MISS</div><div class="v" id="miss">0</div>
-            <div class="k">SCORE</div><div class="v" id="score">0000</div>
-            <div class="k">RANGE</div><div class="v" id="range">0.0km</div>
-          </div>
-        </div>
+      <div class="mission">
+        <b>Mission:</b> forward flight, steady hands. <span class="jp">ゆっくりと。今ここ。</span>
       </div>
     </div>
 
-    <div class="reticle">
-      <div class="ring"></div>
-      <div class="ring small"></div>
-    </div>
-
-    <div class="controls" id="controls">
-      <div class="chip"><span class="key">↑/↓</span> pitch</div>
-      <div class="chip"><span class="key">←/→</span> roll</div>
-      <div class="chip"><span class="key">space</span> boost</div>
-      <div class="chip"><span class="key">caps</span> monk</div>
-      <div class="chip"><span class="key">enter</span> hud</div>
-    </div>
-
-    <div class="wattage" id="wattagePanel">
-      <div class="wRow">
-        <div class="label">WATTAGE</div>
-        <div class="state" id="wState">CLEAN</div>
+    <div class="hudWrap">
+      <div class="panel">
+        <div class="panelHeader">
+          <div class="label">NAV</div>
+          <div class="mode" id="modeTag">FLOW</div>
+        </div>
+        <div class="grid">
+          <div class="k">HDG</div><div class="v" id="hdg">000</div>
+          <div class="k">ALT</div><div class="v" id="alt">00000</div>
+          <div class="k">SPD</div><div class="v" id="spd">000</div>
+          <div class="k">BOOST</div><div class="v muted" id="boost">OFF</div>
+        </div>
+        <div class="divider"></div>
+        <div class="grid">
+          <div class="k">PITCH</div><div class="v" id="pitch">0.0</div>
+          <div class="k">ROLL</div><div class="v" id="roll">0.0</div>
+        </div>
       </div>
-      <div class="bar"><div class="fill" id="wFill"></div></div>
-      <div class="wGrid">
-        <div class="k">SIGNAL</div><div class="v" id="signal">CLEAR</div>
-        <div class="k">LOCK</div><div class="v" id="lock">FORWARD</div>
+
+      <div class="panel">
+        <div class="panelHeader">
+          <div class="label">MISSION</div>
+          <div class="mode" id="monkTag">STEADY</div>
+        </div>
+        <div class="grid">
+          <div class="k">GATES</div><div class="v" id="gates">0</div>
+          <div class="k">MISS</div><div class="v" id="miss">0</div>
+          <div class="k">SCORE</div><div class="v" id="score">0000</div>
+          <div class="k">RANGE</div><div class="v" id="range">0.0km</div>
+        </div>
       </div>
     </div>
   </div>
 
+  <div class="hCue"></div>
+
+  <div class="controls" id="controls">
+    <div class="chip"><span class="key">↑/↓</span> pitch</div>
+    <div class="chip"><span class="key">←/→</span> roll</div>
+    <div class="chip"><span class="key">space</span> boost</div>
+    <div class="chip"><span class="key">caps</span> monk</div>
+    <div class="chip"><span class="key">enter</span> hud</div>
+  </div>
+
+  <div class="wattage">
+    <div class="wRow">
+      <div class="label">WATTAGE</div>
+      <div class="mode" id="wState">CLEAN</div>
+    </div>
+    <div class="bar"><div class="fill" id="wFill"></div></div>
+    <div class="wGrid">
+      <div class="k">SIGNAL</div><div class="v" id="signal">CLEAR</div>
+      <div class="k">LOCK</div><div class="v" id="lock">FORWARD</div>
+    </div>
+  </div>
+</div>
+
 <script>
 (() => {
-  // ---------- sizing ----------
-  const cvsSky = document.getElementById('sky');
-  const cvsFar = document.getElementById('cloudsFar');
-  const cvsNear = document.getElementById('cloudsNear');
-  const cvsLand = document.getElementById('land');
-  const ctxSky = cvsSky.getContext('2d');
-  const ctxFar = cvsFar.getContext('2d');
-  const ctxNear = cvsNear.getContext('2d');
-  const ctxLand = cvsLand.getContext('2d');
+  const c = document.getElementById('scene');
+  const ctx = c.getContext('2d', { alpha: false });
 
   const DPR = () => Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   let W=0,H=0,dpr=1;
 
   function resize(){
     dpr = DPR();
-    W = Math.floor(window.innerWidth);
-    H = Math.floor(window.innerHeight);
-    [cvsSky, cvsFar, cvsNear, cvsLand].forEach(c => {
-      c.width = Math.floor(W * dpr);
-      c.height = Math.floor(H * dpr);
-      c.style.width = W + "px";
-      c.style.height = H + "px";
-    });
-    // crisp lines
-    [ctxSky, ctxFar, ctxNear, ctxLand].forEach(ctx => {
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      ctx.imageSmoothingEnabled = true;
-    });
+    W = window.innerWidth|0; H = window.innerHeight|0;
+    c.width = (W*dpr)|0; c.height = (H*dpr)|0;
+    c.style.width = W+"px"; c.style.height = H+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.imageSmoothingEnabled = true;
   }
-  window.addEventListener('resize', resize, {passive:true});
+  addEventListener('resize', resize, {passive:true});
   resize();
 
-  // ---------- simple value noise ----------
-  function hash2(x,y){
-    // deterministic pseudo-random 0..1
-    const s = Math.sin(x*127.1 + y*311.7) * 43758.5453123;
-    return s - Math.floor(s);
+  // ---------- better noise (value noise + fbm), smooth and non-banded ----------
+  function hash(x,y){
+    let n = x*374761393 + y*668265263;
+    n = (n^(n>>>13)) * 1274126177;
+    n = n^(n>>>16);
+    return (n>>>0) / 4294967295;
   }
-  function smoothstep(t){ return t*t*(3-2*t); }
-  function lerp(a,b,t){ return a + (b-a)*t; }
+  const smooth = t => t*t*(3-2*t);
+  const lerp = (a,b,t) => a + (b-a)*t;
 
-  function noise2(x,y){
+  function noise(x,y){
     const xi = Math.floor(x), yi = Math.floor(y);
     const xf = x - xi, yf = y - yi;
-    const v00 = hash2(xi, yi);
-    const v10 = hash2(xi+1, yi);
-    const v01 = hash2(xi, yi+1);
-    const v11 = hash2(xi+1, yi+1);
-    const u = smoothstep(xf);
-    const v = smoothstep(yf);
-    return lerp(lerp(v00,v10,u), lerp(v01,v11,u), v);
+    const v00 = hash(xi, yi);
+    const v10 = hash(xi+1, yi);
+    const v01 = hash(xi, yi+1);
+    const v11 = hash(xi+1, yi+1);
+    const u = smooth(xf), v = smooth(yf);
+    return lerp(lerp(v00, v10, u), lerp(v01, v11, u), v);
   }
 
   function fbm(x,y){
     let v=0, a=0.55, f=1.0;
-    for(let i=0;i<5;i++){
-      v += a * noise2(x*f, y*f);
+    for(let i=0;i<6;i++){
+      v += a * noise(x*f, y*f);
       f *= 2.0;
       a *= 0.5;
     }
@@ -491,40 +307,50 @@
   // ---------- sim state ----------
   const state = {
     t: 0,
-    pitch: 0,  // -1..1
-    roll: 0,   // -1..1
-    hdg: 358,
-    alt: 38168,
-    spd: 112,
+    pitch: 0,
+    roll: 0,
+    hdg: 352,
+    alt: 38180,
+    spd: 110,
     boost: false,
     monk: true,
     hud: true,
     gates: 1,
     miss: 0,
-    score: 95,
-    range: 0.318,
-    // internal drift
-    driftX: 0,
-    driftY: 0,
-    wattage: 0.72
+    score: 94,
+    range: 0.8,
+    wattage: 0.78,
+    drift: 0
   };
 
-  // ---------- UI hooks ----------
-  const $ = (id)=>document.getElementById(id);
+  const keys = new Set();
+  addEventListener('keydown', (e) => {
+    if (e.code === "Enter"){
+      state.hud = !state.hud;
+      document.body.classList.toggle('hudHidden', !state.hud);
+    }
+    if (e.code === "CapsLock") state.monk = !state.monk;
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+    keys.add(e.code);
+  }, {passive:false});
+
+  addEventListener('keyup', (e) => keys.delete(e.code), {passive:true});
+
+  const $ = id => document.getElementById(id);
   const ui = {
-    hdg: $('hdg'), alt:$('alt'), spd:$('spd'), boost:$('boost'),
+    modeTag: $('modeTag'), monkTag:$('monkTag'),
+    hdg:$('hdg'), alt:$('alt'), spd:$('spd'), boost:$('boost'),
     pitch:$('pitch'), roll:$('roll'),
     gates:$('gates'), miss:$('miss'), score:$('score'), range:$('range'),
-    wFill:$('wFill'), wState:$('wState'), modeTag:$('modeTag'), monkTag:$('monkTag'),
-    signal:$('signal'), lock:$('lock'),
+    wFill:$('wFill'), wState:$('wState'), signal:$('signal'), lock:$('lock')
   };
 
-  function fmt3(n){ return String(Math.round(n)).padStart(3,'0'); }
-  function fmt5(n){ return String(Math.round(n)).padStart(5,'0'); }
-  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  const fmt3 = n => String(Math.round(n)).padStart(3,'0');
+  const fmt5 = n => String(Math.round(n)).padStart(5,'0');
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 
   function updateUI(){
-    ui.hdg.textContent = fmt3((state.hdg%360+360)%360);
+    ui.hdg.textContent = fmt3(((state.hdg%360)+360)%360);
     ui.alt.textContent = fmt5(state.alt);
     ui.spd.textContent = fmt3(state.spd);
     ui.boost.textContent = state.boost ? "ON" : "OFF";
@@ -537,261 +363,227 @@
     ui.range.textContent = state.range.toFixed(1) + "km";
 
     ui.wFill.style.width = (state.wattage*100).toFixed(0) + "%";
-
-    // status language
     const clean = state.wattage > 0.62;
     ui.wState.textContent = clean ? "CLEAN" : "THIN";
     ui.signal.textContent = clean ? "CLEAR" : "NOISY";
     ui.lock.textContent = "FORWARD";
-
     ui.modeTag.textContent = state.monk ? "FLOW" : "GO";
     ui.monkTag.textContent = state.monk ? "STEADY" : "IGNITE";
   }
 
-  // ---------- controls ----------
-  const keys = new Set();
-  window.addEventListener('keydown', (e) => {
-    if (e.code === "Enter"){ state.hud = !state.hud; document.body.classList.toggle('hudHidden', !state.hud); }
-    if (e.code === "CapsLock"){ state.monk = !state.monk; }
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
-    keys.add(e.code);
-  }, {passive:false});
+  // ---------- painterly sky + clouds (no banding, no warp) ----------
+  function drawSky(horizonY){
+    // O'Keeffe-ish calm gradient
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0.00, "#070f17");
+    g.addColorStop(0.22, "#0a2236");
+    g.addColorStop(0.52, "#1b4565");
+    g.addColorStop(0.78, "#6ea3c6");
+    g.addColorStop(1.00, "#d8edf7");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
 
-  window.addEventListener('keyup', (e) => {
-    keys.delete(e.code);
-  }, {passive:true});
+    // warm haze / high sun
+    const cx = W*0.62, cy = H*0.28;
+    const r = Math.min(W,H)*0.62;
+    const rg = ctx.createRadialGradient(cx,cy, 0, cx,cy, r);
+    rg.addColorStop(0, "rgba(255,255,255,0.18)");
+    rg.addColorStop(0.42, "rgba(255,255,255,0.07)");
+    rg.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = rg;
+    ctx.fillRect(0,0,W,H);
 
-  // ---------- rendering helpers ----------
-  function drawSky(){
-    const g = ctxSky.createLinearGradient(0,0,0,H);
-    g.addColorStop(0, "#071421");
-    g.addColorStop(0.35, "#0b2a44");
-    g.addColorStop(0.68, "#2c5c80");
-    g.addColorStop(1, "#b9d6ea");
-    ctxSky.fillStyle = g;
-    ctxSky.fillRect(0,0,W,H);
-
-    // soft sun haze (O'Keeffe calm)
-    const cx = W*0.62, cy = H*0.34;
-    const r = Math.min(W,H)*0.55;
-    const rg = ctxSky.createRadialGradient(cx,cy, 0, cx,cy, r);
-    rg.addColorStop(0, "rgba(220,245,255,0.18)");
-    rg.addColorStop(0.45, "rgba(220,245,255,0.08)");
-    rg.addColorStop(1, "rgba(220,245,255,0)");
-    ctxSky.fillStyle = rg;
-    ctxSky.fillRect(0,0,W,H);
-
-    // faint high-altitude texture (very subtle)
-    ctxSky.globalAlpha = 0.08;
-    ctxSky.fillStyle = "rgba(255,255,255,0.7)";
-    for(let i=0;i<6;i++){
-      const y = (H*0.10) + i*H*0.07;
-      const w = W*(0.9 + Math.sin(state.t*0.08+i)*0.02);
-      ctxSky.beginPath();
-      ctxSky.ellipse(W*0.45, y, w*0.6, H*0.05, 0, 0, Math.PI*2);
-      ctxSky.fill();
-    }
-    ctxSky.globalAlpha = 1;
+    // soft horizon mist (prevents harsh line)
+    const hg = ctx.createLinearGradient(0, horizonY-70, 0, horizonY+90);
+    hg.addColorStop(0, "rgba(255,255,255,0)");
+    hg.addColorStop(0.45, "rgba(255,255,255,0.10)");
+    hg.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = hg;
+    ctx.fillRect(0, horizonY-70, W, 160);
   }
 
-  function drawCloudLayer(ctx, depth, speed, softness){
-    ctx.clearRect(0,0,W,H);
+  function drawCloudField(horizonY, time){
+    // We paint 3 “depth” passes: far / mid / near using the same field,
+    // but different scale + opacity + drift. This kills the banded look.
+    const passes = [
+      {scale:0.00125, alpha:0.18, ySpread:0.55, drift:0.012, soften:0.70},
+      {scale:0.00175, alpha:0.24, ySpread:0.62, drift:0.018, soften:0.78},
+      {scale:0.00235, alpha:0.30, ySpread:0.68, drift:0.026, soften:0.86},
+    ];
 
-    // horizon position reacts gently to pitch
-    const horizon = H*(0.60 + state.pitch*0.02);
-    const driftX = state.driftX * depth;
-    const driftY = state.driftY * depth;
+    for(const p of passes){
+      const top = horizonY - H*0.40;
+      const bot = horizonY + H*0.18;
 
-    // we render a handful of broad cloud "banks" using fbm
-    const bands = 7;
-    for(let b=0;b<bands;b++){
-      const yBase = horizon - H*(0.22 + b*0.045) + driftY*0.25;
-      const amp = H*(0.05 + b*0.006);
-      const alpha = 0.18 - b*0.014;
-      const scale = 0.0035 * (1/depth);
-      const time = state.t * speed;
+      // low-res buffer for speed, then upscale (looks painterly)
+      const step = 4; // bigger = softer
+      for(let y=top; y<bot; y+=step){
+        const yn = (y/H);
+        // clouds should thin near top, thicken near horizon
+        const density = clamp((yn - (horizonY/H - 0.42)) * 1.2, 0, 1);
+        const band = density * density;
 
-      ctx.beginPath();
-      const left = -W*0.1, right = W*1.1;
-      ctx.moveTo(left, yBase);
+        for(let x=0; x<W; x+=step){
+          const n = fbm(
+            (x + time*W*p.drift + state.roll*120)*p.scale,
+            (y + state.pitch*80)*p.scale
+          );
 
-      const steps = 40;
-      for(let i=0;i<=steps;i++){
-        const x = lerp(left, right, i/steps);
-        const n = fbm((x+driftX)*scale + time*0.20, (b*20.0)*0.02 + time*0.05);
-        const y = yBase + (n-0.5)*amp;
-        ctx.lineTo(x, y);
+          // shape: wide soft forms, no stripes
+          const v = clamp((n - 0.48) * 2.2, 0, 1);
+          const puff = v*v*(3-2*v);
+          const a = p.alpha * puff * band;
+
+          if(a <= 0.002) continue;
+
+          // slight vertical softness: more misty near horizon
+          const haze = clamp(1 - Math.abs(y - horizonY)/260, 0, 1);
+          const aa = a * (0.55 + 0.55*haze) * p.soften;
+
+          ctx.fillStyle = `rgba(245,252,255,${aa})`;
+          ctx.fillRect(x, y, step, step);
+        }
       }
-      ctx.lineTo(right, yBase + H*0.5);
-      ctx.lineTo(left, yBase + H*0.5);
-      ctx.closePath();
-
-      // cloud fill
-      const cg = ctx.createLinearGradient(0, yBase-amp*1.2, 0, yBase+H*0.22);
-      cg.addColorStop(0, `rgba(235,248,255,${alpha*0.9})`);
-      cg.addColorStop(0.55, `rgba(235,248,255,${alpha*0.55})`);
-      cg.addColorStop(1, `rgba(235,248,255,0)`);
-      ctx.fillStyle = cg;
-      ctx.fill();
-
-      // soften edges
-      ctx.globalAlpha = softness;
-      ctx.strokeStyle = "rgba(255,255,255,0.22)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
     }
 
-    // gentle directional cue: tiny, slow motes (no streaks)
-    ctx.globalAlpha = 0.08;
+    // tiny spark motes (calm, not streaks)
+    ctx.globalAlpha = 0.06;
     ctx.fillStyle = "rgba(255,255,255,0.9)";
-    const moteCount = depth < 0.7 ? 22 : 10;
-    for(let i=0;i<moteCount;i++){
-      const px = (i*173 + (state.t*40*speed)*1000) % (W+80) - 40;
-      const py = horizon - H*(0.28) + ((i*97)%120) - 60;
-      const r = depth < 0.7 ? 1.6 : 1.2;
+    for(let i=0;i<18;i++){
+      const px = (i*211 + time*18) % (W+60) - 30;
+      const py = horizonY - 220 + ((i*97)%140);
       ctx.beginPath();
-      ctx.arc(px, py, r, 0, Math.PI*2);
+      ctx.arc(px, py, 1.4, 0, Math.PI*2);
       ctx.fill();
     }
     ctx.globalAlpha = 1;
   }
 
-  function drawLand(){
-    ctxLand.clearRect(0,0,W,H);
+  function drawLand(horizonY){
+    // austere landscape: distant plateau silhouettes + slow curve.
+    // Keep it subtle so it reads as “place” not “blob cockpit”.
+    ctx.save();
 
-    const horizon = H*(0.62 + state.pitch*0.02);
-    const roll = state.roll * 0.045; // gentle tilt only
-    const tilt = roll;
+    // tilt is very slight to avoid nausea
+    const tilt = state.roll * 0.035;
+    ctx.translate(W/2, horizonY);
+    ctx.rotate(tilt);
+    ctx.translate(-W/2, -horizonY);
 
-    // land base gradient (austere)
-    const g = ctxLand.createLinearGradient(0,horizon,0,H);
-    g.addColorStop(0, "rgba(8,14,18,0.10)");
-    g.addColorStop(0.18, "rgba(6,10,14,0.55)");
-    g.addColorStop(1, "rgba(0,0,0,0.88)");
-    ctxLand.fillStyle = g;
-
-    // draw a slightly curved "earth" silhouette
-    ctxLand.beginPath();
-    const curve = H*0.14;
-    ctxLand.moveTo(0, H);
-    ctxLand.quadraticCurveTo(W*0.5, horizon+curve, W, H);
-    ctxLand.lineTo(W, H);
-    ctxLand.lineTo(0, H);
-    ctxLand.closePath();
-    ctxLand.fill();
-
-    // distant mountains: very subtle ridges near horizon for orientation
-    ctxLand.save();
-    ctxLand.translate(W/2, horizon);
-    ctxLand.rotate(tilt);
-    ctxLand.translate(-W/2, -horizon);
-
-    ctxLand.globalAlpha = 0.22;
-    ctxLand.fillStyle = "rgba(0,0,0,0.75)";
-    ctxLand.beginPath();
-    const yBase = horizon + 18;
-    ctxLand.moveTo(-20, yBase);
-    const steps = 50;
+    // distant ridge
+    ctx.globalAlpha = 0.30;
+    ctx.fillStyle = "rgba(0,0,0,0.70)";
+    ctx.beginPath();
+    const yBase = horizonY + 26;
+    ctx.moveTo(-40, yBase);
+    const steps = 60;
     for(let i=0;i<=steps;i++){
-      const x = lerp(-20, W+20, i/steps);
-      const n = fbm((x + state.driftX*0.6)*0.004, 7.2);
-      const y = yBase + (n-0.5)*28;
-      ctxLand.lineTo(x,y);
+      const x = (i/steps)*(W+80) - 40;
+      const n = fbm((x + state.drift*110)*0.0032, 9.2);
+      const y = yBase + (n-0.5)*36;
+      ctx.lineTo(x,y);
     }
-    ctxLand.lineTo(W+20, H);
-    ctxLand.lineTo(-20, H);
-    ctxLand.closePath();
-    ctxLand.fill();
-    ctxLand.globalAlpha = 1;
+    ctx.lineTo(W+40, H+40);
+    ctx.lineTo(-40, H+40);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
 
-    // horizon line (soft, not harsh)
-    const hg = ctxLand.createLinearGradient(0,horizon-8,0,horizon+34);
-    hg.addColorStop(0, "rgba(255,255,255,0)");
-    hg.addColorStop(0.4, "rgba(255,255,255,0.10)");
-    hg.addColorStop(1, "rgba(255,255,255,0)");
-    ctxLand.fillStyle = hg;
-    ctxLand.fillRect(0, horizon-8, W, 44);
+    ctx.restore();
 
-    ctxLand.restore();
+    // ground gradient (soft, no hard black)
+    const g = ctx.createLinearGradient(0,horizonY+20,0,H);
+    g.addColorStop(0, "rgba(0,0,0,0.30)");
+    g.addColorStop(0.35, "rgba(0,0,0,0.62)");
+    g.addColorStop(1, "rgba(0,0,0,0.86)");
+    ctx.fillStyle = g;
 
-    // faint cockpit lip / dash shadow (keeps “craft” without showing a plane)
-    const cg = ctxLand.createRadialGradient(W*0.5, H*1.08, H*0.25, W*0.5, H*1.08, H*0.95);
-    cg.addColorStop(0, "rgba(0,0,0,0.95)");
-    cg.addColorStop(0.55, "rgba(0,0,0,0.70)");
+    // gentle earth curve
+    ctx.beginPath();
+    const curve = H*0.12;
+    ctx.moveTo(0, H);
+    ctx.quadraticCurveTo(W*0.5, horizonY+curve, W, H);
+    ctx.lineTo(W, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fill();
+
+    // faint shadowed “dash” lip only at extreme bottom edge
+    const cg = ctx.createRadialGradient(W*0.5, H*1.10, H*0.10, W*0.5, H*1.10, H*0.55);
+    cg.addColorStop(0, "rgba(0,0,0,0.70)");
     cg.addColorStop(1, "rgba(0,0,0,0)");
-    ctxLand.fillStyle = cg;
-    ctxLand.fillRect(0, H*0.58, W, H*0.42);
+    ctx.fillStyle = cg;
+    ctx.fillRect(0, H*0.72, W, H*0.28);
   }
 
   // ---------- sim update ----------
   function step(dt){
     state.t += dt;
 
-    // inputs -> gentle response
     const pitchIn = (keys.has("ArrowUp") ? -1 : 0) + (keys.has("ArrowDown") ? 1 : 0);
     const rollIn  = (keys.has("ArrowLeft") ? -1 : 0) + (keys.has("ArrowRight") ? 1 : 0);
     state.boost = keys.has("Space");
 
     const monkFactor = state.monk ? 0.55 : 1.0;
-    const resp = 0.060 * monkFactor;
-    const damp = 0.92;
+    const resp = 0.055 * monkFactor;
+    const damp = 0.93;
 
     state.pitch = clamp(state.pitch*damp + pitchIn*resp, -1, 1);
     state.roll  = clamp(state.roll*damp  + rollIn*resp, -1, 1);
 
-    // forward motion: conveyed by slow drift + range increment (no warp)
-    const baseSpd = state.monk ? 102 : 125;
-    const boostAdd = state.boost ? (state.monk ? 18 : 28) : 0;
+    const baseSpd = state.monk ? 108 : 132;
+    const boostAdd = state.boost ? (state.monk ? 14 : 24) : 0;
     const targetSpd = baseSpd + boostAdd;
-
     state.spd = Math.round(state.spd + (targetSpd - state.spd)*0.06);
 
-    // heading changes from roll, tiny
-    state.hdg += state.roll * (state.monk ? 0.25 : 0.40);
+    // heading/alt are calm
+    state.hdg += state.roll * (state.monk ? 0.22 : 0.36);
+    state.alt = Math.round(state.alt + (-state.pitch) * (state.monk ? 5 : 9));
 
-    // altitude changes from pitch, tiny
-    state.alt = Math.round(state.alt + (-state.pitch) * (state.monk ? 6 : 10));
+    // forward drift drives scenery movement (not tunnel)
+    const forward = (state.spd/120) * (state.boost ? 1.10 : 1.0);
+    state.drift += forward * dt * 0.9;
 
-    // drift field
-    const forward = (state.spd / 120) * (state.boost ? 1.15 : 1.0);
-    state.driftX += (state.roll * 0.35 + 0.12) * forward;
-    state.driftY += (state.pitch * 0.22) * forward;
+    state.range += forward * dt * 0.055;
+    state.score += Math.floor(forward * dt * (state.monk ? 0.40 : 0.65));
 
-    // range + score (game feel)
-    state.range += forward * dt * 0.06;
-    state.score += Math.floor(forward * dt * (state.monk ? 0.45 : 0.7));
-
-    // wattage: monk steadies, boost drains a touch
+    // wattage
     let w = state.wattage;
-    w += (state.monk ? 0.0009 : -0.0003) * (dt*60);
-    if(state.boost) w -= 0.0012 * (dt*60);
-    // turbulence penalty if yanking controls
-    const yank = (Math.abs(pitchIn)+Math.abs(rollIn)) > 0 ? 1 : 0;
-    if(!state.monk && yank) w -= 0.0007*(dt*60);
+    w += (state.monk ? 0.0008 : -0.0003) * (dt*60);
+    if(state.boost) w -= 0.0010 * (dt*60);
+    if(!state.monk && (Math.abs(pitchIn)+Math.abs(rollIn))>0) w -= 0.0006*(dt*60);
     state.wattage = clamp(w, 0.18, 0.96);
 
     updateUI();
   }
 
-  // ---------- main loop ----------
+  // ---------- render ----------
   let last = performance.now();
   function loop(now){
     const dt = Math.min(0.05, (now-last)/1000);
     last = now;
-
     step(dt);
 
-    // render calm: sky static, clouds drift, land anchors
-    drawSky();
-    drawCloudLayer(ctxFar, 0.95, 0.012, 0.10);
-    drawCloudLayer(ctxNear, 0.55, 0.020, 0.14);
-    drawLand();
+    // horizon anchors comfort
+    const horizonY = H*(0.62 + state.pitch*0.018);
+
+    // clear
+    ctx.clearRect(0,0,W,H);
+
+    drawSky(horizonY);
+
+    // clouds: time is drift-based, with a tiny sway so it feels “alive”
+    const calmSway = Math.sin(state.t*0.35)*8 + Math.sin(state.t*0.17)*6;
+    ctx.save();
+    ctx.translate(0, calmSway);
+    drawCloudField(horizonY, state.drift);
+    ctx.restore();
+
+    drawLand(horizonY);
 
     requestAnimationFrame(loop);
   }
 
-  // initial HUD state
   document.body.classList.toggle('hudHidden', !state.hud);
   updateUI();
   requestAnimationFrame(loop);
