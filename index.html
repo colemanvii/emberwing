@@ -8,7 +8,6 @@
   :root{
     --ink:#d7e3ff; --muted:rgba(215,227,255,.75); --dim:rgba(215,227,255,.45);
     --line:rgba(215,227,255,.16);
-    --glass:rgba(10,16,30,.36);
     --shadow:rgba(0,0,0,.45);
     --radius:14px;
     --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -44,7 +43,7 @@
   .bar{height:8px; border-radius:999px; background:rgba(215,227,255,.10); border:1px solid rgba(215,227,255,.14); overflow:hidden;}
   .fill{height:100%; width:50%; background:linear-gradient(90deg, rgba(120,210,255,.18), rgba(120,210,255,.78)); box-shadow:0 0 18px rgba(120,210,255,.35);}
 
-  /* Monk mode: readable, just quieter */
+  /* Monk mode: quieter, still readable */
   body.monk #hud .brand, body.monk #hud .panel, body.monk #hud .status{opacity:.62; filter:saturate(.85);}
   @media (max-width:980px){ .panel{display:none;} .brand{max-width:72vw;} }
 </style>
@@ -122,17 +121,14 @@
     altitude:38100,
     throttle:0.70,
     boost:false,
-    speed:640,
-    targetSpeed:640,
+    speed:680,
+    targetSpeed:680,
     driftX:0, driftY:0,
     gatesHit:0, gatesMiss:0, score:0,
     wattage:0.86, signalClean:1.0
   };
 
-  function resize(){
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
-  }
+  function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
   addEventListener("resize", resize, {passive:true});
   resize();
 
@@ -152,12 +148,11 @@
   addEventListener("keydown",(e)=>onKey(e,true),{passive:false});
   addEventListener("keyup",(e)=>onKey(e,false),{passive:false});
 
-  // --- Sky + REAL horizon ---
+  // --- Sky + horizon ---
   function drawSky(){
     const w=canvas.width, h=canvas.height;
     const horizonY = h*0.52 + S.pitch*110;
 
-    // O'Keeffe-ish clear gradient
     const sky = ctx.createLinearGradient(0,0,0,h);
     sky.addColorStop(0.00, "#05070b");
     sky.addColorStop(0.18, "#081427");
@@ -167,7 +162,6 @@
     ctx.fillStyle = sky;
     ctx.fillRect(0,0,w,h);
 
-    // painterly glow
     const glow = ctx.createRadialGradient(w*0.52,h*0.30,0, w*0.52,h*0.30, Math.max(w,h)*0.9);
     glow.addColorStop(0,"rgba(255,245,235,0.10)");
     glow.addColorStop(0.55,"rgba(185,235,255,0.08)");
@@ -175,7 +169,7 @@
     ctx.fillStyle = glow;
     ctx.fillRect(0,0,w,h);
 
-    // horizon band + line (visible)
+    // horizon band + line (tilt with roll)
     ctx.save();
     ctx.translate(w*0.5, horizonY);
     ctx.rotate(-S.roll*0.55);
@@ -189,36 +183,37 @@
     ctx.fillRect(-w,-90,w*2,220);
 
     ctx.globalAlpha = 0.30;
-    ctx.strokeStyle = "rgba(215,227,255,0.75)";
+    ctx.strokeStyle = "rgba(215,227,255,0.78)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(-w,0); ctx.lineTo(w,0);
     ctx.stroke();
+
     ctx.restore();
     ctx.globalAlpha = 1;
   }
 
-  // --- Speed streaks (strong forward) ---
+  // --- Speed streaks ---
   const flow = [];
-  const FLOW = 560;
+  const FLOW = 620;
   for (let i=0;i<FLOW;i++) flow.push({x:Math.random()*2-1, y:Math.random()*2-1, z:Math.random(), s:Math.random()*1.2+0.2});
 
   function drawFlow(dt, forward){
     const w=canvas.width, h=canvas.height;
     const cx=w*0.5, cy=h*0.42;
-    const sp = 0.95 + forward*2.10;
+    const sp = 1.05 + forward*2.25;
 
     for (const f of flow){
-      f.z -= dt*(0.9 + (1-f.z)*3.5)*sp;
+      f.z -= dt*(0.95 + (1-f.z)*3.7)*sp;
       if (f.z<=0.02){ f.x=Math.random()*2-1; f.y=Math.random()*2-1; f.z=1; f.s=Math.random()*1.2+0.2; }
       const p = 0.16/(f.z+0.06);
       const x = cx + (f.x + S.driftX*0.0011) * w * p;
       const y = cy + (f.y + S.driftY*0.0011) * h * p;
-      const len = (10 + (1-f.z)*55) * sp;
+      const len = (12 + (1-f.z)*62) * sp;
 
-      ctx.globalAlpha = (0.06 + (1-f.z)*0.26) * (S.monk?0.86:1);
-      ctx.strokeStyle = "rgba(205,235,255,0.80)";
-      ctx.lineWidth = Math.max(1, f.s*(1-f.z)*1.6);
+      ctx.globalAlpha = (0.05 + (1-f.z)*0.26) * (S.monk?0.86:1);
+      ctx.strokeStyle = "rgba(205,235,255,0.85)";
+      ctx.lineWidth = Math.max(1, f.s*(1-f.z)*1.7);
       ctx.beginPath();
       ctx.moveTo(x,y);
       ctx.lineTo(x, y + len*p);
@@ -237,7 +232,7 @@
   function updateGates(dt, forward){
     for (let i=gates.length-1;i>=0;i--){
       const g=gates[i];
-      g.z -= dt*(forward*880 + 240);
+      g.z -= dt*(forward*900 + 260);
       if (g.z < 120){
         if (!g.hit){ S.gatesMiss++; S.wattage=clamp(S.wattage-0.06,0,1); S.signalClean=clamp(S.signalClean-0.08,0,1); }
         gates.splice(i,1);
@@ -276,11 +271,11 @@
 
       const glow = ctx.createRadialGradient(0,0,r*0.65, 0,0,r*1.25);
       glow.addColorStop(0, "rgba(120,210,255,0)");
-      glow.addColorStop(0.55,"rgba(120,210,255,0.26)");
+      glow.addColorStop(0.55,"rgba(120,210,255,0.28)");
       glow.addColorStop(1, "rgba(255,190,120,0)");
       ctx.fillStyle=glow;
 
-      ctx.strokeStyle = gt.hit ? "rgba(120,255,190,0.78)" : "rgba(190,220,255,0.78)";
+      ctx.strokeStyle = gt.hit ? "rgba(120,255,190,0.80)" : "rgba(190,220,255,0.80)";
       ctx.lineWidth = Math.max(1, r*0.06);
       ctx.beginPath(); ctx.arc(0,0,r,0,TAU); ctx.stroke();
       ctx.beginPath(); ctx.arc(0,0,r*1.12,0,TAU); ctx.fill();
@@ -291,136 +286,229 @@
     }
   }
 
-  // --- Aircraft (technical-ish, shaded, not a logo) ---
-  function drawAircraft(){
+  // --- Attitude indicator overlay (real) ---
+  function drawAttitude(){
     const w=canvas.width, h=canvas.height;
-    const cx=w*0.5, cy=h*0.66;
-    const sx = cx + S.driftX*0.10;
-    const sy = cy + S.driftY*0.08;
-    const bank = S.roll*0.42;
+    const cx=w*0.5, cy=h*0.52;
+    const radius = Math.min(w,h)*0.16;
+
+    // convert pitch to pixels for ladder
+    const pxPerDeg = radius*0.18; // tuned
+    const pitchDeg = clamp(S.pitch * 18, -25, 25); // “feel degrees”
+    const rollRad  = clamp(S.roll * 0.55, -0.75, 0.75);
 
     ctx.save();
-    ctx.translate(sx,sy);
-    ctx.rotate(bank);
+    ctx.translate(cx, cy);
+    ctx.rotate(-rollRad);
 
-    // shadow
-    ctx.globalAlpha=0.26;
-    ctx.fillStyle="rgba(0,0,0,0.55)";
-    ctx.beginPath(); ctx.ellipse(0,70,260,30,0,0,TAU); ctx.fill();
-    ctx.globalAlpha=1;
+    // ladder group shifted by pitch
+    ctx.translate(0, pitchDeg * pxPerDeg);
 
-    const wing = ctx.createLinearGradient(-320,10,320,70);
-    wing.addColorStop(0, "rgba(245,249,252,0.98)");
-    wing.addColorStop(0.55,"rgba(210,228,242,0.96)");
-    wing.addColorStop(1, "rgba(160,190,214,0.92)");
+    // ladder lines every 5°
+    ctx.globalAlpha = S.monk ? 0.28 : 0.34;
+    ctx.strokeStyle = "rgba(220,245,255,0.85)";
+    ctx.fillStyle   = "rgba(220,245,255,0.85)";
+    ctx.lineWidth = 1;
 
-    const fuse = ctx.createLinearGradient(-30,-140, 40,160);
-    fuse.addColorStop(0, "rgba(250,252,255,0.99)");
-    fuse.addColorStop(0.40,"rgba(225,238,248,0.97)");
-    fuse.addColorStop(1, "rgba(170,200,222,0.93)");
+    for (let d=-25; d<=25; d+=5){
+      if (d===0) continue;
+      const y = -d * pxPerDeg;
+      const len = (d%10===0) ? radius*0.90 : radius*0.62;
+      ctx.beginPath();
+      ctx.moveTo(-len, y);
+      ctx.lineTo( len, y);
+      ctx.stroke();
 
-    const darkLine = "rgba(40,70,110,0.22)";
-    const specLine = "rgba(255,255,255,0.30)";
+      if (d%10===0){
+        ctx.globalAlpha = (S.monk ? 0.22 : 0.28);
+        ctx.font = "11px " + getComputedStyle(document.documentElement).getPropertyValue('--mono');
+        ctx.textAlign="left"; ctx.textBaseline="middle";
+        ctx.fillText(String(Math.abs(d)), len+8, y);
+        ctx.textAlign="right";
+        ctx.fillText(String(Math.abs(d)), -len-8, y);
+        ctx.globalAlpha = S.monk ? 0.28 : 0.34;
+      }
+    }
 
-    // wings
-    ctx.fillStyle=wing; ctx.strokeStyle=darkLine; ctx.lineWidth=1;
+    // 0-line bolder
+    ctx.globalAlpha = S.monk ? 0.32 : 0.40;
+    ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.moveTo(-320, 46);
-    ctx.quadraticCurveTo(-210, -12, -70, 18);
-    ctx.quadraticCurveTo(0, 30, 70, 18);
-    ctx.quadraticCurveTo(210, -12, 320, 46);
-    ctx.quadraticCurveTo(210, 108, 62, 82);
-    ctx.quadraticCurveTo(0, 74, -62, 82);
-    ctx.quadraticCurveTo(-210, 108, -320, 46);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-
-    // wing root fairing
-    ctx.globalAlpha=0.22;
-    ctx.fillStyle="rgba(10,16,30,0.55)";
-    ctx.beginPath(); ctx.ellipse(0,52,150,44,0,0,TAU); ctx.fill();
-    ctx.globalAlpha=1;
-
-    // fuselage
-    ctx.fillStyle=fuse; ctx.strokeStyle=darkLine;
-    ctx.beginPath();
-    ctx.moveTo(0,-150);
-    ctx.bezierCurveTo(-26,-150,-42,-120,-42,-86);
-    ctx.lineTo(-32,120);
-    ctx.bezierCurveTo(-28,154,-16,178,0,192);
-    ctx.bezierCurveTo(16,178,28,154,32,120);
-    ctx.lineTo(42,-86);
-    ctx.bezierCurveTo(42,-120,26,-150,0,-150);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-
-    // cowling
-    ctx.fillStyle="rgba(200,215,228,0.96)";
-    ctx.beginPath(); ctx.ellipse(0,-150,22,18,0,0,TAU); ctx.fill();
-
-    // prop disc
-    ctx.globalAlpha=0.10;
-    ctx.fillStyle="rgba(255,255,255,0.9)";
-    ctx.beginPath(); ctx.ellipse(0,-162,70,26,0,0,TAU); ctx.fill();
-    ctx.globalAlpha=1;
-
-    // windshield
-    const glass=ctx.createRadialGradient(0,-88,4, 0,-78,70);
-    glass.addColorStop(0,"rgba(10,16,30,0.62)");
-    glass.addColorStop(0.55,"rgba(10,16,30,0.30)");
-    glass.addColorStop(1,"rgba(10,16,30,0)");
-    ctx.fillStyle=glass;
-    ctx.beginPath(); ctx.ellipse(0,-88,52,44,0,0,TAU); ctx.fill();
-
-    // tailplane
-    ctx.fillStyle="rgba(225,238,248,0.94)";
-    ctx.strokeStyle=darkLine;
-    ctx.beginPath();
-    ctx.moveTo(-96, 120);
-    ctx.quadraticCurveTo(0, 88, 96, 120);
-    ctx.quadraticCurveTo(32, 160, 0, 164);
-    ctx.quadraticCurveTo(-32, 160, -96, 120);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-
-    // panel lines
-    ctx.strokeStyle=specLine;
-    ctx.globalAlpha=0.34;
-    ctx.beginPath(); ctx.moveTo(0,-146); ctx.lineTo(0,176); ctx.stroke();
-    ctx.globalAlpha=1;
+    ctx.moveTo(-radius*0.92, 0);
+    ctx.lineTo( radius*0.92, 0);
+    ctx.stroke();
 
     ctx.restore();
+
+    // roll arc (outside)
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.globalAlpha = S.monk ? 0.22 : 0.26;
+    ctx.strokeStyle = "rgba(220,245,255,0.8)";
+    ctx.lineWidth = 1;
+
+    const arcR = radius*1.22;
+    ctx.beginPath();
+    ctx.arc(0,0,arcR, Math.PI*1.08, Math.PI*1.92);
+    ctx.stroke();
+
+    // tick marks
+    const ticks = [-60,-45,-30,-20,-10,0,10,20,30,45,60];
+    for (const t of ticks){
+      const a = (t/180)*Math.PI;
+      const ang = -a; // conventional
+      const inner = arcR - (Math.abs(t)%30===0 ? 12 : 7);
+      const outer = arcR + 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.sin(ang)*inner, -Math.cos(ang)*inner);
+      ctx.lineTo(Math.sin(ang)*outer, -Math.cos(ang)*outer);
+      ctx.stroke();
+    }
+
+    // little roll pointer
+    ctx.globalAlpha = S.monk ? 0.30 : 0.38;
+    ctx.fillStyle = "rgba(255,210,160,0.75)";
+    ctx.beginPath();
+    ctx.moveTo(0, -arcR-10);
+    ctx.lineTo(-6, -arcR+2);
+    ctx.lineTo(6, -arcR+2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+
+    // fixed aircraft reference (center)
+    ctx.globalAlpha = S.monk ? 0.30 : 0.36;
+    ctx.strokeStyle = "rgba(220,245,255,0.85)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(cx-26, cy);
+    ctx.lineTo(cx-6, cy);
+    ctx.moveTo(cx+6, cy);
+    ctx.lineTo(cx+26, cy);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // --- Cockpit POV ---
+  function drawCockpit(){
+    const w=canvas.width, h=canvas.height;
+    const cx=w*0.5, cy=h*0.56;
+
+    // tiny vibration tied to speed/boost (disciplined)
+    const vib = (S.boost ? 1 : 0) * 0.8 + (S.speed/1000)*0.25;
+    const shake = (0.7 - S.wattage) * 0.9 + vib*0.25;
+
+    // canopy frame mask
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.translate(Math.sin(S.t*18)*shake, Math.cos(S.t*22)*shake);
+
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = "rgba(5,8,14,0.82)";
+    ctx.beginPath();
+    ctx.moveTo(-w*0.58, -h*0.12);
+    ctx.quadraticCurveTo(0, -h*0.46, w*0.58, -h*0.12);
+    ctx.lineTo(w*0.58, h*0.60);
+    ctx.quadraticCurveTo(0, h*0.74, -w*0.58, h*0.60);
+    ctx.closePath();
+    ctx.fill();
+
+    // cut out windshield (clear view)
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.moveTo(-w*0.46, -h*0.08);
+    ctx.quadraticCurveTo(0, -h*0.36, w*0.46, -h*0.08);
+    ctx.lineTo(w*0.36, h*0.44);
+    ctx.quadraticCurveTo(0, h*0.56, -w*0.36, h*0.44);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalCompositeOperation = "source-over";
+    ctx.restore();
+
+    // windshield glare
+    const glare = ctx.createRadialGradient(w*0.62,h*0.18,0, w*0.62,h*0.18, Math.max(w,h)*0.65);
+    glare.addColorStop(0,"rgba(255,245,235,0.10)");
+    glare.addColorStop(0.35,"rgba(185,235,255,0.06)");
+    glare.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle = glare;
+    ctx.fillRect(0,0,w,h);
+
+    // instrument panel (bottom)
+    ctx.save();
+    ctx.globalAlpha = 0.97;
+    ctx.fillStyle = "rgba(8,12,20,0.92)";
+    ctx.beginPath();
+    ctx.moveTo(0, h*0.78);
+    ctx.quadraticCurveTo(w*0.5, h*0.64, w, h*0.78);
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fill();
+
+    // panel top edge highlight
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = "rgba(215,227,255,0.7)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, h*0.78);
+    ctx.quadraticCurveTo(w*0.5, h*0.64, w, h*0.78);
+    ctx.stroke();
+
+    // G1000-ish screens (minimal)
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = "rgba(14,22,36,0.92)";
+    const sw = w*0.22, sh = h*0.16, gap = w*0.03;
+    const y  = h*0.80;
+    ctx.fillRect(w*0.50 - gap/2 - sw, y, sw, sh);
+    ctx.fillRect(w*0.50 + gap/2,       y, sw, sh);
+
+    // soft screen glow
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = "rgba(120,210,255,0.20)";
+    ctx.fillRect(w*0.50 - gap/2 - sw, y, sw, sh);
+    ctx.fillRect(w*0.50 + gap/2,       y, sw, sh);
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
   }
 
   function updateFlight(dt){
     const up=S.keys.has("ArrowUp"), dn=S.keys.has("ArrowDown");
     const lf=S.keys.has("ArrowLeft"), rt=S.keys.has("ArrowRight");
 
-    const calm = S.monk ? 0.82 : 1.0;
+    const calm = S.monk ? 0.86 : 1.0;
     const pIn = (up?1:0) + (dn?-1:0);
     const rIn = (rt?1:0) + (lf?-1:0);
 
-    const pitchTarget = pIn * 0.26 * calm;
-    const rollTarget  = rIn * 0.40 * calm;
+    // subtle hands, strong forward
+    const pitchTarget = pIn * 0.24 * calm;
+    const rollTarget  = rIn * 0.34 * calm;
 
-    S.pitch = lerp(S.pitch, pitchTarget, dt*7.2);
-    S.roll  = lerp(S.roll,  rollTarget,  dt*7.2);
+    S.pitch = lerp(S.pitch, pitchTarget, dt*7.8);
+    S.roll  = lerp(S.roll,  rollTarget,  dt*7.8);
 
-    const base=640, max=920, boostAdd=S.boost?320:0;
+    const base=720, max=980, boostAdd=S.boost?360:0;
     S.targetSpeed = base + (max-base)*S.throttle + boostAdd;
-    const resp = S.boost ? 2.8 : 1.7;
+
+    const resp = S.boost ? 3.0 : 1.8;
     S.speed += (S.targetSpeed - S.speed) * dt * resp;
 
-    S.altitude += (S.pitch*3200 + (S.boost?260:0)) * dt;
-    const turn = S.roll * (0.70 + (S.speed/980)) * calm;
-    S.heading += (turn*54)*dt;
+    S.altitude += (S.pitch*3000 + (S.boost?240:0)) * dt;
 
-    S.driftX = lerp(S.driftX, S.roll*180, dt*2.4);
-    S.driftY = lerp(S.driftY, -S.pitch*220, dt*2.4);
+    const turn = S.roll * (0.68 + (S.speed/980)) * calm;
+    S.heading += (turn*52)*dt;
 
-    const stress=(S.boost?0.40:0)+(Math.abs(S.roll)+Math.abs(S.pitch))*0.55;
-    const recover=(S.monk?0.22:0.12);
+    // drift as camera sway
+    S.driftX = lerp(S.driftX, S.roll*170, dt*2.6);
+    S.driftY = lerp(S.driftY, -S.pitch*210, dt*2.6);
+
+    const stress=(S.boost?0.38:0)+(Math.abs(S.roll)+Math.abs(S.pitch))*0.50;
+    const recover=(S.monk?0.24:0.12);
     S.wattage = clamp(S.wattage + (recover-stress)*dt*0.34, 0,1);
+
     const steady = 1 - clamp(stress,0,1);
     S.signalClean = clamp(lerp(S.signalClean, steady, dt*0.60), 0,1);
   }
@@ -435,6 +523,7 @@
     ui.gates.textContent = String(S.gatesHit);
     ui.miss.textContent  = String(S.gatesMiss);
     ui.score.textContent = String(S.score).padStart(4,"0");
+
     let nearest=null; for (const g of gates){ if (!g.hit && (nearest===null || g.z<nearest)) nearest=g.z; }
     ui.range.textContent = nearest ? Math.round(nearest)+"m" : "—";
 
@@ -451,18 +540,22 @@
     last=now; S.t+=S.dt;
 
     updateFlight(S.dt);
-    const forward = clamp((S.speed/720)+(S.boost?0.70:0), 0.70, 2.40);
+    const forward = clamp((S.speed/760)+(S.boost?0.78:0), 0.75, 2.55);
     updateGates(S.dt, forward);
 
     drawSky();
     drawFlow(S.dt, forward);
     drawGates();
-    drawAircraft();
-    updateUI();
 
+    // cockpit + instruments
+    drawAttitude();
+    drawCockpit();
+
+    updateUI();
     requestAnimationFrame(tick);
   }
 
+  // seed a few gates
   spawnGate(); spawnGate();
   requestAnimationFrame(tick);
 })();
