@@ -1,1159 +1,435 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>EMBERWING // HAVEN — Monk Mode</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Emberwing Gyro Controls</title>
   <style>
-    :root{
-      --ink: rgba(236,246,255,.92);
-      --muted: rgba(236,246,255,.62);
-      --dim: rgba(236,246,255,.30);
-      --line: rgba(236,246,255,.11);
-      --line2: rgba(236,246,255,.07);
-      --glass: rgba(10,14,18,.22);
-      --glass2: rgba(10,14,18,.34);
-      --accent: rgba(150,210,255,.92);
-      --mint: rgba(170,240,210,.86);
-      --amber: rgba(255,226,160,.82);
-      --hot: rgba(255,120,120,.72);
+    :root { color-scheme: dark; }
+    html, body { height: 100%; margin: 0; background: #05060a; font-family: ui-sans-serif, system-ui; }
+    #hud {
+      position: fixed; inset: 16px auto auto 16px;
+      display: grid; gap: 10px; z-index: 10;
+      max-width: calc(100vw - 32px);
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; overflow:hidden;
-      background:#060b10;
-      color:var(--ink);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-    }
-    #stage{position:fixed; inset:0}
-    canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
-
-    /* veil */
-    #veil{
-      position:absolute; inset:0; pointer-events:none;
-      background:
-        radial-gradient(900px 600px at 50% 18%, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 60%),
-        radial-gradient(1200px 900px at 50% 62%, rgba(0,0,0,0) 0%, rgba(0,0,0,.20) 58%, rgba(0,0,0,.42) 100%),
-        linear-gradient(to bottom, rgba(0,0,0,.30) 0%, rgba(0,0,0,.06) 40%, rgba(0,0,0,.34) 100%);
-      mix-blend-mode:multiply;
-    }
-
-    /* top UI */
-    .topbar{
-      position:absolute; left:16px; right:16px; top:14px;
-      display:flex; justify-content:space-between; gap:14px;
-      pointer-events:none;
-    }
-    .brand{display:flex; flex-direction:column; gap:10px; min-width:340px}
-    .brandRow{display:flex; align-items:center; gap:10px}
-    .dot{
-      width:8px; height:8px; border-radius:999px;
-      background:rgba(255,255,255,.24);
-      box-shadow:0 0 26px rgba(150,210,255,.20);
-    }
-    .title{letter-spacing:.18em; font-size:12px; opacity:.92; white-space:nowrap}
-    .pill{
-      display:inline-flex; align-items:center;
-      padding:6px 10px; border-radius:999px;
-      border:1px solid var(--line);
-      background:rgba(10,14,18,.18);
-      color:var(--muted);
-      font-size:11px; letter-spacing:.14em; text-transform:uppercase;
-    }
-    .mission{
-      max-width:740px;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid var(--line2);
-      background:linear-gradient(to bottom, rgba(10,14,18,.26), rgba(10,14,18,.10));
-      box-shadow:0 18px 60px rgba(0,0,0,.24);
-      color:rgba(236,246,255,.74);
-      font-size:12px; line-height:1.35; letter-spacing:.04em;
+    .card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 12px 12px;
       backdrop-filter: blur(10px);
     }
-    .mission b{color:rgba(236,246,255,.92); font-weight:600}
-    .mission .jp{opacity:.62}
-    .mission .sub{margin-top:6px; opacity:.80; min-height:16px}
-
-    .hudWrap{display:flex; gap:12px; align-items:flex-start; justify-content:flex-end}
-    .panel{
-      width:320px;
-      border-radius:16px;
-      border:1px solid var(--line2);
-      background:linear-gradient(to bottom, rgba(10,14,18,.22), rgba(10,14,18,.10));
-      box-shadow:0 18px 55px rgba(0,0,0,.24);
-      backdrop-filter: blur(10px);
-      padding:12px 12px 10px;
-      transition: opacity .18s ease, transform .18s ease, filter .18s ease;
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button {
+      appearance: none; border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.92);
+      padding: 10px 12px; border-radius: 12px;
+      font-weight: 600; letter-spacing: 0.2px;
     }
-    .panelHeader{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:10px}
-    .label{font-size:11px; letter-spacing:.18em; text-transform:uppercase; opacity:.62}
-    .mode{
-      font-size:10px; letter-spacing:.18em; text-transform:uppercase;
-      padding:5px 9px; border-radius:999px;
-      border:1px solid var(--line);
-      color:rgba(236,246,255,.62);
-      background:rgba(10,14,18,.18);
+    button:active { transform: translateY(1px); }
+    .muted { color: rgba(255,255,255,0.65); font-size: 12px; line-height: 1.35; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: rgba(255,255,255,0.85); }
+    #statusDot {
+      width: 10px; height: 10px; border-radius: 999px;
+      background: #ff4d4d; box-shadow: 0 0 16px rgba(255,77,77,0.55);
+      display: inline-block; vertical-align: middle; margin-right: 8px;
     }
-    .grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; font-size:12px}
-    .k{opacity:.55; letter-spacing:.08em}
-    .v{text-align:right; opacity:.92; letter-spacing:.06em}
-    .divider{height:1px; margin:10px 0; background:linear-gradient(to right, rgba(236,246,255,0), var(--line), rgba(236,246,255,0))}
-
-    .controls{
-      position:absolute; left:16px; bottom:16px;
-      display:flex; gap:8px; flex-wrap:wrap; max-width:980px;
-      pointer-events:none; opacity:.74;
-      transition: opacity .18s ease, transform .18s ease;
-    }
-    .chip{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:7px 10px;
-      border-radius:999px;
-      border:1px solid var(--line2);
-      background:rgba(10,14,18,.20);
-      color:rgba(236,246,255,.62);
-      font-size:11px; letter-spacing:.10em; text-transform:lowercase;
+    #touchPad {
+      position: fixed; inset: auto 16px 16px auto;
+      width: min(42vw, 220px); height: min(42vw, 220px);
+      border-radius: 24px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.10);
       backdrop-filter: blur(8px);
+      touch-action: none;
+      display: none;
+      z-index: 9;
     }
-    .key{
-      padding:3px 8px; border-radius:8px;
-      border:1px solid rgba(236,246,255,.12);
-      background:rgba(255,255,255,.04);
-      color:rgba(236,246,255,.84);
-      font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+    #touchKnob {
+      position: absolute; left: 50%; top: 50%;
+      width: 64px; height: 64px; border-radius: 999px;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
     }
-
-    .wattage{
-      position:absolute; right:16px; bottom:16px; width:410px;
-      border-radius:16px;
-      border:1px solid var(--line2);
-      background:linear-gradient(to bottom, rgba(10,14,18,.22), rgba(10,14,18,.10));
-      box-shadow:0 18px 55px rgba(0,0,0,.24);
-      backdrop-filter: blur(10px);
-      padding:12px; pointer-events:none;
-      transition: opacity .18s ease, transform .18s ease;
-    }
-    .wRow{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:10px}
-    .bar{
-      height:10px; border-radius:999px;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(236,246,255,.10);
-      overflow:hidden;
-    }
-    .fill{
-      height:100%; width:50%; border-radius:999px;
-      background:linear-gradient(90deg, rgba(150,210,255,.0), rgba(150,210,255,.62), rgba(170,240,210,.52));
-      transition: width .12s ease;
-    }
-    .wGrid{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; margin-top:10px; font-size:12px}
-
-    /* CENTER: compelling HUD */
-    .reticle{
-      position:absolute; left:50%; top:54%;
-      width:580px; height:360px;
-      transform:translate(-50%,-50%);
-      pointer-events:none;
-      opacity:.22;
-      filter: drop-shadow(0 14px 28px rgba(0,0,0,.22));
-      transition: opacity .15s ease, transform .15s ease, filter .15s ease;
-    }
-    .reticle .h{
-      position:absolute; left:0; right:0; top:50%;
-      height:1px;
-      background:linear-gradient(to right, rgba(236,246,255,0), rgba(236,246,255,.16), rgba(236,246,255,0));
-    }
-    .reticle .ring{
-      position:absolute; left:50%; top:50%;
-      width:92px; height:92px;
-      transform:translate(-50%,-50%);
-      border-radius:999px;
-      border:1px solid rgba(236,246,255,.18);
-      box-shadow:0 0 0 1px rgba(236,246,255,.06) inset;
-    }
-    .reticle .pip{
-      position:absolute; left:50%; top:50%;
-      width:6px; height:6px;
-      transform:translate(-50%,-50%);
-      border-radius:99px;
-      background:rgba(236,246,255,.20);
-      box-shadow:0 0 0 16px rgba(236,246,255,.03);
-    }
-    .reticle .br{
-      position:absolute; left:50%; top:50%;
-      width:190px; height:128px;
-      transform:translate(-50%,-50%);
-      opacity:.85;
-    }
-    .br:before,.br:after{
-      content:""; position:absolute; top:0; bottom:0; width:18px;
-      border-top:1px solid rgba(236,246,255,.16);
-      border-bottom:1px solid rgba(236,246,255,.16);
-    }
-    .br:before{left:0; border-left:1px solid rgba(236,246,255,.16)}
-    .br:after{right:0; border-right:1px solid rgba(236,246,255,.16)}
-    .reticle .vv{
-      position:absolute; left:50%; top:50%;
-      width:16px; height:16px;
-      transform:translate(-50%,-50%);
-      border-radius:99px;
-      border:1px solid rgba(170,240,210,.20);
-      box-shadow:0 0 26px rgba(170,240,210,.08);
-    }
-    .reticle .lead{
-      position:absolute; left:50%; top:50%;
-      width:10px; height:10px;
-      transform:translate(-50%,-50%);
-      border-radius:99px;
-      border:1px solid rgba(255,226,160,.22);
-      box-shadow:0 0 18px rgba(255,226,160,.08);
-      opacity:.85;
-    }
-
-    /* lock */
-    .lock-on .reticle{
-      opacity:.34;
-      transform:translate(-50%,-50%) scale(1.02);
-      filter: drop-shadow(0 18px 34px rgba(0,0,0,.28));
-    }
-    .lock-on .reticle .ring{border-color: rgba(170,240,210,.28)}
-    .lock-on .reticle .vv{border-color: rgba(255,226,160,.22)}
-    .lock-on .reticle .h{
-      background:linear-gradient(to right, rgba(236,246,255,0), rgba(170,240,210,.18), rgba(236,246,255,0));
-    }
-
-    .hudHidden .panel,
-    .hudHidden .wattage,
-    .hudHidden .controls{
-      opacity:0; transform:translateY(6px);
-    }
-
-    /* monk breath */
-    .monk-breathe .panel,
-    .monk-breathe .wattage{
-      animation: breathe 1.35s ease-in-out infinite;
-    }
-    @keyframes breathe{
-      0%{filter:brightness(1); transform:translateY(0)}
-      50%{filter:brightness(1.05); transform:translateY(-1px)}
-      100%{filter:brightness(1); transform:translateY(0)}
-    }
-
-    /* small "click to lock" hint */
-    #hint{
-      position:absolute; left:50%; top:72%;
-      transform:translate(-50%,-50%);
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid var(--line2);
-      background:linear-gradient(to bottom, rgba(10,14,18,.22), rgba(10,14,18,.10));
-      color:rgba(236,246,255,.68);
-      letter-spacing:.06em;
-      font-size:12px;
-      backdrop-filter: blur(10px);
-      pointer-events:none;
-      opacity:0;
-      transition: opacity .24s ease, transform .24s ease;
-    }
-    #hint.show{opacity:1; transform:translate(-50%,-50%) translateY(-2px)}
-    #hint b{color:rgba(236,246,255,.88)}
-    #hint .k{opacity:.7}
-
-    @media (max-width: 980px){
-      .hudWrap{display:none}
-      .mission{max-width:84vw}
-      .wattage{width:min(420px, calc(100vw - 32px))}
-      .reticle{opacity:.16}
-      #hint{top:78%}
-    }
+    canvas { display:block; width: 100vw; height: 100vh; }
   </style>
 </head>
 <body>
-<div id="stage" tabindex="0" aria-label="Emberwing stage (click to lock mouse)">
-  <canvas id="scene"></canvas>
-  <div id="veil"></div>
-
-  <div class="topbar">
-    <div class="brand">
-      <div class="brandRow">
-        <div class="dot"></div>
-        <div class="title">EMBERWING // HAVEN</div>
-        <div class="pill" id="pillMode">MONK</div>
+  <div id="hud">
+    <div class="card">
+      <div class="row">
+        <span id="statusDot"></span>
+        <span style="color:rgba(255,255,255,0.92);font-weight:700">Emberwing Controls</span>
       </div>
-      <div class="mission" id="missionBox">
-        <b>Mission:</b> warp-speed glide, syrup control, steady hands. <span class="jp">ゆっくりと。今ここ。</span>
-        <div class="sub" id="missionSub"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="btnEnable">Enable Gyro</button>
+        <button id="btnCalibrate" title="Sets current device angle as neutral">Calibrate</button>
+        <button id="btnTouch">Use Touch</button>
       </div>
-    </div>
-
-    <div class="hudWrap">
-      <div class="panel">
-        <div class="panelHeader">
-          <div class="label">NAV</div>
-          <div class="mode" id="modeTag">FLOW</div>
-        </div>
-        <div class="grid">
-          <div class="k">HDG</div><div class="v" id="hdg">000</div>
-          <div class="k">ALT</div><div class="v" id="alt">00000</div>
-          <div class="k">SPD</div><div class="v" id="spd">000</div>
-          <div class="k">WARP</div><div class="v" id="warp">OFF</div>
-        </div>
-        <div class="divider"></div>
-        <div class="grid">
-          <div class="k">PITCH</div><div class="v" id="pitch">0.0</div>
-          <div class="k">ROLL</div><div class="v" id="roll">0.0</div>
-        </div>
+      <div class="muted" style="margin-top:10px">
+        iPhone requires a tap to allow motion access. Gyro feels best with smoothing + deadzone.
       </div>
-
-      <div class="panel">
-        <div class="panelHeader">
-          <div class="label">RUN</div>
-          <div class="mode" id="stabilityTag">STEADY</div>
-        </div>
-        <div class="grid">
-          <div class="k">GATES</div><div class="v" id="gates">0</div>
-          <div class="k">MISS</div><div class="v" id="miss">0</div>
-          <div class="k">SCORE</div><div class="v" id="score">0000</div>
-          <div class="k">RANGE</div><div class="v" id="range">0.0km</div>
-        </div>
-        <div class="divider"></div>
-        <div class="grid">
-          <div class="k">COMBO</div><div class="v" id="combo">x1</div>
-          <div class="k">LOCK</div><div class="v" id="lock">FORWARD</div>
-        </div>
-      </div>
+      <div class="mono" style="margin-top:10px" id="readout">pitch: 0.000  roll: 0.000  yaw: 0.000</div>
+      <div class="mono" style="margin-top:6px" id="mode">mode: waiting</div>
     </div>
   </div>
 
-  <div class="reticle" id="reticle">
-    <div class="h"></div>
-    <div class="ring"></div>
-    <div class="pip"></div>
-    <div class="br"></div>
-    <div class="vv" id="vv"></div>
-    <div class="lead" id="lead"></div>
+  <div id="touchPad">
+    <div id="touchKnob"></div>
   </div>
 
-  <div class="controls">
-    <div class="chip"><span class="key">click</span> lock mouse</div>
-    <div class="chip"><span class="key">mouse</span> aim (pitch/roll)</div>
-    <div class="chip"><span class="key">space</span> warp</div>
-    <div class="chip"><span class="key">f</span> monk/fighter</div>
-    <div class="chip"><span class="key">m</span> mouse aim</div>
-    <div class="chip"><span class="key">esc</span> unlock</div>
-    <div class="chip"><span class="key">enter</span> hud</div>
-  </div>
+  <canvas id="c"></canvas>
 
-  <div class="wattage">
-    <div class="wRow">
-      <div class="label">WATTAGE</div>
-      <div class="mode" id="wState">CLEAN</div>
-    </div>
-    <div class="bar"><div class="fill" id="wFill"></div></div>
-    <div class="wGrid">
-      <div class="k">SIGNAL</div><div class="v" id="signal">CLEAR</div>
-      <div class="k">STATE</div><div class="v" id="stateTag">GLIDE</div>
-    </div>
-  </div>
+  <script>
+    // -----------------------------
+    // EmberwingGyroControls (drop-in)
+    // Outputs: controls.state = { pitch, roll, yaw } in radians-ish normalized range
+    // -----------------------------
+    class EmberwingGyroControls {
+      constructor(opts = {}) {
+        this.opts = {
+          smoothing: opts.smoothing ?? 0.08, // lower = smoother/laggier; ~0.06–0.12 good
+          deadzone: opts.deadzone ?? 0.035,  // ignore tiny tremor
+          gainPitch: opts.gainPitch ?? 1.15, // scale response
+          gainRoll:  opts.gainRoll  ?? 1.35,
+          gainYaw:   opts.gainYaw   ?? 0.55, // yaw is optional; browsers often noisy
+          clamp:     opts.clamp     ?? 0.85, // max normalized magnitude
+        };
 
-  <div id="hint"><b>Click</b> to lock mouse. <span class="k">Esc</span> to release.</div>
-</div>
+        this.enabled = false;
+        this.hasPermission = false;
+        this.mode = "waiting"; // waiting | gyro | touch
+        this._baseline = { beta: 0, gamma: 0, alpha: 0 };
+        this._raw = { beta: 0, gamma: 0, alpha: 0 };
+        this._smoothed = { pitch: 0, roll: 0, yaw: 0 };
 
-<script>
-(() => {
-  // ---------- Canvas ----------
-  const canvas = document.getElementById("scene");
-  const ctx = canvas.getContext("2d", { alpha:false });
+        this.state = { pitch: 0, roll: 0, yaw: 0 };
+        this._onOrientation = this._onOrientation.bind(this);
+        this._onMotion = this._onMotion.bind(this);
 
-  const DPR = () => Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-  let W=0,H=0,dpr=1;
-
-  function resize(){
-    dpr = DPR();
-    W = innerWidth|0; H = innerHeight|0;
-    canvas.width = (W*dpr)|0; canvas.height=(H*dpr)|0;
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    ctx.imageSmoothingEnabled = true;
-  }
-  addEventListener("resize", resize, {passive:true});
-  resize();
-
-  // ---------- Utils ----------
-  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const lerp=(a,b,t)=>a+(b-a)*t;
-  const smooth=t=>t*t*(3-2*t);
-  const rnd=(a=1)=>Math.random()*a;
-  const easeTo=(v,target,k,dt)=>v + (target-v)*(1-Math.exp(-k*dt));
-
-  // hash noise / fbm
-  function hash(x,y){
-    let n = x*374761393 + y*668265263;
-    n = (n^(n>>>13)) * 1274126177;
-    n = n^(n>>>16);
-    return (n>>>0)/4294967295;
-  }
-  function noise(x,y){
-    const xi=Math.floor(x), yi=Math.floor(y);
-    const xf=x-xi, yf=y-yi;
-    const v00=hash(xi,yi), v10=hash(xi+1,yi), v01=hash(xi,yi+1), v11=hash(xi+1,yi+1);
-    const u=smooth(xf), v=smooth(yf);
-    return lerp(lerp(v00,v10,u), lerp(v01,v11,u), v);
-  }
-  function fbm(x,y){
-    let v=0,a=0.55,f=1.0;
-    for(let i=0;i<6;i++){ v += a*noise(x*f,y*f); f*=2; a*=0.5; }
-    return v;
-  }
-
-  // ---------- UI ----------
-  const $ = (id)=>document.getElementById(id);
-  const ui={
-    pillMode:$("pillMode"), modeTag:$("modeTag"), stabilityTag:$("stabilityTag"),
-    hdg:$("hdg"), alt:$("alt"), spd:$("spd"), warp:$("warp"),
-    pitch:$("pitch"), roll:$("roll"),
-    gates:$("gates"), miss:$("miss"), score:$("score"), range:$("range"), combo:$("combo"), lock:$("lock"),
-    wFill:$("wFill"), wState:$("wState"), signal:$("signal"), stateTag:$("stateTag"),
-    missionSub:$("missionSub"), missionBox:$("missionBox"),
-    vv:$("vv"), lead:$("lead"),
-    hint:$("hint"),
-    stage: document.getElementById("stage"),
-  };
-  const fmt3=n=>String(Math.round(n)).padStart(3,"0");
-  const fmt5=n=>String(Math.round(n)).padStart(5,"0");
-
-  function whisper(text,ms=1300){
-    ui.missionSub.textContent=text;
-    clearTimeout(whisper._t);
-    whisper._t=setTimeout(()=>ui.missionSub.textContent="",ms);
-  }
-
-  // ---------- Audio (soft lock tone + warp hush) ----------
-  let audio=null;
-  function initAudio(){
-    if(audio) return;
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if(!AC) return;
-
-    const ctxA = new AC();
-    const master = ctxA.createGain();
-    master.gain.value = 0.0;
-    master.connect(ctxA.destination);
-
-    // Hush (pink-ish noise through filter)
-    const hush = ctxA.createBiquadFilter();
-    hush.type="lowpass";
-    hush.frequency.value = 420;
-    hush.Q.value = 0.9;
-
-    const hushGain = ctxA.createGain();
-    hushGain.gain.value = 0.0;
-
-    const bufferSize = 2 * ctxA.sampleRate;
-    const noiseBuf = ctxA.createBuffer(1, bufferSize, ctxA.sampleRate);
-    const data = noiseBuf.getChannelData(0);
-    for(let i=0;i<bufferSize;i++){
-      // cheap pink-ish: sum a few randoms
-      data[i] = (Math.random()*2-1)*0.2 + (Math.random()*2-1)*0.1 + (Math.random()*2-1)*0.05;
-    }
-    const noiseSrc = ctxA.createBufferSource();
-    noiseSrc.buffer = noiseBuf;
-    noiseSrc.loop = true;
-
-    noiseSrc.connect(hush);
-    hush.connect(hushGain);
-    hushGain.connect(master);
-    noiseSrc.start();
-
-    // Lock tone (sine + gentle vibrato)
-    const osc = ctxA.createOscillator();
-    osc.type="sine";
-    osc.frequency.value = 660;
-
-    const vib = ctxA.createOscillator();
-    vib.type="sine";
-    vib.frequency.value = 6.2;
-
-    const vibGain = ctxA.createGain();
-    vibGain.gain.value = 8.0;
-
-    vib.connect(vibGain);
-    vibGain.connect(osc.frequency);
-
-    const toneGain = ctxA.createGain();
-    toneGain.gain.value = 0.0;
-
-    osc.connect(toneGain);
-    toneGain.connect(master);
-
-    vib.start(); osc.start();
-
-    audio = {
-      ctxA, master,
-      hush, hushGain,
-      osc, toneGain,
-      enabled:true
-    };
-
-    // fade in master gently
-    master.gain.setTargetAtTime(0.35, ctxA.currentTime, 0.08);
-  }
-
-  // ---------- World State ----------
-  const state={
-    t:0,
-
-    // actual attitude
-    pitch:0, roll:0,
-    // command
-    pitchCmd:0, rollCmd:0,
-    pitchRate:0, rollRate:0,
-
-    hdg:352,
-    alt:38200,
-
-    spd:210,
-    warpOn:false,
-
-    monk:true,
-    fighter:false,
-    hud:true,
-
-    range:0,
-    score:0,
-    combo:1,
-    gatesHit:0,
-    miss:0,
-
-    wattage:0.82,
-    hitGlow:0,
-
-    lockStrength:0,
-    _lockWhispered:false,
-
-    // mouse aim
-    mouseAim:true,
-    mx:0, my:0,
-
-    // visuals
-    stars:[],
-    streaks:[],
-    gates:[],
-    gateSpawn:0,
-
-    // blackout
-    blackout:0,
-  };
-
-  // ---------- Mode ----------
-  function applyMode(){
-    if(state.monk){
-      ui.pillMode.textContent="MONK";
-      ui.modeTag.textContent="FLOW";
-      ui.stabilityTag.textContent="STEADY";
-      ui.stateTag.textContent="GLIDE";
-      document.body.classList.add("monk-breathe");
-      whisper("Monk mode: glide. syrup control. accuracy without strain.", 1600);
-    }else{
-      ui.pillMode.textContent="FIGHTER";
-      ui.modeTag.textContent="FIGHTER";
-      ui.stabilityTag.textContent="ACCURATE";
-      ui.stateTag.textContent="LOCKED";
-      document.body.classList.remove("monk-breathe");
-      whisper("Fighter mode: accuracy is final.", 1400);
-    }
-  }
-  applyMode();
-
-  // ---------- Stars + Streaks ----------
-  function seedStars(){
-    state.stars.length=0;
-    const n=260;
-    for(let i=0;i<n;i++){
-      state.stars.push({
-        x:rnd(), y:rnd(),
-        z:0.15+rnd(0.85),
-        tw:rnd(1000)
-      });
-    }
-  }
-  function seedStreaks(){
-    state.streaks.length=0;
-    const n=240;
-    for(let i=0;i<n;i++){
-      const a=rnd(Math.PI*2);
-      const r=Math.pow(rnd(),0.55);
-      state.streaks.push({a,r,p:rnd(1000),w:0.6+rnd(1.6)});
-    }
-  }
-  seedStars(); seedStreaks();
-
-  // ---------- Gates ----------
-  function spawnGate(){
-    const centerBias = state.monk ? 0.18 : 0.12;
-    const x = 0.50 + (rnd()-0.5)*centerBias*2;
-    const y = 0.54 + (rnd()-0.5)*(state.monk ? 0.16 : 0.12);
-    const r = state.monk ? (0.070 + rnd(0.016)) : (0.060 + rnd(0.012));
-    const z = 1.35 + rnd(0.55);
-    state.gates.push({x,y,r,z,alive:true,missed:false,hit:false});
-  }
-  for(let i=0;i<3;i++) spawnGate();
-
-  function nearestGateInfo(){
-    const cx = 0.50 + state.roll*0.030;
-    const cy = 0.54 + state.pitch*0.024;
-
-    let best=null, bestScore=1e9;
-    for(const g of state.gates){
-      if(!g.alive || g.hit) continue;
-      if(g.z>0.98 || g.z<0.30) continue;
-      const d=Math.hypot(g.x-cx,g.y-cy);
-      const w=d*(0.55+g.z*0.75);
-      if(w<bestScore){bestScore=w; best=g;}
-    }
-    if(!best) return {g:null,cx,cy,dist:999};
-    return {g:best,cx,cy,dist:Math.hypot(best.x-cx,best.y-cy)};
-  }
-
-  // ---------- Pointer Lock + Mouse Aim ----------
-  function showHint(on){
-    ui.hint.classList.toggle("show", !!on);
-  }
-
-  function lockMouse(){
-    if(document.pointerLockElement === ui.stage) return;
-    ui.stage.requestPointerLock?.();
-  }
-
-  ui.stage.addEventListener("click", () => {
-    initAudio();
-    if(state.mouseAim) lockMouse();
-  });
-
-  document.addEventListener("pointerlockchange", () => {
-    const locked = (document.pointerLockElement === ui.stage);
-    showHint(!locked);
-    whisper(locked ? "Mouse aim locked." : "Mouse aim released.", 900);
-  });
-
-  document.addEventListener("mousemove", (e) => {
-    if(!state.mouseAim) return;
-    if(document.pointerLockElement !== ui.stage) return;
-    // collect deltas (syrup-decayed in sim)
-    state.mx += e.movementX;
-    state.my += e.movementY;
-  });
-
-  // show hint initially
-  showHint(true);
-
-  // ---------- Keys ----------
-  const keys=new Set();
-  addEventListener("keydown",(e)=>{
-    if(e.code==="Enter"){
-      state.hud=!state.hud;
-      document.body.classList.toggle("hudHidden", !state.hud);
-    }
-    if(e.code==="KeyF"){
-      state.monk = !state.monk;
-      state.fighter = !state.monk;
-      applyMode();
-    }
-    if(e.code==="KeyM"){
-      state.mouseAim = !state.mouseAim;
-      whisper(state.mouseAim ? "Mouse aim enabled." : "Mouse aim disabled.", 1000);
-      if(state.mouseAim) showHint(document.pointerLockElement !== ui.stage);
-      else showHint(false);
-    }
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
-    keys.add(e.code);
-  },{passive:false});
-  addEventListener("keyup",(e)=>keys.delete(e.code),{passive:true});
-
-  // ---------- Render Helpers ----------
-  function drawSky(hy){
-    const g=ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0.00,"#050b11");
-    g.addColorStop(0.18,"#071625");
-    g.addColorStop(0.42,"#0f2c45");
-    g.addColorStop(0.68,"#2d6e92");
-    g.addColorStop(0.86,"#9fcee6");
-    g.addColorStop(1.00,"#e7f6ff");
-    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-
-    const cx=W*0.62, cy=H*0.22, r=Math.min(W,H)*0.75;
-    const rg=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
-    rg.addColorStop(0,"rgba(255,255,255,0.18)");
-    rg.addColorStop(0.45,"rgba(255,255,255,0.07)");
-    rg.addColorStop(1,"rgba(255,255,255,0)");
-    ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
-
-    // subtle aurora band
-    const a = state.monk ? 0.085 : 0.11;
-    const ay = H*0.22 + Math.sin(state.t*0.12)*16;
-    const ag = ctx.createLinearGradient(0, ay, 0, ay+H*0.34);
-    ag.addColorStop(0, `rgba(160,220,255,${a*0.0})`);
-    ag.addColorStop(0.35, `rgba(160,220,255,${a*0.75})`);
-    ag.addColorStop(0.70, `rgba(185,255,220,${a*0.55})`);
-    ag.addColorStop(1, `rgba(160,220,255,${a*0.0})`);
-    ctx.globalCompositeOperation="screen";
-    ctx.fillStyle=ag; ctx.fillRect(0,ay,W,H*0.40);
-    ctx.globalCompositeOperation="source-over";
-
-    const mist=ctx.createLinearGradient(0,hy-85,0,hy+125);
-    mist.addColorStop(0,"rgba(255,255,255,0)");
-    mist.addColorStop(0.42,"rgba(255,255,255,0.12)");
-    mist.addColorStop(1,"rgba(255,255,255,0)");
-    ctx.fillStyle=mist; ctx.fillRect(0,hy-85,W,220);
-  }
-
-  function drawStars(hy){
-    ctx.globalCompositeOperation="screen";
-    for(const s of state.stars){
-      const drift = state.range*0.0008*(0.5+s.z);
-      const tw = 0.65 + 0.35*Math.sin(state.t*0.9 + s.tw);
-      const x = ((s.x + drift) % 1) * W;
-      const y = (s.y * (hy*0.98)) + 6;
-      const a = (0.05 + 0.10*s.z) * tw * (state.warpOn ? 0.55 : 1.0);
-      if(a<0.01) continue;
-      ctx.fillStyle = `rgba(210,240,255,${a})`;
-      ctx.fillRect(x,y,1,1);
-    }
-    ctx.globalCompositeOperation="source-over";
-  }
-
-  function drawCloudVeil(hy){
-    const step = 7;
-    const top = hy - H*0.52;
-    const bot = hy + H*0.06;
-    for(let y=top; y<bot; y+=step){
-      const yn=y/H;
-      const band = clamp((yn - (hy/H - 0.50))*1.35, 0, 1);
-      const b=band*band;
-      for(let x=0; x<W; x+=step){
-        const n = fbm((x + state.range*120)*0.0016, (y + state.t*18)*0.0012);
-        const v = clamp((n-0.52)*2.1, 0, 1);
-        const a = 0.10 * v*v*(3-2*v) * b * (state.monk ? 1.15 : 1.0);
-        if(a<0.004) continue;
-        ctx.fillStyle = `rgba(245,252,255,${a})`;
-        ctx.fillRect(x,y,step,step);
+        // Touch fallback state
+        this.touch = {
+          active: false,
+          x: 0, y: 0, // -1..1
+          strength: 0
+        };
       }
-    }
-  }
 
-  function drawWarpTunnel(){
-    // warp speed visuals, syrup-stable center
-    const centerX = W*0.5 + state.roll*W*0.010;
-    const centerY = H*0.54 + state.pitch*H*0.008;
+      // iOS 13+ needs permission prompt
+      async requestPermission() {
+        const DOE = window.DeviceOrientationEvent;
+        if (!DOE) return { ok: false, reason: "DeviceOrientationEvent not supported" };
 
-    const spdN = clamp(state.spd/420, 0, 1);
-    const warp = state.warpOn ? 1 : 0;
-    const intensity = clamp(0.16 + spdN*0.26 + warp*0.44, 0, 0.92);
-    if(intensity <= 0.001) return;
+        // iOS style permission
+        if (typeof DOE.requestPermission === "function") {
+          const res = await DOE.requestPermission();
+          if (res !== "granted") return { ok: false, reason: "Permission denied" };
+        }
 
-    ctx.save();
-    ctx.globalCompositeOperation="screen";
-
-    const r = Math.min(W,H)*0.55;
-    const g = ctx.createRadialGradient(centerX,centerY, r*0.06, centerX,centerY, r);
-    g.addColorStop(0, `rgba(170,240,210,${0.06*intensity})`);
-    g.addColorStop(0.35, `rgba(150,210,255,${0.05*intensity})`);
-    g.addColorStop(1, `rgba(150,210,255,0)`);
-    ctx.fillStyle=g; ctx.fillRect(centerX-r,centerY-r,r*2,r*2);
-
-    ctx.lineCap="round";
-    for(const st of state.streaks){
-      const a = st.a;
-      const edge = Math.pow(st.r, 0.85);
-      const baseR = edge * Math.min(W,H) * 0.70;
-
-      const L = (18 + 210*intensity) * (0.65 + 0.6*edge) * (state.monk ? 0.92 : 1.0);
-
-      const x1 = centerX + Math.cos(a)*baseR;
-      const y1 = centerY + Math.sin(a)*baseR;
-      const x2 = centerX + Math.cos(a)*(baseR + L);
-      const y2 = centerY + Math.sin(a)*(baseR + L);
-
-      const alpha = (0.012 + 0.080*intensity) * (0.25 + 0.75*edge);
-      const w = (0.6 + st.w) * (0.62 + 0.9*intensity);
-
-      ctx.strokeStyle = `rgba(170,240,210,${alpha})`;
-      ctx.lineWidth = w;
-      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-    }
-
-    ctx.restore();
-  }
-
-  function drawLand(hy){
-    const tilt = state.roll * 0.030;
-    ctx.save();
-    ctx.translate(W/2,hy);
-    ctx.rotate(tilt);
-    ctx.translate(-W/2,-hy);
-
-    const layers=[
-      {dy:26,a:0.22,amp:30,s:0.0036},
-      {dy:42,a:0.28,amp:38,s:0.0032},
-      {dy:60,a:0.34,amp:46,s:0.0028}
-    ];
-    for(let li=0; li<layers.length; li++){
-      const L=layers[li];
-      ctx.fillStyle=`rgba(0,0,0,${0.56+li*0.08})`;
-      ctx.beginPath();
-      const yBase=hy+L.dy;
-      ctx.moveTo(-40,yBase);
-      const steps=70;
-      for(let i=0;i<=steps;i++){
-        const x=(i/steps)*(W+80)-40;
-        const n=fbm((x+state.range*180*(1+li*0.18))*L.s, 8.0+li*2.7);
-        const yy=yBase+(n-0.5)*L.amp;
-        ctx.lineTo(x,yy);
+        this.hasPermission = true;
+        return { ok: true };
       }
-      ctx.lineTo(W+40,H+60);
-      ctx.lineTo(-40,H+60);
-      ctx.closePath();
-      ctx.globalAlpha=L.a; ctx.fill(); ctx.globalAlpha=1;
+
+      startGyro() {
+        if (this.enabled) return;
+        this.enabled = true;
+        this.mode = "gyro";
+        window.addEventListener("deviceorientation", this._onOrientation, { passive: true });
+        window.addEventListener("devicemotion", this._onMotion, { passive: true }); // optional, for future use
+      }
+
+      stopGyro() {
+        this.enabled = false;
+        window.removeEventListener("deviceorientation", this._onOrientation);
+        window.removeEventListener("devicemotion", this._onMotion);
+      }
+
+      calibrate() {
+        // Use current raw angles as neutral center
+        this._baseline.beta = this._raw.beta;
+        this._baseline.gamma = this._raw.gamma;
+        this._baseline.alpha = this._raw.alpha;
+      }
+
+      setTouch(x, y, active) {
+        this.mode = "touch";
+        this.touch.active = !!active;
+        this.touch.x = x;
+        this.touch.y = y;
+        this.touch.strength = Math.min(1, Math.hypot(x, y));
+      }
+
+      update(dt) {
+        // Convert device angles to normalized controls
+        // deviceorientation: beta (front/back), gamma (left/right), alpha (compass-ish)
+        let pitchN = 0, rollN = 0, yawN = 0;
+
+        if (this.mode === "gyro" && this.enabled) {
+          const beta = (this._raw.beta - this._baseline.beta);   // degrees
+          const gamma = (this._raw.gamma - this._baseline.gamma);// degrees
+          const alpha = (this._raw.alpha - this._baseline.alpha);// degrees (not always stable)
+
+          // Map degrees -> normalized ~[-1..1] (tune denominators for "syrupy warp")
+          pitchN = beta / 25;   // 25° tilt = full-ish pitch
+          rollN  = gamma / 25;  // 25° tilt = full-ish roll
+          yawN   = alpha / 90;  // very soft yaw
+
+          // Apply gains
+          pitchN *= this.opts.gainPitch;
+          rollN  *= this.opts.gainRoll;
+          yawN   *= this.opts.gainYaw;
+
+        } else if (this.mode === "touch") {
+          // Touch: y up = pitch down (invert for airplane feel)
+          pitchN = -this.touch.y * 1.0;
+          rollN  =  this.touch.x * 1.0;
+          yawN   =  this.touch.x * 0.35; // optional
+        }
+
+        // Deadzone
+        pitchN = this._applyDeadzone(pitchN, this.opts.deadzone);
+        rollN  = this._applyDeadzone(rollN,  this.opts.deadzone);
+        yawN   = this._applyDeadzone(yawN,   this.opts.deadzone);
+
+        // Clamp
+        pitchN = this._clamp(pitchN, -this.opts.clamp, this.opts.clamp);
+        rollN  = this._clamp(rollN,  -this.opts.clamp, this.opts.clamp);
+        yawN   = this._clamp(yawN,   -this.opts.clamp, this.opts.clamp);
+
+        // Smooth (EMA)
+        const a = 1 - Math.exp(-dt / Math.max(1e-4, this.opts.smoothing));
+        this._smoothed.pitch += (pitchN - this._smoothed.pitch) * a;
+        this._smoothed.roll  += (rollN  - this._smoothed.roll)  * a;
+        this._smoothed.yaw   += (yawN   - this._smoothed.yaw)   * a;
+
+        // Output in a "radians-ish" small range (so it plugs into camera/ship rotations easily)
+        this.state.pitch = this._smoothed.pitch * 0.65;
+        this.state.roll  = this._smoothed.roll  * 0.85;
+        this.state.yaw   = this._smoothed.yaw   * 0.55;
+      }
+
+      _onOrientation(e) {
+        // Some browsers give nulls until permission is granted
+        if (e.beta == null || e.gamma == null) return;
+        this._raw.beta = e.beta;
+        this._raw.gamma = e.gamma;
+        this._raw.alpha = e.alpha ?? 0;
+      }
+
+      _onMotion(_e) { /* reserved: could use rotationRate for “true gyro” feel later */ }
+
+      _applyDeadzone(v, dz) {
+        const av = Math.abs(v);
+        if (av < dz) return 0;
+        // Rescale so it ramps smoothly after deadzone
+        const s = (av - dz) / (1 - dz);
+        return Math.sign(v) * s;
+      }
+
+      _clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
     }
-    ctx.restore();
 
-    // cockpit shadow curve
-    const g=ctx.createLinearGradient(0,hy+40,0,H);
-    g.addColorStop(0,"rgba(0,0,0,0.18)");
-    g.addColorStop(0.40,"rgba(0,0,0,0.58)");
-    g.addColorStop(1,"rgba(0,0,0,0.88)");
-    ctx.fillStyle=g;
-    ctx.beginPath();
-    const curve=H*0.12;
-    ctx.moveTo(0,H);
-    ctx.quadraticCurveTo(W*0.5, hy+curve, W, H);
-    ctx.closePath();
-    ctx.fill();
-  }
+    // -----------------------------
+    // Demo loop (replace with your game loop)
+    // -----------------------------
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d");
+    const readout = document.getElementById("readout");
+    const modeEl = document.getElementById("mode");
+    const dot = document.getElementById("statusDot");
 
-  function drawGates(){
-    const centerX=W*0.5, centerY=H*0.54;
+    const btnEnable = document.getElementById("btnEnable");
+    const btnCal = document.getElementById("btnCalibrate");
+    const btnTouch = document.getElementById("btnTouch");
 
-    if(state.hitGlow>0.001){
-      ctx.globalCompositeOperation="screen";
-      const a=state.hitGlow*0.18;
-      const g=ctx.createRadialGradient(centerX,centerY,0,centerX,centerY,Math.min(W,H)*0.46);
-      g.addColorStop(0,`rgba(170,240,210,${a})`);
-      g.addColorStop(0.55,`rgba(150,210,255,${a*0.55})`);
-      g.addColorStop(1,`rgba(150,210,255,0)`);
-      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-      ctx.globalCompositeOperation="source-over";
+    const touchPad = document.getElementById("touchPad");
+    const touchKnob = document.getElementById("touchKnob");
+
+    function resize() {
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      canvas.width = Math.floor(innerWidth * dpr);
+      canvas.height = Math.floor(innerHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    addEventListener("resize", resize, { passive: true });
+    resize();
+
+    const controls = new EmberwingGyroControls({
+      smoothing: 0.09,
+      deadzone: 0.04,
+      gainPitch: 1.2,
+      gainRoll: 1.35,
+      gainYaw: 0.45,
+      clamp: 0.9
+    });
+
+    function setStatus(on) {
+      dot.style.background = on ? "#3cff7a" : "#ff4d4d";
+      dot.style.boxShadow = on ? "0 0 16px rgba(60,255,122,0.55)" : "0 0 16px rgba(255,77,77,0.55)";
     }
 
-    for(const gt of state.gates){
-      if(!gt.alive) continue;
+    btnEnable.addEventListener("click", async () => {
+      try {
+        const res = await controls.requestPermission();
+        if (!res.ok) {
+          controls.mode = "touch";
+          modeEl.textContent = `mode: touch (gyro unavailable: ${res.reason})`;
+          touchPad.style.display = "block";
+          setStatus(false);
+          return;
+        }
+        controls.startGyro();
+        controls.calibrate();
+        touchPad.style.display = "none";
+        setStatus(true);
+        modeEl.textContent = "mode: gyro (tilt to fly) — tap Calibrate if drift";
+      } catch (err) {
+        controls.mode = "touch";
+        touchPad.style.display = "block";
+        setStatus(false);
+        modeEl.textContent = `mode: touch (error: ${String(err)})`;
+      }
+    });
 
-      const z=gt.z;
-      const px=lerp(centerX, gt.x*W, 1/(z));
-      const py=lerp(centerY, gt.y*H, 1/(z));
-      const pr=(gt.r*Math.min(W,H))*(1/(z));
-      if(pr<4) continue;
+    btnCal.addEventListener("click", () => {
+      controls.calibrate();
+      modeEl.textContent = controls.mode === "gyro"
+        ? "mode: gyro (re-centered)"
+        : "mode: touch";
+    });
 
-      const alpha=clamp((1.35-z),0,1);
-      const bite = state.monk ? 0.66 : 0.88;
+    btnTouch.addEventListener("click", () => {
+      controls.stopGyro();
+      controls.mode = "touch";
+      touchPad.style.display = "block";
+      setStatus(false);
+      modeEl.textContent = "mode: touch (drag the pad)";
+    });
 
+    // Touchpad handling
+    const padState = { pointerId: null, cx: 0, cy: 0, radius: 0 };
+
+    function padMetrics() {
+      const r = touchPad.getBoundingClientRect();
+      padState.cx = r.left + r.width / 2;
+      padState.cy = r.top + r.height / 2;
+      padState.radius = Math.min(r.width, r.height) * 0.34;
+    }
+    addEventListener("resize", padMetrics, { passive: true });
+    padMetrics();
+
+    function setKnob(nx, ny) {
+      const px = nx * padState.radius;
+      const py = ny * padState.radius;
+      touchKnob.style.left = `calc(50% + ${px}px)`;
+      touchKnob.style.top  = `calc(50% + ${py}px)`;
+    }
+
+    touchPad.addEventListener("pointerdown", (e) => {
+      touchPad.setPointerCapture(e.pointerId);
+      padState.pointerId = e.pointerId;
+      controls.setTouch(0, 0, true);
+      padMetrics();
+    });
+
+    touchPad.addEventListener("pointermove", (e) => {
+      if (padState.pointerId !== e.pointerId) return;
+      const dx = (e.clientX - padState.cx);
+      const dy = (e.clientY - padState.cy);
+      const r = padState.radius;
+      let nx = dx / r;
+      let ny = dy / r;
+      const mag = Math.hypot(nx, ny);
+      if (mag > 1) { nx /= mag; ny /= mag; }
+      controls.setTouch(nx, ny, true);
+      setKnob(nx, ny);
+    });
+
+    function endTouch(e) {
+      if (padState.pointerId !== e.pointerId) return;
+      padState.pointerId = null;
+      controls.setTouch(0, 0, false);
+      setKnob(0, 0);
+    }
+    touchPad.addEventListener("pointerup", endTouch);
+    touchPad.addEventListener("pointercancel", endTouch);
+
+    // Minimal “flight” visualization
+    let tPrev = performance.now();
+    function loop(tNow) {
+      const dt = Math.min(0.05, (tNow - tPrev) / 1000);
+      tPrev = tNow;
+
+      controls.update(dt);
+
+      // Use these values inside Emberwing:
+      // controls.state.pitch / roll / yaw
+      const { pitch, roll, yaw } = controls.state;
+
+      readout.textContent =
+        `pitch: ${pitch.toFixed(3)}  roll: ${roll.toFixed(3)}  yaw: ${yaw.toFixed(3)}`;
+
+      // Draw calm “horizon” that banks & pitches
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
       ctx.save();
-      ctx.globalCompositeOperation="screen";
+      ctx.translate(innerWidth/2, innerHeight/2);
+      ctx.rotate(-roll);
 
-      ctx.lineWidth=Math.max(2, pr*0.030);
-      ctx.strokeStyle=`rgba(150,210,255,${alpha*0.40*bite})`;
-      ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2); ctx.stroke();
+      const horizonY = pitch * 220;
+      ctx.globalAlpha = 0.9;
 
-      ctx.lineWidth=Math.max(1.5, pr*0.018);
-      ctx.strokeStyle=`rgba(170,240,210,${alpha*0.36*bite})`;
-      ctx.beginPath(); ctx.arc(px,py,pr*0.78,0,Math.PI*2); ctx.stroke();
+      // Sky
+      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      ctx.fillRect(-innerWidth, -innerHeight, innerWidth*2, innerHeight*2);
 
-      const haze=ctx.createRadialGradient(px,py,pr*0.2,px,py,pr*1.35);
-      haze.addColorStop(0,`rgba(255,226,160,${alpha*0.07*bite})`);
-      haze.addColorStop(0.55,`rgba(170,240,210,${alpha*0.06*bite})`);
-      haze.addColorStop(1,`rgba(150,210,255,0)`);
-      ctx.fillStyle=haze;
-      ctx.beginPath(); ctx.arc(px,py,pr*1.35,0,Math.PI*2); ctx.fill();
+      // Horizon line
+      ctx.strokeStyle = "rgba(255,255,255,0.55)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-innerWidth, horizonY);
+      ctx.lineTo(innerWidth, horizonY);
+      ctx.stroke();
 
-      // chevrons (directionality)
-      ctx.globalAlpha = alpha*0.20*bite;
-      ctx.strokeStyle="rgba(255,226,160,0.8)";
-      ctx.lineWidth=1;
-      for(let i=0;i<6;i++){
-        const ang = (i/6)*Math.PI*2;
-        const r0 = pr*0.86, r1=pr*1.05;
-        ctx.beginPath();
-        ctx.moveTo(px+Math.cos(ang)*r0, py+Math.sin(ang)*r0);
-        ctx.lineTo(px+Math.cos(ang)*r1, py+Math.sin(ang)*r1);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
+      // Center reticle
+      ctx.globalAlpha = 0.8;
+      ctx.strokeStyle = "rgba(255,255,255,0.75)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 18, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-40, 0); ctx.lineTo(-18, 0);
+      ctx.moveTo(18, 0);  ctx.lineTo(40, 0);
+      ctx.stroke();
+
+      // Subtle yaw indicator
+      ctx.globalAlpha = 0.65;
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.fillRect(-2, -90, 4, 28);
+      ctx.translate(yaw * 90, 0);
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.fillRect(-2, -90, 4, 28);
 
       ctx.restore();
 
-      if(gt.missed){
-        ctx.globalAlpha=0.24;
-        ctx.strokeStyle="rgba(255,120,120,0.22)";
-        ctx.lineWidth=1;
-        ctx.beginPath(); ctx.arc(px,py,pr*1.08,0,Math.PI*2); ctx.stroke();
-        ctx.globalAlpha=1;
-      }
+      requestAnimationFrame(loop);
     }
-  }
-
-  // ---------- UI Update (VV + lead indicator) ----------
-  function updateUI(leadVX=0, leadVY=0){
-    ui.hdg.textContent = fmt3(((state.hdg%360)+360)%360);
-    ui.alt.textContent = fmt5(state.alt);
-    ui.spd.textContent = fmt3(state.spd);
-    ui.warp.textContent = state.warpOn ? "ON" : "OFF";
-    ui.pitch.textContent = (state.pitch*6).toFixed(1);
-    ui.roll.textContent  = (state.roll*12).toFixed(1);
-
-    ui.gates.textContent = state.gatesHit;
-    ui.miss.textContent  = state.miss;
-    ui.score.textContent = String(state.score).padStart(4,"0");
-    ui.range.textContent = state.range.toFixed(1)+"km";
-    ui.combo.textContent = "x"+state.combo;
-
-    const clean = state.wattage>0.62;
-    ui.wFill.style.width = (state.wattage*100).toFixed(0)+"%";
-    ui.wState.textContent = clean ? "CLEAN" : "THIN";
-    ui.signal.textContent = clean ? "CLEAR" : "NOISY";
-    ui.lock.textContent = state.lockStrength>0.35 ? "GATE" : "FORWARD";
-
-    // VV moves with attitude (within reticle)
-    const vx = (state.roll*0.030) * 280;
-    const vy = (state.pitch*0.024) * 240;
-    ui.vv.style.transform = `translate(calc(-50% + ${vx}px), calc(-50% + ${vy}px))`;
-
-    // lead indicator: slight predictive cue based on rates (feels “pilot”)
-    ui.lead.style.transform = `translate(calc(-50% + ${vx + leadVX}px), calc(-50% + ${vy + leadVY}px))`;
-  }
-
-  // ---------- SIM ----------
-  function step(dt){
-    state.t += dt;
-
-    // mode params
-    const monk = state.monk;
-    const fighter = !monk;
-
-    // warp
-    state.warpOn = keys.has("Space");
-
-    // INPUT: mouse aim primary (pointer lock), keyboard fallback
-    let pitchIn=0, rollIn=0;
-
-    const locked = (document.pointerLockElement === ui.stage);
-    if(state.mouseAim && locked){
-      const sensitivity = fighter ? 0.0022 : 0.0014;
-
-      rollIn  = clamp(state.mx * sensitivity, -1, 1);
-      pitchIn = clamp(-state.my * sensitivity, -1, 1); // pull back = pitch up
-
-      // syrup decay (key to “fast but slow” feel)
-      state.mx *= monk ? 0.84 : 0.80;
-      state.my *= monk ? 0.84 : 0.80;
-    }else{
-      // fallback (rare) — aviation feel
-      pitchIn = (keys.has("ArrowUp") ? 1 : 0) + (keys.has("ArrowDown") ? -1 : 0);
-      rollIn  = (keys.has("ArrowRight") ? 1 : 0) + (keys.has("ArrowLeft") ? -1 : 0);
-      // show hint if mouse aim is on but not locked
-      if(state.mouseAim) showHint(true);
-    }
-
-    // Command shaping
-    const kCmd = monk ? 10.0 : 18.0;
-    state.pitchCmd = easeTo(state.pitchCmd, pitchIn, kCmd, dt);
-    state.rollCmd  = easeTo(state.rollCmd,  rollIn,  kCmd, dt);
-
-    // Syrup dynamics: spring-damper
-    const k = monk ? 8.5 : 16.0;
-    const d = monk ? 6.6 : 8.8;
-
-    const pitchErr = state.pitchCmd - state.pitch;
-    const rollErr  = state.rollCmd  - state.roll;
-
-    state.pitchRate += (pitchErr*k - state.pitchRate*d) * dt;
-    state.rollRate  += (rollErr*k  - state.rollRate*d)  * dt;
-
-    const rateMax = monk ? 1.7 : 3.0;
-    state.pitchRate = clamp(state.pitchRate, -rateMax, rateMax);
-    state.rollRate  = clamp(state.rollRate,  -rateMax, rateMax);
-
-    state.pitch += state.pitchRate * dt;
-    state.roll  += state.rollRate  * dt;
-
-    state.pitch = clamp(state.pitch, -1, 1);
-    state.roll  = clamp(state.roll,  -1, 1);
-
-    // SPEED: monk = stable glide, warp = tunnel
-    const base = monk ? 210 : 260;
-    const warpAdd = state.warpOn ? (monk ? 170 : 210) : 0;
-    const targetSpd = base + warpAdd;
-    state.spd = Math.round(state.spd + (targetSpd - state.spd) * (monk ? 0.07 : 0.10));
-
-    // NAV
-    state.hdg += state.roll * (monk ? 0.28 : 0.55);
-    state.alt = Math.round(state.alt + (state.pitch) * (monk ? 5 : 10));
-
-    const forward = (state.spd/260) * (state.warpOn ? 1.22 : 1.0);
-    state.range += forward * dt * 0.090;
-    state.score += Math.floor(forward * dt * (monk ? 0.60 : 1.00));
-    state.hitGlow = Math.max(0, state.hitGlow - dt*1.8);
-
-    // “G-force blackout” (subtle): driven by rotational rate + warp
-    const gLoad = (Math.abs(state.pitchRate) + Math.abs(state.rollRate)) * (state.warpOn ? 1.2 : 1.0);
-    const targetBlack = clamp((gLoad - (monk ? 1.35 : 1.75)) * 0.22, 0, 0.55);
-    state.blackout = easeTo(state.blackout, targetBlack, 6.5, dt);
-
-    // Wattage
-    let w = state.wattage;
-    w += (monk ? 0.0009 : -0.00035) * (dt*60);
-    if(state.warpOn) w -= (monk ? 0.0011 : 0.0015) * (dt*60);
-    if(!monk && (Math.abs(pitchIn)+Math.abs(rollIn))>0) w -= 0.0006*(dt*60);
-    state.wattage = clamp(w, 0.18, 0.96);
-
-    // Gates spawn
-    state.gateSpawn -= dt;
-    const spawnEvery = monk ? 1.20 : 0.95;
-    if(state.gateSpawn <= 0){
-      spawnGate();
-      state.gateSpawn = spawnEvery;
-    }
-
-    // Gate lock
-    const info = nearestGateInfo();
-    const g = info.g;
-
-    let targetLock = 0;
-    if(g){
-      const tol = g.r * (monk ? 1.18 : 0.95);
-      targetLock = clamp(1 - (info.dist / tol), 0, 1);
-      targetLock *= clamp((0.92 - g.z)/0.58, 0, 1);
-    }
-    state.lockStrength = easeTo(state.lockStrength, targetLock, 12.0, dt);
-
-    if(state.lockStrength > 0.22) document.body.classList.add("lock-on");
-    else document.body.classList.remove("lock-on");
-
-    // micro-assist
-    if(g && state.lockStrength > 0.18){
-      const cx = 0.50 + state.roll*0.030;
-      const cy = 0.54 + state.pitch*0.024;
-      const dx = g.x - cx;
-      const dy = g.y - cy;
-
-      const assist = (monk ? 0.55 : 0.18) * state.lockStrength;
-      state.roll  = clamp(state.roll  + (dx * 0.50) * assist, -1, 1);
-      state.pitch = clamp(state.pitch + (dy * 0.42) * assist, -1, 1);
-
-      if(state.lockStrength > 0.62 && !state._lockWhispered){
-        state._lockWhispered = true;
-        whisper(monk ? "Lock: soft center." : "Lock: hold the line.", 1000);
-      }
-      if(state.lockStrength < 0.26) state._lockWhispered = false;
-    } else {
-      state._lockWhispered = false;
-    }
-
-    // Gates hit/miss
-    const aimX = 0.50 + state.roll*0.030;
-    const aimY = 0.54 + state.pitch*0.024;
-
-    for(const gt of state.gates){
-      if(!gt.alive) continue;
-
-      const zSpeed = (monk ? 0.62 : 0.95) * forward;
-      gt.z -= dt * zSpeed;
-
-      if(!gt.missed && gt.z < 0.50){
-        gt.missed = true;
-        state.miss += 1;
-        state.combo = 1;
-        whisper(monk ? "Miss. return to center." : "Miss. reset. fly true.", 1100);
-      }
-      if(gt.z < 0.18) gt.alive = false;
-
-      if(gt.alive && !gt.hit && gt.z < 0.64 && gt.z > 0.30){
-        const dist = Math.hypot(gt.x-aimX, gt.y-aimY);
-        const tol = gt.r * (monk ? 0.94 : 0.78);
-        if(dist < tol){
-          gt.hit = true; gt.alive = false;
-          state.gatesHit += 1;
-          state.combo = Math.min(9, state.combo + 1);
-          const bonus = Math.floor((monk ? 45 : 70) * state.combo);
-          state.score += bonus;
-          state.hitGlow = Math.min(1, state.hitGlow + 0.95);
-          whisper(`Gate clean. +${bonus} (x${state.combo}).`, 1000);
-        }
-      }
-    }
-
-    if(state.gates.length > 34) state.gates = state.gates.filter(g=>g.alive);
-
-    // AUDIO update (lock tone + warp hush)
-    if(audio && audio.enabled){
-      const t = audio.ctxA.currentTime;
-
-      // hush increases with speed/warp
-      const spdN = clamp(state.spd/420, 0, 1);
-      const hushTarget = clamp(0.02 + spdN*0.05 + (state.warpOn?0.10:0), 0, 0.20);
-      audio.hushGain.gain.setTargetAtTime(hushTarget, t, 0.08);
-      audio.hush.frequency.setTargetAtTime(280 + spdN*520 + (state.warpOn?320:0), t, 0.10);
-
-      // lock tone scales with lockStrength
-      const toneTarget = clamp((state.lockStrength - 0.20) * 0.26, 0, 0.10);
-      audio.toneGain.gain.setTargetAtTime(toneTarget, t, 0.06);
-      audio.osc.frequency.setTargetAtTime(560 + state.lockStrength*220, t, 0.08);
-    }
-
-    // Lead indicator based on rates (predictive)
-    const leadVX = clamp(state.rollRate * 42, -46, 46);
-    const leadVY = clamp(state.pitchRate * -38, -44, 44);
-
-    updateUI(leadVX, leadVY);
-  }
-
-  // ---------- LOOP ----------
-  let last = performance.now();
-  function loop(now){
-    const dt = Math.min(0.05, (now-last)/1000);
-    last = now;
-
-    step(dt);
-
-    const hy = H*(0.62 - state.pitch*0.018);
-    const bob = (Math.sin(state.t*0.45)*4 + Math.sin(state.t*0.21)*3) * (state.monk ? 0.90 : 0.65);
-
-    ctx.clearRect(0,0,W,H);
-    ctx.save();
-    ctx.translate(0, bob);
-
-    drawSky(hy);
-    drawStars(hy);
-    drawCloudVeil(hy);
-    drawWarpTunnel();
-    drawLand(hy);
-    drawGates();
-
-    // blackout overlay (subtle)
-    if(state.blackout > 0.001){
-      ctx.globalAlpha = state.blackout;
-      ctx.fillStyle = "rgba(0,0,0,1)";
-      ctx.fillRect(0,0,W,H);
-      ctx.globalAlpha = 1;
-    }
-
-    ctx.restore();
-
     requestAnimationFrame(loop);
-  }
 
-  whisper("Monk mode. Click to lock mouse. Slow hands, clean lines.", 2200);
-  requestAnimationFrame(loop);
-})();
-</script>
+    // Default: show touch pad on desktop
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) {
+      controls.mode = "touch";
+      touchPad.style.display = "block";
+      modeEl.textContent = "mode: touch (desktop)";
+      setStatus(false);
+    } else {
+      setStatus(false);
+      modeEl.textContent = "mode: waiting (tap Enable Gyro)";
+    }
+  </script>
 </body>
 </html>
