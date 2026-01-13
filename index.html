@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>EMBERWING // HAVEN — Fighter Pilot</title>
+  <title>EMBERWING // HAVEN — Monk Mode</title>
   <style>
     :root{
       --ink: rgba(236,246,255,.92);
@@ -29,7 +29,7 @@
     #stage{position:fixed; inset:0}
     canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
 
-    /* soft cinematic veil */
+    /* veil */
     #veil{
       position:absolute; inset:0; pointer-events:none;
       background:
@@ -39,7 +39,7 @@
       mix-blend-mode:multiply;
     }
 
-    /* UI */
+    /* top UI */
     .topbar{
       position:absolute; left:16px; right:16px; top:14px;
       display:flex; justify-content:space-between; gap:14px;
@@ -62,7 +62,7 @@
       font-size:11px; letter-spacing:.14em; text-transform:uppercase;
     }
     .mission{
-      max-width:680px;
+      max-width:740px;
       padding:10px 12px;
       border-radius:14px;
       border:1px solid var(--line2);
@@ -103,7 +103,7 @@
 
     .controls{
       position:absolute; left:16px; bottom:16px;
-      display:flex; gap:8px; flex-wrap:wrap; max-width:900px;
+      display:flex; gap:8px; flex-wrap:wrap; max-width:980px;
       pointer-events:none; opacity:.74;
       transition: opacity .18s ease, transform .18s ease;
     }
@@ -126,7 +126,7 @@
     }
 
     .wattage{
-      position:absolute; right:16px; bottom:16px; width:390px;
+      position:absolute; right:16px; bottom:16px; width:410px;
       border-radius:16px;
       border:1px solid var(--line2);
       background:linear-gradient(to bottom, rgba(10,14,18,.22), rgba(10,14,18,.10));
@@ -149,27 +149,27 @@
     }
     .wGrid{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; margin-top:10px; font-size:12px}
 
-    /* Compelling center: velocity vector + flight path brackets (not the boring dot-cluster) */
+    /* CENTER: compelling HUD */
     .reticle{
       position:absolute; left:50%; top:54%;
-      width:560px; height:340px;
+      width:580px; height:360px;
       transform:translate(-50%,-50%);
       pointer-events:none;
-      opacity:.26;
+      opacity:.22;
       filter: drop-shadow(0 14px 28px rgba(0,0,0,.22));
       transition: opacity .15s ease, transform .15s ease, filter .15s ease;
     }
     .reticle .h{
       position:absolute; left:0; right:0; top:50%;
       height:1px;
-      background:linear-gradient(to right, rgba(236,246,255,0), rgba(236,246,255,.18), rgba(236,246,255,0));
+      background:linear-gradient(to right, rgba(236,246,255,0), rgba(236,246,255,.16), rgba(236,246,255,0));
     }
     .reticle .ring{
       position:absolute; left:50%; top:50%;
-      width:86px; height:86px;
+      width:92px; height:92px;
       transform:translate(-50%,-50%);
       border-radius:999px;
-      border:1px solid rgba(236,246,255,.20);
+      border:1px solid rgba(236,246,255,.18);
       box-shadow:0 0 0 1px rgba(236,246,255,.06) inset;
     }
     .reticle .pip{
@@ -177,41 +177,50 @@
       width:6px; height:6px;
       transform:translate(-50%,-50%);
       border-radius:99px;
-      background:rgba(236,246,255,.22);
-      box-shadow:0 0 0 14px rgba(236,246,255,.03);
+      background:rgba(236,246,255,.20);
+      box-shadow:0 0 0 16px rgba(236,246,255,.03);
     }
     .reticle .br{
       position:absolute; left:50%; top:50%;
-      width:180px; height:120px;
+      width:190px; height:128px;
       transform:translate(-50%,-50%);
       opacity:.85;
     }
     .br:before,.br:after{
       content:""; position:absolute; top:0; bottom:0; width:18px;
-      border-top:1px solid rgba(236,246,255,.18);
-      border-bottom:1px solid rgba(236,246,255,.18);
+      border-top:1px solid rgba(236,246,255,.16);
+      border-bottom:1px solid rgba(236,246,255,.16);
     }
-    .br:before{left:0; border-left:1px solid rgba(236,246,255,.18)}
-    .br:after{right:0; border-right:1px solid rgba(236,246,255,.18)}
+    .br:before{left:0; border-left:1px solid rgba(236,246,255,.16)}
+    .br:after{right:0; border-right:1px solid rgba(236,246,255,.16)}
     .reticle .vv{
       position:absolute; left:50%; top:50%;
       width:16px; height:16px;
       transform:translate(-50%,-50%);
       border-radius:99px;
-      border:1px solid rgba(170,240,210,.22);
+      border:1px solid rgba(170,240,210,.20);
       box-shadow:0 0 26px rgba(170,240,210,.08);
     }
+    .reticle .lead{
+      position:absolute; left:50%; top:50%;
+      width:10px; height:10px;
+      transform:translate(-50%,-50%);
+      border-radius:99px;
+      border:1px solid rgba(255,226,160,.22);
+      box-shadow:0 0 18px rgba(255,226,160,.08);
+      opacity:.85;
+    }
 
-    /* lock + fighter bite */
+    /* lock */
     .lock-on .reticle{
-      opacity:.40;
+      opacity:.34;
       transform:translate(-50%,-50%) scale(1.02);
       filter: drop-shadow(0 18px 34px rgba(0,0,0,.28));
     }
-    .lock-on .reticle .ring{border-color: rgba(170,240,210,.34)}
-    .lock-on .reticle .vv{border-color: rgba(255,226,160,.28)}
+    .lock-on .reticle .ring{border-color: rgba(170,240,210,.28)}
+    .lock-on .reticle .vv{border-color: rgba(255,226,160,.22)}
     .lock-on .reticle .h{
-      background:linear-gradient(to right, rgba(236,246,255,0), rgba(170,240,210,.22), rgba(236,246,255,0));
+      background:linear-gradient(to right, rgba(236,246,255,0), rgba(170,240,210,.18), rgba(236,246,255,0));
     }
 
     .hudHidden .panel,
@@ -220,7 +229,7 @@
       opacity:0; transform:translateY(6px);
     }
 
-    /* subtle “warp syrup” breathing of HUD in monk */
+    /* monk breath */
     .monk-breathe .panel,
     .monk-breathe .wattage{
       animation: breathe 1.35s ease-in-out infinite;
@@ -231,16 +240,37 @@
       100%{filter:brightness(1); transform:translateY(0)}
     }
 
+    /* small "click to lock" hint */
+    #hint{
+      position:absolute; left:50%; top:72%;
+      transform:translate(-50%,-50%);
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--line2);
+      background:linear-gradient(to bottom, rgba(10,14,18,.22), rgba(10,14,18,.10));
+      color:rgba(236,246,255,.68);
+      letter-spacing:.06em;
+      font-size:12px;
+      backdrop-filter: blur(10px);
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .24s ease, transform .24s ease;
+    }
+    #hint.show{opacity:1; transform:translate(-50%,-50%) translateY(-2px)}
+    #hint b{color:rgba(236,246,255,.88)}
+    #hint .k{opacity:.7}
+
     @media (max-width: 980px){
       .hudWrap{display:none}
       .mission{max-width:84vw}
-      .wattage{width:min(410px, calc(100vw - 32px))}
-      .reticle{opacity:.18}
+      .wattage{width:min(420px, calc(100vw - 32px))}
+      .reticle{opacity:.16}
+      #hint{top:78%}
     }
   </style>
 </head>
 <body>
-<div id="stage">
+<div id="stage" tabindex="0" aria-label="Emberwing stage (click to lock mouse)">
   <canvas id="scene"></canvas>
   <div id="veil"></div>
 
@@ -249,10 +279,10 @@
       <div class="brandRow">
         <div class="dot"></div>
         <div class="title">EMBERWING // HAVEN</div>
-        <div class="pill" id="pillMode">FIGHTER</div>
+        <div class="pill" id="pillMode">MONK</div>
       </div>
       <div class="mission" id="missionBox">
-        <b>Mission:</b> warp-speed glide, syrup control, perfect lines. <span class="jp">ゆっくりと。今ここ。</span>
+        <b>Mission:</b> warp-speed glide, syrup control, steady hands. <span class="jp">ゆっくりと。今ここ。</span>
         <div class="sub" id="missionSub"></div>
       </div>
     </div>
@@ -261,7 +291,7 @@
       <div class="panel">
         <div class="panelHeader">
           <div class="label">NAV</div>
-          <div class="mode" id="modeTag">FIGHTER</div>
+          <div class="mode" id="modeTag">FLOW</div>
         </div>
         <div class="grid">
           <div class="k">HDG</div><div class="v" id="hdg">000</div>
@@ -279,7 +309,7 @@
       <div class="panel">
         <div class="panelHeader">
           <div class="label">RUN</div>
-          <div class="mode" id="stabilityTag">ACCURATE</div>
+          <div class="mode" id="stabilityTag">STEADY</div>
         </div>
         <div class="grid">
           <div class="k">GATES</div><div class="v" id="gates">0</div>
@@ -302,14 +332,16 @@
     <div class="pip"></div>
     <div class="br"></div>
     <div class="vv" id="vv"></div>
+    <div class="lead" id="lead"></div>
   </div>
 
   <div class="controls">
-    <div class="chip"><span class="key">↑</span> pull (pitch up)</div>
-    <div class="chip"><span class="key">↓</span> push (pitch down)</div>
-    <div class="chip"><span class="key">←/→</span> roll</div>
+    <div class="chip"><span class="key">click</span> lock mouse</div>
+    <div class="chip"><span class="key">mouse</span> aim (pitch/roll)</div>
     <div class="chip"><span class="key">space</span> warp</div>
-    <div class="chip"><span class="key">f</span> fighter/monk</div>
+    <div class="chip"><span class="key">f</span> monk/fighter</div>
+    <div class="chip"><span class="key">m</span> mouse aim</div>
+    <div class="chip"><span class="key">esc</span> unlock</div>
     <div class="chip"><span class="key">enter</span> hud</div>
   </div>
 
@@ -321,35 +353,40 @@
     <div class="bar"><div class="fill" id="wFill"></div></div>
     <div class="wGrid">
       <div class="k">SIGNAL</div><div class="v" id="signal">CLEAR</div>
-      <div class="k">STATE</div><div class="v" id="stateTag">LOCKED</div>
+      <div class="k">STATE</div><div class="v" id="stateTag">GLIDE</div>
     </div>
   </div>
+
+  <div id="hint"><b>Click</b> to lock mouse. <span class="k">Esc</span> to release.</div>
 </div>
 
 <script>
 (() => {
-  const c = document.getElementById("scene");
-  const ctx = c.getContext("2d", { alpha:false });
+  // ---------- Canvas ----------
+  const canvas = document.getElementById("scene");
+  const ctx = canvas.getContext("2d", { alpha:false });
 
   const DPR = () => Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   let W=0,H=0,dpr=1;
+
   function resize(){
     dpr = DPR();
     W = innerWidth|0; H = innerHeight|0;
-    c.width = (W*dpr)|0; c.height = (H*dpr)|0;
+    canvas.width = (W*dpr)|0; canvas.height=(H*dpr)|0;
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.imageSmoothingEnabled = true;
   }
   addEventListener("resize", resize, {passive:true});
   resize();
 
+  // ---------- Utils ----------
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const lerp=(a,b,t)=>a+(b-a)*t;
   const smooth=t=>t*t*(3-2*t);
   const rnd=(a=1)=>Math.random()*a;
   const easeTo=(v,target,k,dt)=>v + (target-v)*(1-Math.exp(-k*dt));
 
-  // hash noise
+  // hash noise / fbm
   function hash(x,y){
     let n = x*374761393 + y*668265263;
     n = (n^(n>>>13)) * 1274126177;
@@ -369,7 +406,7 @@
     return v;
   }
 
-  // UI
+  // ---------- UI ----------
   const $ = (id)=>document.getElementById(id);
   const ui={
     pillMode:$("pillMode"), modeTag:$("modeTag"), stabilityTag:$("stabilityTag"),
@@ -378,50 +415,108 @@
     gates:$("gates"), miss:$("miss"), score:$("score"), range:$("range"), combo:$("combo"), lock:$("lock"),
     wFill:$("wFill"), wState:$("wState"), signal:$("signal"), stateTag:$("stateTag"),
     missionSub:$("missionSub"), missionBox:$("missionBox"),
-    vv:$("vv"),
+    vv:$("vv"), lead:$("lead"),
+    hint:$("hint"),
+    stage: document.getElementById("stage"),
   };
   const fmt3=n=>String(Math.round(n)).padStart(3,"0");
   const fmt5=n=>String(Math.round(n)).padStart(5,"0");
-  function whisper(text,ms=1200){
+
+  function whisper(text,ms=1300){
     ui.missionSub.textContent=text;
     clearTimeout(whisper._t);
     whisper._t=setTimeout(()=>ui.missionSub.textContent="",ms);
   }
-  function pulse(el){
-    el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
+
+  // ---------- Audio (soft lock tone + warp hush) ----------
+  let audio=null;
+  function initAudio(){
+    if(audio) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+
+    const ctxA = new AC();
+    const master = ctxA.createGain();
+    master.gain.value = 0.0;
+    master.connect(ctxA.destination);
+
+    // Hush (pink-ish noise through filter)
+    const hush = ctxA.createBiquadFilter();
+    hush.type="lowpass";
+    hush.frequency.value = 420;
+    hush.Q.value = 0.9;
+
+    const hushGain = ctxA.createGain();
+    hushGain.gain.value = 0.0;
+
+    const bufferSize = 2 * ctxA.sampleRate;
+    const noiseBuf = ctxA.createBuffer(1, bufferSize, ctxA.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for(let i=0;i<bufferSize;i++){
+      // cheap pink-ish: sum a few randoms
+      data[i] = (Math.random()*2-1)*0.2 + (Math.random()*2-1)*0.1 + (Math.random()*2-1)*0.05;
+    }
+    const noiseSrc = ctxA.createBufferSource();
+    noiseSrc.buffer = noiseBuf;
+    noiseSrc.loop = true;
+
+    noiseSrc.connect(hush);
+    hush.connect(hushGain);
+    hushGain.connect(master);
+    noiseSrc.start();
+
+    // Lock tone (sine + gentle vibrato)
+    const osc = ctxA.createOscillator();
+    osc.type="sine";
+    osc.frequency.value = 660;
+
+    const vib = ctxA.createOscillator();
+    vib.type="sine";
+    vib.frequency.value = 6.2;
+
+    const vibGain = ctxA.createGain();
+    vibGain.gain.value = 8.0;
+
+    vib.connect(vibGain);
+    vibGain.connect(osc.frequency);
+
+    const toneGain = ctxA.createGain();
+    toneGain.gain.value = 0.0;
+
+    osc.connect(toneGain);
+    toneGain.connect(master);
+
+    vib.start(); osc.start();
+
+    audio = {
+      ctxA, master,
+      hush, hushGain,
+      osc, toneGain,
+      enabled:true
+    };
+
+    // fade in master gently
+    master.gain.setTargetAtTime(0.35, ctxA.currentTime, 0.08);
   }
 
-  // INPUT (FIXED: aviation feel — Up = pull = pitch up)
-  const keys=new Set();
-  addEventListener("keydown",(e)=>{
-    if(e.code==="Enter"){
-      state.hud=!state.hud;
-      document.body.classList.toggle("hudHidden", !state.hud);
-    }
-    if(e.code==="KeyF"){
-      state.fighter = !state.fighter;
-      state.monk = !state.fighter;
-      applyMode();
-    }
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
-    keys.add(e.code);
-  },{passive:false});
-  addEventListener("keyup",(e)=>keys.delete(e.code),{passive:true});
-
-  // WORLD
+  // ---------- World State ----------
   const state={
     t:0,
-    // physics state (actual)
-    pitch:0, roll:0,
-    // desired (from input) for syrup control
-    pitchCmd:0, rollCmd:0,
 
-    hdg:352, alt:38200,
-    spd:220,
+    // actual attitude
+    pitch:0, roll:0,
+    // command
+    pitchCmd:0, rollCmd:0,
+    pitchRate:0, rollRate:0,
+
+    hdg:352,
+    alt:38200,
+
+    spd:210,
     warpOn:false,
 
-    monk:false,
-    fighter:true,
+    monk:true,
+    fighter:false,
     hud:true,
 
     range:0,
@@ -430,74 +525,75 @@
     gatesHit:0,
     miss:0,
 
-    wattage:0.78,
+    wattage:0.82,
     hitGlow:0,
 
     lockStrength:0,
     _lockWhispered:false,
 
-    // warp lines
-    streaks:[],
-    // stars
+    // mouse aim
+    mouseAim:true,
+    mx:0, my:0,
+
+    // visuals
     stars:[],
-    // gates
+    streaks:[],
     gates:[],
-    gateSpawn:0
+    gateSpawn:0,
+
+    // blackout
+    blackout:0,
   };
 
+  // ---------- Mode ----------
   function applyMode(){
-    if(state.fighter){
-      ui.pillMode.textContent="FIGHTER";
-      ui.modeTag.textContent="FIGHTER";
-      ui.stabilityTag.textContent="ACCURATE";
-      ui.stateTag.textContent="LOCKED";
-      document.body.classList.remove("monk-breathe");
-      whisper("Fighter engaged: accuracy is final.", 1500);
-    }else{
+    if(state.monk){
       ui.pillMode.textContent="MONK";
       ui.modeTag.textContent="FLOW";
       ui.stabilityTag.textContent="STEADY";
       ui.stateTag.textContent="GLIDE";
       document.body.classList.add("monk-breathe");
-      whisper("Monk engaged: soften. glide. listen.", 1500);
+      whisper("Monk mode: glide. syrup control. accuracy without strain.", 1600);
+    }else{
+      ui.pillMode.textContent="FIGHTER";
+      ui.modeTag.textContent="FIGHTER";
+      ui.stabilityTag.textContent="ACCURATE";
+      ui.stateTag.textContent="LOCKED";
+      document.body.classList.remove("monk-breathe");
+      whisper("Fighter mode: accuracy is final.", 1400);
     }
-    pulse(ui.missionBox); pulse(ui.pillMode);
   }
   applyMode();
 
-  // Stars: calm base + warp streak overlay
+  // ---------- Stars + Streaks ----------
   function seedStars(){
     state.stars.length=0;
-    const n=240;
+    const n=260;
     for(let i=0;i<n;i++){
       state.stars.push({
         x:rnd(), y:rnd(),
         z:0.15+rnd(0.85),
-        tw:rnd(1000),
+        tw:rnd(1000)
       });
     }
   }
   function seedStreaks(){
     state.streaks.length=0;
-    const n=220;
+    const n=240;
     for(let i=0;i<n;i++){
-      const a = rnd(Math.PI*2);
-      const r = Math.pow(rnd(), 0.55); // concentrate toward edges
-      state.streaks.push({
-        a, r,
-        p:rnd(1000),
-        w:0.6+rnd(1.6)
-      });
+      const a=rnd(Math.PI*2);
+      const r=Math.pow(rnd(),0.55);
+      state.streaks.push({a,r,p:rnd(1000),w:0.6+rnd(1.6)});
     }
   }
   seedStars(); seedStreaks();
 
+  // ---------- Gates ----------
   function spawnGate(){
-    // tighter, more “flight-test” placement — feels intentional, not random confetti
-    const centerBias = state.fighter ? 0.12 : 0.18;
+    const centerBias = state.monk ? 0.18 : 0.12;
     const x = 0.50 + (rnd()-0.5)*centerBias*2;
-    const y = 0.54 + (rnd()-0.5)*(state.fighter ? 0.12 : 0.16);
-    const r = state.fighter ? (0.060 + rnd(0.012)) : (0.068 + rnd(0.016));
+    const y = 0.54 + (rnd()-0.5)*(state.monk ? 0.16 : 0.12);
+    const r = state.monk ? (0.070 + rnd(0.016)) : (0.060 + rnd(0.012));
     const z = 1.35 + rnd(0.55);
     state.gates.push({x,y,r,z,alive:true,missed:false,hit:false});
   }
@@ -519,7 +615,62 @@
     return {g:best,cx,cy,dist:Math.hypot(best.x-cx,best.y-cy)};
   }
 
-  // RENDER — calm sky + austere land + WARPTUNNEL overlay (compelling center)
+  // ---------- Pointer Lock + Mouse Aim ----------
+  function showHint(on){
+    ui.hint.classList.toggle("show", !!on);
+  }
+
+  function lockMouse(){
+    if(document.pointerLockElement === ui.stage) return;
+    ui.stage.requestPointerLock?.();
+  }
+
+  ui.stage.addEventListener("click", () => {
+    initAudio();
+    if(state.mouseAim) lockMouse();
+  });
+
+  document.addEventListener("pointerlockchange", () => {
+    const locked = (document.pointerLockElement === ui.stage);
+    showHint(!locked);
+    whisper(locked ? "Mouse aim locked." : "Mouse aim released.", 900);
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if(!state.mouseAim) return;
+    if(document.pointerLockElement !== ui.stage) return;
+    // collect deltas (syrup-decayed in sim)
+    state.mx += e.movementX;
+    state.my += e.movementY;
+  });
+
+  // show hint initially
+  showHint(true);
+
+  // ---------- Keys ----------
+  const keys=new Set();
+  addEventListener("keydown",(e)=>{
+    if(e.code==="Enter"){
+      state.hud=!state.hud;
+      document.body.classList.toggle("hudHidden", !state.hud);
+    }
+    if(e.code==="KeyF"){
+      state.monk = !state.monk;
+      state.fighter = !state.monk;
+      applyMode();
+    }
+    if(e.code==="KeyM"){
+      state.mouseAim = !state.mouseAim;
+      whisper(state.mouseAim ? "Mouse aim enabled." : "Mouse aim disabled.", 1000);
+      if(state.mouseAim) showHint(document.pointerLockElement !== ui.stage);
+      else showHint(false);
+    }
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+    keys.add(e.code);
+  },{passive:false});
+  addEventListener("keyup",(e)=>keys.delete(e.code),{passive:true});
+
+  // ---------- Render Helpers ----------
   function drawSky(hy){
     const g=ctx.createLinearGradient(0,0,0,H);
     g.addColorStop(0.00,"#050b11");
@@ -537,8 +688,8 @@
     rg.addColorStop(1,"rgba(255,255,255,0)");
     ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
 
-    // very subtle aurora band
-    const a = state.monk ? 0.08 : 0.10;
+    // subtle aurora band
+    const a = state.monk ? 0.085 : 0.11;
     const ay = H*0.22 + Math.sin(state.t*0.12)*16;
     const ag = ctx.createLinearGradient(0, ay, 0, ay+H*0.34);
     ag.addColorStop(0, `rgba(160,220,255,${a*0.0})`);
@@ -571,68 +722,14 @@
     ctx.globalCompositeOperation="source-over";
   }
 
-  function drawWarpTunnel(){
-    // “warp speed yet syrup”: fast visuals, stable center, low nausea
-    // Streaks radiate outward but DO NOT rotate wildly.
-    const centerX = W*0.5 + state.roll*W*0.010;
-    const centerY = H*0.54 + state.pitch*H*0.008;
-
-    const spdN = clamp(state.spd/420, 0, 1);
-    const warp = state.warpOn ? 1 : 0;
-    const intensity = clamp(0.18 + spdN*0.28 + warp*0.45, 0, 0.95);
-
-    if(intensity <= 0.001) return;
-
-    ctx.save();
-    ctx.globalCompositeOperation="screen";
-
-    // soft vignette glow “tunnel mouth”
-    const r = Math.min(W,H)*0.55;
-    const g = ctx.createRadialGradient(centerX,centerY, r*0.06, centerX,centerY, r);
-    g.addColorStop(0, `rgba(170,240,210,${0.06*intensity})`);
-    g.addColorStop(0.35, `rgba(150,210,255,${0.05*intensity})`);
-    g.addColorStop(1, `rgba(150,210,255,0)`);
-    ctx.fillStyle=g; ctx.fillRect(centerX-r,centerY-r,r*2,r*2);
-
-    // streaks
-    ctx.lineCap="round";
-    for(const st of state.streaks){
-      const a = st.a;
-      const edge = Math.pow(st.r, 0.85);
-
-      // base radius: favors edges for drama, center stays calm
-      const baseR = edge * Math.min(W,H) * 0.70;
-
-      // length grows with speed, but eased to keep “syrup”
-      const L = (22 + 220*intensity) * (0.65 + 0.6*edge) * (state.fighter ? 1.0 : 0.85);
-
-      const x1 = centerX + Math.cos(a)*baseR;
-      const y1 = centerY + Math.sin(a)*baseR;
-      const x2 = centerX + Math.cos(a)*(baseR + L);
-      const y2 = centerY + Math.sin(a)*(baseR + L);
-
-      const alpha = (0.015 + 0.085*intensity) * (0.25 + 0.75*edge);
-      const w = (0.6 + st.w) * (0.65 + 0.9*intensity);
-
-      ctx.strokeStyle = `rgba(170,240,210,${alpha})`;
-      ctx.lineWidth = w;
-      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-    }
-
-    ctx.restore();
-  }
-
   function drawCloudVeil(hy){
-    // minimal cloud texture (austere) — no nausea “moving carpet”
     const step = 7;
     const top = hy - H*0.52;
     const bot = hy + H*0.06;
-
     for(let y=top; y<bot; y+=step){
       const yn=y/H;
       const band = clamp((yn - (hy/H - 0.50))*1.35, 0, 1);
       const b=band*band;
-
       for(let x=0; x<W; x+=step){
         const n = fbm((x + state.range*120)*0.0016, (y + state.t*18)*0.0012);
         const v = clamp((n-0.52)*2.1, 0, 1);
@@ -642,6 +739,50 @@
         ctx.fillRect(x,y,step,step);
       }
     }
+  }
+
+  function drawWarpTunnel(){
+    // warp speed visuals, syrup-stable center
+    const centerX = W*0.5 + state.roll*W*0.010;
+    const centerY = H*0.54 + state.pitch*H*0.008;
+
+    const spdN = clamp(state.spd/420, 0, 1);
+    const warp = state.warpOn ? 1 : 0;
+    const intensity = clamp(0.16 + spdN*0.26 + warp*0.44, 0, 0.92);
+    if(intensity <= 0.001) return;
+
+    ctx.save();
+    ctx.globalCompositeOperation="screen";
+
+    const r = Math.min(W,H)*0.55;
+    const g = ctx.createRadialGradient(centerX,centerY, r*0.06, centerX,centerY, r);
+    g.addColorStop(0, `rgba(170,240,210,${0.06*intensity})`);
+    g.addColorStop(0.35, `rgba(150,210,255,${0.05*intensity})`);
+    g.addColorStop(1, `rgba(150,210,255,0)`);
+    ctx.fillStyle=g; ctx.fillRect(centerX-r,centerY-r,r*2,r*2);
+
+    ctx.lineCap="round";
+    for(const st of state.streaks){
+      const a = st.a;
+      const edge = Math.pow(st.r, 0.85);
+      const baseR = edge * Math.min(W,H) * 0.70;
+
+      const L = (18 + 210*intensity) * (0.65 + 0.6*edge) * (state.monk ? 0.92 : 1.0);
+
+      const x1 = centerX + Math.cos(a)*baseR;
+      const y1 = centerY + Math.sin(a)*baseR;
+      const x2 = centerX + Math.cos(a)*(baseR + L);
+      const y2 = centerY + Math.sin(a)*(baseR + L);
+
+      const alpha = (0.012 + 0.080*intensity) * (0.25 + 0.75*edge);
+      const w = (0.6 + st.w) * (0.62 + 0.9*intensity);
+
+      ctx.strokeStyle = `rgba(170,240,210,${alpha})`;
+      ctx.lineWidth = w;
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+
+    ctx.restore();
   }
 
   function drawLand(hy){
@@ -676,7 +817,7 @@
     }
     ctx.restore();
 
-    // cockpit shadow curve (keeps “pilot” feeling)
+    // cockpit shadow curve
     const g=ctx.createLinearGradient(0,hy+40,0,H);
     g.addColorStop(0,"rgba(0,0,0,0.18)");
     g.addColorStop(0.40,"rgba(0,0,0,0.58)");
@@ -693,10 +834,9 @@
   function drawGates(){
     const centerX=W*0.5, centerY=H*0.54;
 
-    // global “hit” bloom
     if(state.hitGlow>0.001){
       ctx.globalCompositeOperation="screen";
-      const a=state.hitGlow*0.20;
+      const a=state.hitGlow*0.18;
       const g=ctx.createRadialGradient(centerX,centerY,0,centerX,centerY,Math.min(W,H)*0.46);
       g.addColorStop(0,`rgba(170,240,210,${a})`);
       g.addColorStop(0.55,`rgba(150,210,255,${a*0.55})`);
@@ -715,29 +855,28 @@
       if(pr<4) continue;
 
       const alpha=clamp((1.35-z),0,1);
-      const bite = state.fighter ? 0.88 : 0.66;
+      const bite = state.monk ? 0.66 : 0.88;
 
       ctx.save();
       ctx.globalCompositeOperation="screen";
 
-      // “aperture gate”: outer + inner + subtle chevrons
       ctx.lineWidth=Math.max(2, pr*0.030);
-      ctx.strokeStyle=`rgba(150,210,255,${alpha*0.42*bite})`;
+      ctx.strokeStyle=`rgba(150,210,255,${alpha*0.40*bite})`;
       ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2); ctx.stroke();
 
       ctx.lineWidth=Math.max(1.5, pr*0.018);
-      ctx.strokeStyle=`rgba(170,240,210,${alpha*0.38*bite})`;
+      ctx.strokeStyle=`rgba(170,240,210,${alpha*0.36*bite})`;
       ctx.beginPath(); ctx.arc(px,py,pr*0.78,0,Math.PI*2); ctx.stroke();
 
       const haze=ctx.createRadialGradient(px,py,pr*0.2,px,py,pr*1.35);
-      haze.addColorStop(0,`rgba(255,226,160,${alpha*0.08*bite})`);
-      haze.addColorStop(0.55,`rgba(170,240,210,${alpha*0.07*bite})`);
+      haze.addColorStop(0,`rgba(255,226,160,${alpha*0.07*bite})`);
+      haze.addColorStop(0.55,`rgba(170,240,210,${alpha*0.06*bite})`);
       haze.addColorStop(1,`rgba(150,210,255,0)`);
       ctx.fillStyle=haze;
       ctx.beginPath(); ctx.arc(px,py,pr*1.35,0,Math.PI*2); ctx.fill();
 
-      // chevrons (directionality = “pilot”)
-      ctx.globalAlpha = alpha*0.22*bite;
+      // chevrons (directionality)
+      ctx.globalAlpha = alpha*0.20*bite;
       ctx.strokeStyle="rgba(255,226,160,0.8)";
       ctx.lineWidth=1;
       for(let i=0;i<6;i++){
@@ -753,7 +892,7 @@
       ctx.restore();
 
       if(gt.missed){
-        ctx.globalAlpha=0.28;
+        ctx.globalAlpha=0.24;
         ctx.strokeStyle="rgba(255,120,120,0.22)";
         ctx.lineWidth=1;
         ctx.beginPath(); ctx.arc(px,py,pr*1.08,0,Math.PI*2); ctx.stroke();
@@ -762,8 +901,8 @@
     }
   }
 
-  // UPDATE UI + VV (velocity vector) placement
-  function updateUI(){
+  // ---------- UI Update (VV + lead indicator) ----------
+  function updateUI(leadVX=0, leadVY=0){
     ui.hdg.textContent = fmt3(((state.hdg%360)+360)%360);
     ui.alt.textContent = fmt5(state.alt);
     ui.spd.textContent = fmt3(state.spd);
@@ -783,41 +922,55 @@
     ui.signal.textContent = clean ? "CLEAR" : "NOISY";
     ui.lock.textContent = state.lockStrength>0.35 ? "GATE" : "FORWARD";
 
-    // VV moves slightly with “drift” but remains stable (no nausea)
-    const vx = (state.roll*0.030) * 280;   // px within reticle box
+    // VV moves with attitude (within reticle)
+    const vx = (state.roll*0.030) * 280;
     const vy = (state.pitch*0.024) * 240;
     ui.vv.style.transform = `translate(calc(-50% + ${vx}px), calc(-50% + ${vy}px))`;
+
+    // lead indicator: slight predictive cue based on rates (feels “pilot”)
+    ui.lead.style.transform = `translate(calc(-50% + ${vx + leadVX}px), calc(-50% + ${vy + leadVY}px))`;
   }
 
-  // SIM
+  // ---------- SIM ----------
   function step(dt){
     state.t += dt;
 
-    // MODE parameters: warp-speed visuals, syrup control, accuracy final
-    const fighter = state.fighter;
-    const monk = !fighter;
+    // mode params
+    const monk = state.monk;
+    const fighter = !monk;
 
-    // INPUT (fixed + accurate)
-    // Up = pull = pitch up (positive), Down = pitch down (negative)
-    const pitchIn = (keys.has("ArrowUp") ? 1 : 0) + (keys.has("ArrowDown") ? -1 : 0);
-    const rollIn  = (keys.has("ArrowRight") ? 1 : 0) + (keys.has("ArrowLeft") ? -1 : 0);
+    // warp
     state.warpOn = keys.has("Space");
 
-    // Command shaping (deadzone + smoothing)
-    const dead = 0.06;
-    const targetPitchCmd = Math.abs(pitchIn) < dead ? 0 : pitchIn;
-    const targetRollCmd  = Math.abs(rollIn)  < dead ? 0 : rollIn;
+    // INPUT: mouse aim primary (pointer lock), keyboard fallback
+    let pitchIn=0, rollIn=0;
 
-    state.pitchCmd = easeTo(state.pitchCmd, targetPitchCmd, fighter ? 18 : 10, dt);
-    state.rollCmd  = easeTo(state.rollCmd,  targetRollCmd,  fighter ? 18 : 10, dt);
+    const locked = (document.pointerLockElement === ui.stage);
+    if(state.mouseAim && locked){
+      const sensitivity = fighter ? 0.0022 : 0.0014;
 
-    // Syrup dynamics: spring-damper, critically damped-ish
-    // Fighter: faster response, still smooth. Monk: slower, floatier.
-    const k = fighter ? 16.0 : 8.5;   // stiffness
-    const d = fighter ? 8.8  : 6.6;   // damping
-    // integrate “rate”
-    state.pitchRate = (state.pitchRate||0);
-    state.rollRate  = (state.rollRate||0);
+      rollIn  = clamp(state.mx * sensitivity, -1, 1);
+      pitchIn = clamp(-state.my * sensitivity, -1, 1); // pull back = pitch up
+
+      // syrup decay (key to “fast but slow” feel)
+      state.mx *= monk ? 0.84 : 0.80;
+      state.my *= monk ? 0.84 : 0.80;
+    }else{
+      // fallback (rare) — aviation feel
+      pitchIn = (keys.has("ArrowUp") ? 1 : 0) + (keys.has("ArrowDown") ? -1 : 0);
+      rollIn  = (keys.has("ArrowRight") ? 1 : 0) + (keys.has("ArrowLeft") ? -1 : 0);
+      // show hint if mouse aim is on but not locked
+      if(state.mouseAim) showHint(true);
+    }
+
+    // Command shaping
+    const kCmd = monk ? 10.0 : 18.0;
+    state.pitchCmd = easeTo(state.pitchCmd, pitchIn, kCmd, dt);
+    state.rollCmd  = easeTo(state.rollCmd,  rollIn,  kCmd, dt);
+
+    // Syrup dynamics: spring-damper
+    const k = monk ? 8.5 : 16.0;
+    const d = monk ? 6.6 : 8.8;
 
     const pitchErr = state.pitchCmd - state.pitch;
     const rollErr  = state.rollCmd  - state.roll;
@@ -825,8 +978,7 @@
     state.pitchRate += (pitchErr*k - state.pitchRate*d) * dt;
     state.rollRate  += (rollErr*k  - state.rollRate*d)  * dt;
 
-    // clamp rates for comfort
-    const rateMax = fighter ? 3.0 : 1.8;
+    const rateMax = monk ? 1.7 : 3.0;
     state.pitchRate = clamp(state.pitchRate, -rateMax, rateMax);
     state.rollRate  = clamp(state.rollRate,  -rateMax, rateMax);
 
@@ -836,43 +988,48 @@
     state.pitch = clamp(state.pitch, -1, 1);
     state.roll  = clamp(state.roll,  -1, 1);
 
-    // SPEED: warp-speed feel, but stable handling
-    const base = fighter ? 260 : 210;
-    const warpAdd = state.warpOn ? (fighter ? 210 : 170) : 0;
+    // SPEED: monk = stable glide, warp = tunnel
+    const base = monk ? 210 : 260;
+    const warpAdd = state.warpOn ? (monk ? 170 : 210) : 0;
     const targetSpd = base + warpAdd;
-    state.spd = Math.round(state.spd + (targetSpd - state.spd) * (fighter ? 0.10 : 0.07));
+    state.spd = Math.round(state.spd + (targetSpd - state.spd) * (monk ? 0.07 : 0.10));
 
     // NAV
-    state.hdg += state.roll * (fighter ? 0.55 : 0.28);
-    state.alt = Math.round(state.alt + (state.pitch) * (fighter ? 10 : 5)); // pull-up increases altitude
+    state.hdg += state.roll * (monk ? 0.28 : 0.55);
+    state.alt = Math.round(state.alt + (state.pitch) * (monk ? 5 : 10));
 
-    const forward = (state.spd/260) * (state.warpOn ? 1.25 : 1.0);
+    const forward = (state.spd/260) * (state.warpOn ? 1.22 : 1.0);
     state.range += forward * dt * 0.090;
-    state.score += Math.floor(forward * dt * (fighter ? 1.00 : 0.60));
+    state.score += Math.floor(forward * dt * (monk ? 0.60 : 1.00));
     state.hitGlow = Math.max(0, state.hitGlow - dt*1.8);
 
-    // Wattage: fighter burns more under warp + aggressive input
+    // “G-force blackout” (subtle): driven by rotational rate + warp
+    const gLoad = (Math.abs(state.pitchRate) + Math.abs(state.rollRate)) * (state.warpOn ? 1.2 : 1.0);
+    const targetBlack = clamp((gLoad - (monk ? 1.35 : 1.75)) * 0.22, 0, 0.55);
+    state.blackout = easeTo(state.blackout, targetBlack, 6.5, dt);
+
+    // Wattage
     let w = state.wattage;
     w += (monk ? 0.0009 : -0.00035) * (dt*60);
-    if(state.warpOn) w -= (fighter ? 0.0015 : 0.0011) * (dt*60);
-    if(fighter && (Math.abs(pitchIn)+Math.abs(rollIn))>0) w -= 0.0006*(dt*60);
+    if(state.warpOn) w -= (monk ? 0.0011 : 0.0015) * (dt*60);
+    if(!monk && (Math.abs(pitchIn)+Math.abs(rollIn))>0) w -= 0.0006*(dt*60);
     state.wattage = clamp(w, 0.18, 0.96);
 
-    // Gates: disciplined rhythm
+    // Gates spawn
     state.gateSpawn -= dt;
-    const spawnEvery = fighter ? 0.95 : 1.30;
+    const spawnEvery = monk ? 1.20 : 0.95;
     if(state.gateSpawn <= 0){
       spawnGate();
       state.gateSpawn = spawnEvery;
     }
 
-    // Gate lock + “accuracy final” assist (fighter: less assist)
+    // Gate lock
     const info = nearestGateInfo();
     const g = info.g;
 
     let targetLock = 0;
     if(g){
-      const tol = g.r * (fighter ? 0.95 : 1.18);
+      const tol = g.r * (monk ? 1.18 : 0.95);
       targetLock = clamp(1 - (info.dist / tol), 0, 1);
       targetLock *= clamp((0.92 - g.z)/0.58, 0, 1);
     }
@@ -881,57 +1038,54 @@
     if(state.lockStrength > 0.22) document.body.classList.add("lock-on");
     else document.body.classList.remove("lock-on");
 
-    // micro-assist: monk gets more, fighter gets tiny
+    // micro-assist
     if(g && state.lockStrength > 0.18){
       const cx = 0.50 + state.roll*0.030;
       const cy = 0.54 + state.pitch*0.024;
       const dx = g.x - cx;
       const dy = g.y - cy;
 
-      const assist = (fighter ? 0.18 : 0.55) * state.lockStrength;
+      const assist = (monk ? 0.55 : 0.18) * state.lockStrength;
       state.roll  = clamp(state.roll  + (dx * 0.50) * assist, -1, 1);
       state.pitch = clamp(state.pitch + (dy * 0.42) * assist, -1, 1);
 
       if(state.lockStrength > 0.62 && !state._lockWhispered){
         state._lockWhispered = true;
-        whisper("Lock: hold the line.", 1000);
-        pulse(ui.missionBox);
+        whisper(monk ? "Lock: soft center." : "Lock: hold the line.", 1000);
       }
       if(state.lockStrength < 0.26) state._lockWhispered = false;
     } else {
       state._lockWhispered = false;
     }
 
-    // Update gates + hit/miss
+    // Gates hit/miss
     const aimX = 0.50 + state.roll*0.030;
     const aimY = 0.54 + state.pitch*0.024;
 
     for(const gt of state.gates){
       if(!gt.alive) continue;
 
-      const zSpeed = (fighter ? 0.95 : 0.62) * forward;
+      const zSpeed = (monk ? 0.62 : 0.95) * forward;
       gt.z -= dt * zSpeed;
 
       if(!gt.missed && gt.z < 0.50){
         gt.missed = true;
         state.miss += 1;
         state.combo = 1;
-        whisper("Miss. Reset. Fly true.", 1100);
-        pulse(ui.missionBox);
+        whisper(monk ? "Miss. return to center." : "Miss. reset. fly true.", 1100);
       }
       if(gt.z < 0.18) gt.alive = false;
 
       if(gt.alive && !gt.hit && gt.z < 0.64 && gt.z > 0.30){
         const dist = Math.hypot(gt.x-aimX, gt.y-aimY);
-        const tol = gt.r * (fighter ? 0.78 : 0.94); // fighter stricter
+        const tol = gt.r * (monk ? 0.94 : 0.78);
         if(dist < tol){
           gt.hit = true; gt.alive = false;
           state.gatesHit += 1;
           state.combo = Math.min(9, state.combo + 1);
-          const bonus = Math.floor((fighter ? 70 : 45) * state.combo);
+          const bonus = Math.floor((monk ? 45 : 70) * state.combo);
           state.score += bonus;
           state.hitGlow = Math.min(1, state.hitGlow + 0.95);
-          pulse(ui.score); pulse(ui.combo);
           whisper(`Gate clean. +${bonus} (x${state.combo}).`, 1000);
         }
       }
@@ -939,10 +1093,30 @@
 
     if(state.gates.length > 34) state.gates = state.gates.filter(g=>g.alive);
 
-    updateUI();
+    // AUDIO update (lock tone + warp hush)
+    if(audio && audio.enabled){
+      const t = audio.ctxA.currentTime;
+
+      // hush increases with speed/warp
+      const spdN = clamp(state.spd/420, 0, 1);
+      const hushTarget = clamp(0.02 + spdN*0.05 + (state.warpOn?0.10:0), 0, 0.20);
+      audio.hushGain.gain.setTargetAtTime(hushTarget, t, 0.08);
+      audio.hush.frequency.setTargetAtTime(280 + spdN*520 + (state.warpOn?320:0), t, 0.10);
+
+      // lock tone scales with lockStrength
+      const toneTarget = clamp((state.lockStrength - 0.20) * 0.26, 0, 0.10);
+      audio.toneGain.gain.setTargetAtTime(toneTarget, t, 0.06);
+      audio.osc.frequency.setTargetAtTime(560 + state.lockStrength*220, t, 0.08);
+    }
+
+    // Lead indicator based on rates (predictive)
+    const leadVX = clamp(state.rollRate * 42, -46, 46);
+    const leadVY = clamp(state.pitchRate * -38, -44, 44);
+
+    updateUI(leadVX, leadVY);
   }
 
-  // LOOP
+  // ---------- LOOP ----------
   let last = performance.now();
   function loop(now){
     const dt = Math.min(0.05, (now-last)/1000);
@@ -950,9 +1124,8 @@
 
     step(dt);
 
-    // camera: syrup-stable (tiny motion only)
     const hy = H*(0.62 - state.pitch*0.018);
-    const bob = (Math.sin(state.t*0.45)*4 + Math.sin(state.t*0.21)*3) * (state.monk ? 0.9 : 0.65);
+    const bob = (Math.sin(state.t*0.45)*4 + Math.sin(state.t*0.21)*3) * (state.monk ? 0.90 : 0.65);
 
     ctx.clearRect(0,0,W,H);
     ctx.save();
@@ -965,12 +1138,20 @@
     drawLand(hy);
     drawGates();
 
+    // blackout overlay (subtle)
+    if(state.blackout > 0.001){
+      ctx.globalAlpha = state.blackout;
+      ctx.fillStyle = "rgba(0,0,0,1)";
+      ctx.fillRect(0,0,W,H);
+      ctx.globalAlpha = 1;
+    }
+
     ctx.restore();
 
     requestAnimationFrame(loop);
   }
 
-  whisper("Fighter pilot mode engaged. Accuracy is final.", 1700);
+  whisper("Monk mode. Click to lock mouse. Slow hands, clean lines.", 2200);
   requestAnimationFrame(loop);
 })();
 </script>
