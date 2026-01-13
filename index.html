@@ -3,433 +3,758 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Emberwing Gyro Controls</title>
+  <title>Emberwing // Cockpit</title>
   <style>
     :root { color-scheme: dark; }
-    html, body { height: 100%; margin: 0; background: #05060a; font-family: ui-sans-serif, system-ui; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; overflow: hidden; background: #04050a; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+
+    /* Subtle nebula backdrop */
+    body::before{
+      content:"";
+      position:fixed; inset:-20%;
+      background:
+        radial-gradient(1200px 900px at 45% 25%, rgba(120,180,255,0.11), transparent 60%),
+        radial-gradient(900px 700px at 20% 70%, rgba(255,180,120,0.07), transparent 62%),
+        radial-gradient(700px 900px at 85% 65%, rgba(170,120,255,0.05), transparent 62%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), transparent 55%);
+      filter: blur(2px);
+      pointer-events:none;
+    }
+
+    canvas { display:block; width:100vw; height:100vh; }
+
+    /* Cockpit HUD */
     #hud {
-      position: fixed; inset: 16px auto auto 16px;
-      display: grid; gap: 10px; z-index: 10;
-      max-width: calc(100vw - 32px);
+      position: fixed; inset: 0;
+      pointer-events: none;
     }
-    .card {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 14px;
-      padding: 12px 12px;
+
+    /* Header bar */
+    #topBar{
+      position: fixed; left: 16px; right: 16px; top: calc(12px + env(safe-area-inset-top));
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.045);
+      border: 1px solid rgba(170,210,255,0.12);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+      pointer-events: auto; /* allow taps */
+    }
+    #brand{
+      display:flex; align-items:center; gap:10px;
+      letter-spacing: 0.18em;
+      font-weight: 700;
+      color: rgba(220,240,255,0.90);
+      text-transform: uppercase;
+      font-size: 12px;
+      user-select: none;
+    }
+    #dot{
+      width:10px; height:10px; border-radius:999px;
+      background:#ff4d4d;
+      box-shadow: 0 0 16px rgba(255,77,77,0.55);
+      flex: 0 0 auto;
+    }
+    #tag{
+      opacity:0.7; font-weight:600; letter-spacing:0.14em; font-size:11px;
+      padding: 6px 10px; border-radius: 999px;
+      border: 1px solid rgba(170,210,255,0.12);
+      background: rgba(255,255,255,0.03);
+    }
+
+    /* Control buttons */
+    #controls{
+      display:flex; gap:8px; align-items:center;
+      user-select:none;
+    }
+    .btn{
+      pointer-events:auto;
+      appearance:none;
+      border: 1px solid rgba(170,210,255,0.16);
+      background: linear-gradient(180deg, rgba(180,220,255,0.14), rgba(255,255,255,0.05));
+      color: rgba(230,245,255,0.92);
+      padding: 9px 10px;
+      border-radius: 12px;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      font-size: 12px;
+    }
+    .btn:active{ transform: translateY(1px); }
+
+    /* Mission strip */
+    #mission{
+      position: fixed; left: 16px; right: 16px;
+      top: calc(70px + env(safe-area-inset-top));
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(170,210,255,0.10);
       backdrop-filter: blur(10px);
+      color: rgba(220,240,255,0.80);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 24px rgba(120,180,255,0.20);
+      pointer-events:none;
     }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    button {
-      appearance: none; border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.10);
-      color: rgba(255,255,255,0.92);
-      padding: 10px 12px; border-radius: 12px;
-      font-weight: 600; letter-spacing: 0.2px;
+    #mission b{ color: rgba(235,250,255,0.92); }
+
+    /* Bottom instruments */
+    #bottom{
+      position: fixed; left: 16px; right: 16px;
+      bottom: calc(14px + env(safe-area-inset-bottom));
+      display:grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 12px;
+      align-items:end;
+      pointer-events:none;
     }
-    button:active { transform: translateY(1px); }
-    .muted { color: rgba(255,255,255,0.65); font-size: 12px; line-height: 1.35; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: rgba(255,255,255,0.85); }
-    #statusDot {
-      width: 10px; height: 10px; border-radius: 999px;
-      background: #ff4d4d; box-shadow: 0 0 16px rgba(255,77,77,0.55);
-      display: inline-block; vertical-align: middle; margin-right: 8px;
+    .panel{
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(170,210,255,0.10);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 24px 90px rgba(0,0,0,0.58);
+      padding: 12px 12px;
     }
-    #touchPad {
-      position: fixed; inset: auto 16px 16px auto;
-      width: min(42vw, 220px); height: min(42vw, 220px);
+    .panelTitle{
+      display:flex; align-items:center; justify-content:space-between;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(220,240,255,0.72);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .pill{
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(170,210,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: rgba(235,250,255,0.78);
+      font-weight: 650;
+      letter-spacing: 0.12em;
+      font-size: 10px;
+    }
+    .barWrap{
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(170,210,255,0.10);
+      overflow:hidden;
+      position:relative;
+    }
+    .barFill{
+      height:100%;
+      width: 60%;
+      background: linear-gradient(90deg, rgba(120,180,255,0.35), rgba(120,255,200,0.35));
+      box-shadow: 0 0 30px rgba(120,180,255,0.25);
+    }
+    .rows{
+      margin-top: 10px;
+      display:grid;
+      grid-template-columns: 1fr auto;
+      row-gap: 6px;
+      column-gap: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      color: rgba(235,250,255,0.78);
+      letter-spacing: 0.06em;
+    }
+    .muted{ color: rgba(235,250,255,0.55); }
+
+    /* Center reticle overlay (glass) */
+    #reticle{
+      position: fixed; left:50%; top:50%;
+      width: min(48vmin, 420px);
+      height: min(48vmin, 420px);
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      border: 1px solid rgba(170,210,255,0.08);
+      background: radial-gradient(circle at 50% 50%, rgba(120,180,255,0.06), transparent 60%);
+      box-shadow: 0 0 80px rgba(0,0,0,0.35);
+      pointer-events:none;
+    }
+    #reticle::before{
+      content:"";
+      position:absolute; inset: 14%;
+      border-radius: 999px;
+      border: 1px solid rgba(170,210,255,0.10);
+    }
+    #reticle::after{
+      content:"";
+      position:absolute; left:50%; top:50%;
+      width: 18px; height: 18px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      border: 1px solid rgba(235,250,255,0.55);
+      box-shadow: 0 0 24px rgba(120,180,255,0.25);
+    }
+
+    /* Subtle scanlines for “helmet glass” */
+    #scanlines{
+      position:fixed; inset:0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.02),
+        rgba(255,255,255,0.02) 1px,
+        transparent 1px,
+        transparent 7px
+      );
+      mix-blend-mode: overlay;
+      opacity: 0.25;
+      pointer-events:none;
+    }
+
+    /* Touch pad fallback */
+    #touchPad{
+      position: fixed;
+      right: 16px; bottom: calc(130px + env(safe-area-inset-bottom));
+      width: min(42vw, 220px);
+      height: min(42vw, 220px);
       border-radius: 24px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), rgba(255,255,255,0.03));
-      border: 1px solid rgba(255,255,255,0.10);
-      backdrop-filter: blur(8px);
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+      border: 1px solid rgba(170,210,255,0.10);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 70px rgba(0,0,0,0.5);
       touch-action: none;
       display: none;
-      z-index: 9;
+      pointer-events: auto;
     }
-    #touchKnob {
-      position: absolute; left: 50%; top: 50%;
-      width: 64px; height: 64px; border-radius: 999px;
+    #knob{
+      position:absolute; left:50%; top:50%;
+      width: 64px; height: 64px;
+      border-radius: 999px;
       transform: translate(-50%, -50%);
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(170,210,255,0.14);
       box-shadow: 0 10px 30px rgba(0,0,0,0.35);
     }
-    canvas { display:block; width: 100vw; height: 100vh; }
+
+    /* Small screens */
+    @media (max-width: 420px){
+      #mission{ display:none; }
+      #bottom{ grid-template-columns: 1fr; }
+      #touchPad{ bottom: calc(106px + env(safe-area-inset-bottom)); }
+    }
   </style>
 </head>
 <body>
+  <canvas id="c"></canvas>
+
   <div id="hud">
-    <div class="card">
-      <div class="row">
-        <span id="statusDot"></span>
-        <span style="color:rgba(255,255,255,0.92);font-weight:700">Emberwing Controls</span>
+    <div id="topBar">
+      <div id="brand">
+        <span id="dot"></span>
+        <span>EMBERWING //</span>
+        <span style="opacity:.75">HAVEN</span>
+        <span id="tag">MONK</span>
       </div>
-      <div class="row" style="margin-top:10px">
-        <button id="btnEnable">Enable Gyro</button>
-        <button id="btnCalibrate" title="Sets current device angle as neutral">Calibrate</button>
-        <button id="btnTouch">Use Touch</button>
+      <div id="controls">
+        <button class="btn" id="btnEnable">Enable Gyro</button>
+        <button class="btn" id="btnCal">Calibrate</button>
+        <button class="btn" id="btnTouch">Touch</button>
       </div>
-      <div class="muted" style="margin-top:10px">
-        iPhone requires a tap to allow motion access. Gyro feels best with smoothing + deadzone.
+    </div>
+
+    <div id="mission">
+      <b>Mission:</b> warp-speed glide, syrup control, steady hands. ゆっくりと。今ここ。
+    </div>
+
+    <div id="reticle"></div>
+    <div id="scanlines"></div>
+
+    <div id="touchPad"><div id="knob"></div></div>
+
+    <div id="bottom">
+      <div class="panel">
+        <div class="panelTitle">
+          <span>Wattage</span>
+          <span class="pill" id="pillState">GLIDE</span>
+        </div>
+        <div class="barWrap"><div class="barFill" id="barFill"></div></div>
+
+        <div class="rows">
+          <div class="muted">MODE</div><div id="readMode">WAITING</div>
+          <div class="muted">SIGNAL</div><div id="readSignal">—</div>
+          <div class="muted">PITCH</div><div id="readPitch">0.000</div>
+          <div class="muted">ROLL</div><div id="readRoll">0.000</div>
+        </div>
       </div>
-      <div class="mono" style="margin-top:10px" id="readout">pitch: 0.000  roll: 0.000  yaw: 0.000</div>
-      <div class="mono" style="margin-top:6px" id="mode">mode: waiting</div>
+
+      <div class="panel">
+        <div class="panelTitle">
+          <span>Trim</span>
+          <span class="pill" id="pillTrim">CENTER</span>
+        </div>
+        <div class="rows">
+          <div class="muted">ANGLE</div><div id="readAngle">0°</div>
+          <div class="muted">DEADZONE</div><div id="readDZ">0.04</div>
+          <div class="muted">SMOOTH</div><div id="readSm">0.09</div>
+          <div class="muted">TIP</div><div class="muted">tap Calibrate if drift</div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div id="touchPad">
-    <div id="touchKnob"></div>
-  </div>
-
-  <canvas id="c"></canvas>
-
   <script>
-    // -----------------------------
-    // EmberwingGyroControls (drop-in)
-    // Outputs: controls.state = { pitch, roll, yaw } in radians-ish normalized range
-    // -----------------------------
-    class EmberwingGyroControls {
-      constructor(opts = {}) {
+    // ---------- Utilities ----------
+    function clamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
+    function lerp(a,b,t){ return a + (b-a)*t; }
+
+    function getScreenAngle(){
+      const a = (screen.orientation && typeof screen.orientation.angle === "number")
+        ? screen.orientation.angle
+        : (typeof window.orientation === "number" ? window.orientation : 0);
+      return ((a % 360) + 360) % 360;
+    }
+
+    function remap(beta, gamma, angle){
+      // beta: front/back, gamma: left/right
+      // returns pitchSrc/rollSrc in degrees aligned to the user's “airplane” feel
+      switch(angle){
+        case 90:  return { pitchSrc: gamma,  rollSrc: -beta }; // landscape right
+        case 270: return { pitchSrc: -gamma, rollSrc: beta  }; // landscape left
+        case 180: return { pitchSrc: -beta,  rollSrc: -gamma }; // upside-down portrait
+        default:  return { pitchSrc: beta,   rollSrc: gamma  }; // portrait
+      }
+    }
+
+    // ---------- Controls ----------
+    class EmberwingControls {
+      constructor(opts = {}){
         this.opts = {
-          smoothing: opts.smoothing ?? 0.08, // lower = smoother/laggier; ~0.06–0.12 good
-          deadzone: opts.deadzone ?? 0.035,  // ignore tiny tremor
-          gainPitch: opts.gainPitch ?? 1.15, // scale response
+          smoothing: opts.smoothing ?? 0.09,
+          deadzone:  opts.deadzone  ?? 0.04,
+          gainPitch: opts.gainPitch ?? 1.15,
           gainRoll:  opts.gainRoll  ?? 1.35,
-          gainYaw:   opts.gainYaw   ?? 0.55, // yaw is optional; browsers often noisy
-          clamp:     opts.clamp     ?? 0.85, // max normalized magnitude
+          clamp:     opts.clamp     ?? 0.95,
+          invertPitch: opts.invertPitch ?? false,
         };
-
-        this.enabled = false;
-        this.hasPermission = false;
         this.mode = "waiting"; // waiting | gyro | touch
-        this._baseline = { beta: 0, gamma: 0, alpha: 0 };
+        this.enabled = false;
+
         this._raw = { beta: 0, gamma: 0, alpha: 0 };
-        this._smoothed = { pitch: 0, roll: 0, yaw: 0 };
+        this._baseline = { beta: 0, gamma: 0, alpha: 0 };
 
-        this.state = { pitch: 0, roll: 0, yaw: 0 };
+        this._sm = { pitch: 0, roll: 0 };
+        this.state = { pitch: 0, roll: 0 }; // "radians-ish" small outputs
+
+        this.touch = { active:false, x:0, y:0 };
+
         this._onOrientation = this._onOrientation.bind(this);
-        this._onMotion = this._onMotion.bind(this);
-
-        // Touch fallback state
-        this.touch = {
-          active: false,
-          x: 0, y: 0, // -1..1
-          strength: 0
-        };
       }
 
-      // iOS 13+ needs permission prompt
-      async requestPermission() {
+      async requestPermission(){
         const DOE = window.DeviceOrientationEvent;
-        if (!DOE) return { ok: false, reason: "DeviceOrientationEvent not supported" };
+        if(!DOE) return { ok:false, reason:"DeviceOrientationEvent unsupported" };
 
-        // iOS style permission
-        if (typeof DOE.requestPermission === "function") {
+        if(typeof DOE.requestPermission === "function"){
           const res = await DOE.requestPermission();
-          if (res !== "granted") return { ok: false, reason: "Permission denied" };
+          if(res !== "granted") return { ok:false, reason:"permission denied" };
         }
-
-        this.hasPermission = true;
-        return { ok: true };
+        return { ok:true };
       }
 
-      startGyro() {
-        if (this.enabled) return;
+      startGyro(){
+        if(this.enabled) return;
         this.enabled = true;
         this.mode = "gyro";
-        window.addEventListener("deviceorientation", this._onOrientation, { passive: true });
-        window.addEventListener("devicemotion", this._onMotion, { passive: true }); // optional, for future use
+        window.addEventListener("deviceorientation", this._onOrientation, { passive:true });
       }
-
-      stopGyro() {
+      stopGyro(){
         this.enabled = false;
         window.removeEventListener("deviceorientation", this._onOrientation);
-        window.removeEventListener("devicemotion", this._onMotion);
       }
 
-      calibrate() {
-        // Use current raw angles as neutral center
+      calibrate(){
         this._baseline.beta = this._raw.beta;
         this._baseline.gamma = this._raw.gamma;
         this._baseline.alpha = this._raw.alpha;
       }
 
-      setTouch(x, y, active) {
+      setTouch(nx, ny, active){
         this.mode = "touch";
         this.touch.active = !!active;
-        this.touch.x = x;
-        this.touch.y = y;
-        this.touch.strength = Math.min(1, Math.hypot(x, y));
+        this.touch.x = nx;
+        this.touch.y = ny;
       }
 
-      update(dt) {
-        // Convert device angles to normalized controls
-        // deviceorientation: beta (front/back), gamma (left/right), alpha (compass-ish)
-        let pitchN = 0, rollN = 0, yawN = 0;
-
-        if (this.mode === "gyro" && this.enabled) {
-          const beta = (this._raw.beta - this._baseline.beta);   // degrees
-          const gamma = (this._raw.gamma - this._baseline.gamma);// degrees
-          const alpha = (this._raw.alpha - this._baseline.alpha);// degrees (not always stable)
-
-          // Map degrees -> normalized ~[-1..1] (tune denominators for "syrupy warp")
-          pitchN = beta / 25;   // 25° tilt = full-ish pitch
-          rollN  = gamma / 25;  // 25° tilt = full-ish roll
-          yawN   = alpha / 90;  // very soft yaw
-
-          // Apply gains
-          pitchN *= this.opts.gainPitch;
-          rollN  *= this.opts.gainRoll;
-          yawN   *= this.opts.gainYaw;
-
-        } else if (this.mode === "touch") {
-          // Touch: y up = pitch down (invert for airplane feel)
-          pitchN = -this.touch.y * 1.0;
-          rollN  =  this.touch.x * 1.0;
-          yawN   =  this.touch.x * 0.35; // optional
-        }
-
-        // Deadzone
-        pitchN = this._applyDeadzone(pitchN, this.opts.deadzone);
-        rollN  = this._applyDeadzone(rollN,  this.opts.deadzone);
-        yawN   = this._applyDeadzone(yawN,   this.opts.deadzone);
-
-        // Clamp
-        pitchN = this._clamp(pitchN, -this.opts.clamp, this.opts.clamp);
-        rollN  = this._clamp(rollN,  -this.opts.clamp, this.opts.clamp);
-        yawN   = this._clamp(yawN,   -this.opts.clamp, this.opts.clamp);
-
-        // Smooth (EMA)
-        const a = 1 - Math.exp(-dt / Math.max(1e-4, this.opts.smoothing));
-        this._smoothed.pitch += (pitchN - this._smoothed.pitch) * a;
-        this._smoothed.roll  += (rollN  - this._smoothed.roll)  * a;
-        this._smoothed.yaw   += (yawN   - this._smoothed.yaw)   * a;
-
-        // Output in a "radians-ish" small range (so it plugs into camera/ship rotations easily)
-        this.state.pitch = this._smoothed.pitch * 0.65;
-        this.state.roll  = this._smoothed.roll  * 0.85;
-        this.state.yaw   = this._smoothed.yaw   * 0.55;
-      }
-
-      _onOrientation(e) {
-        // Some browsers give nulls until permission is granted
-        if (e.beta == null || e.gamma == null) return;
-        this._raw.beta = e.beta;
-        this._raw.gamma = e.gamma;
-        this._raw.alpha = e.alpha ?? 0;
-      }
-
-      _onMotion(_e) { /* reserved: could use rotationRate for “true gyro” feel later */ }
-
-      _applyDeadzone(v, dz) {
+      _deadzone(v, dz){
         const av = Math.abs(v);
-        if (av < dz) return 0;
-        // Rescale so it ramps smoothly after deadzone
+        if(av < dz) return 0;
         const s = (av - dz) / (1 - dz);
         return Math.sign(v) * s;
       }
 
-      _clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+      update(dt){
+        let pitchN = 0, rollN = 0;
+
+        if(this.mode === "gyro" && this.enabled){
+          const beta = (this._raw.beta - this._baseline.beta);
+          const gamma = (this._raw.gamma - this._baseline.gamma);
+          const angle = getScreenAngle();
+          const { pitchSrc, rollSrc } = remap(beta, gamma, angle);
+
+          pitchN = (pitchSrc / 25) * this.opts.gainPitch;
+          rollN  = (rollSrc  / 25) * this.opts.gainRoll;
+
+          if(this.opts.invertPitch) pitchN *= -1;
+
+        } else if(this.mode === "touch"){
+          pitchN = -this.touch.y;
+          rollN  =  this.touch.x;
+        }
+
+        pitchN = this._deadzone(pitchN, this.opts.deadzone);
+        rollN  = this._deadzone(rollN,  this.opts.deadzone);
+
+        pitchN = clamp(pitchN, -this.opts.clamp, this.opts.clamp);
+        rollN  = clamp(rollN,  -this.opts.clamp, this.opts.clamp);
+
+        // Exponential smoothing (stable across frame rates)
+        const a = 1 - Math.exp(-dt / Math.max(1e-4, this.opts.smoothing));
+        this._sm.pitch += (pitchN - this._sm.pitch) * a;
+        this._sm.roll  += (rollN  - this._sm.roll)  * a;
+
+        // Output small values suitable for camera/ship rotations
+        this.state.pitch = this._sm.pitch * 0.62;
+        this.state.roll  = this._sm.roll  * 0.86;
+      }
+
+      _onOrientation(e){
+        if(e.beta == null || e.gamma == null) return;
+        this._raw.beta = e.beta;
+        this._raw.gamma = e.gamma;
+        this._raw.alpha = e.alpha ?? 0;
+      }
     }
 
-    // -----------------------------
-    // Demo loop (replace with your game loop)
-    // -----------------------------
+    // ---------- Renderer (starfield + cockpit cues) ----------
     const canvas = document.getElementById("c");
-    const ctx = canvas.getContext("2d");
-    const readout = document.getElementById("readout");
-    const modeEl = document.getElementById("mode");
-    const dot = document.getElementById("statusDot");
+    const ctx = canvas.getContext("2d", { alpha: false });
 
-    const btnEnable = document.getElementById("btnEnable");
-    const btnCal = document.getElementById("btnCalibrate");
-    const btnTouch = document.getElementById("btnTouch");
-
-    const touchPad = document.getElementById("touchPad");
-    const touchKnob = document.getElementById("touchKnob");
-
-    function resize() {
+    function resize(){
       const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
       canvas.width = Math.floor(innerWidth * dpr);
       canvas.height = Math.floor(innerHeight * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
     }
-    addEventListener("resize", resize, { passive: true });
+    addEventListener("resize", resize, { passive:true });
     resize();
 
-    const controls = new EmberwingGyroControls({
+    // Stars
+    const stars = [];
+    const STAR_COUNT = 900;
+    function seedStars(){
+      stars.length = 0;
+      for(let i=0;i<STAR_COUNT;i++){
+        stars.push({
+          x: (Math.random()*2-1),
+          y: (Math.random()*2-1),
+          z: Math.random(),          // depth 0..1
+          b: 0.4 + Math.random()*0.6 // brightness
+        });
+      }
+    }
+    seedStars();
+
+    function drawStarfield(dt, roll, pitch){
+      // "Warp-glide": forward drift + streaks that remain calm
+      const w = innerWidth, h = innerHeight;
+      const cx = w/2, cy = h/2;
+
+      // speed curve from how much you're moving (more input = more streak)
+      const mag = Math.min(1, Math.hypot(roll, pitch) / 0.9);
+      const baseSpeed = 0.18;              // constant forward drift
+      const warp = lerp(0.22, 0.85, mag);  // controlled, not nauseating
+      const speed = baseSpeed + warp;
+
+      // background wash
+      ctx.fillStyle = "rgb(4,5,10)";
+      ctx.fillRect(0,0,w,h);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-roll * 0.85);
+
+      // Gentle parallax from pitch (moves "horizon" feel)
+      const tiltY = pitch * 180;
+
+      // Draw stars
+      for(const s of stars){
+        // Move forward (increase z), wrap
+        s.z -= dt * speed * (0.25 + (1 - s.z) * 1.2);
+        if(s.z <= 0.001){
+          s.x = (Math.random()*2-1);
+          s.y = (Math.random()*2-1);
+          s.z = 1;
+          s.b = 0.4 + Math.random()*0.6;
+        }
+
+        const depth = Math.max(0.04, s.z);
+        const px = s.x / depth * (cx * 0.65);
+        const py = (s.y / depth * (cy * 0.65)) + tiltY;
+
+        const r = clamp((1 - depth) * 2.2, 0.7, 2.2);
+        const alpha = clamp((1 - depth) * 0.9, 0.12, 0.9) * s.b;
+
+        // Streak length scales with speed + depth
+        const streak = (speed * 110) * (1 - depth) * (0.35 + mag);
+        const dx = 0;
+        const dy = -streak; // streak "forward"
+
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = "rgba(200,230,255,0.85)";
+        ctx.lineWidth = r;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + dx, py + dy);
+        ctx.stroke();
+
+        // tiny star head
+        ctx.globalAlpha = alpha * 0.85;
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.beginPath();
+        ctx.arc(px, py, r*0.55, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      // Very subtle vignette
+      const g = ctx.createRadialGradient(cx, cy, Math.min(cx,cy)*0.35, cx, cy, Math.max(cx,cy));
+      g.addColorStop(0, "rgba(0,0,0,0)");
+      g.addColorStop(1, "rgba(0,0,0,0.55)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,w,h);
+    }
+
+    function drawReticleCues(roll, pitch){
+      // Add minimal “target brackets” that sway with controls
+      const w = innerWidth, h = innerHeight;
+      const cx = w/2, cy = h/2;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-roll);
+
+      const offsetY = pitch * 200;
+
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = "rgba(180,220,255,0.65)";
+      ctx.lineWidth = 1.25;
+
+      const size = Math.min(w,h) * 0.14;
+      const gap = 18;
+
+      // four corner brackets
+      const pts = [
+        [-size, -size + offsetY],
+        [ size, -size + offsetY],
+        [-size,  size + offsetY],
+        [ size,  size + offsetY],
+      ];
+
+      for(const [x,y] of pts){
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.sign(x)*gap, y);
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + Math.sign(y)*gap);
+        ctx.stroke();
+      }
+
+      // center crosshair
+      ctx.globalAlpha = 0.75;
+      ctx.strokeStyle = "rgba(220,245,255,0.75)";
+      ctx.beginPath();
+      ctx.moveTo(-42, offsetY); ctx.lineTo(-14, offsetY);
+      ctx.moveTo( 14, offsetY); ctx.lineTo( 42, offsetY);
+      ctx.moveTo(0, offsetY-42); ctx.lineTo(0, offsetY-14);
+      ctx.moveTo(0, offsetY+14); ctx.lineTo(0, offsetY+42);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // ---------- UI wiring ----------
+    const dot = document.getElementById("dot");
+    const btnEnable = document.getElementById("btnEnable");
+    const btnCal = document.getElementById("btnCal");
+    const btnTouch = document.getElementById("btnTouch");
+
+    const touchPad = document.getElementById("touchPad");
+    const knob = document.getElementById("knob");
+
+    const readMode = document.getElementById("readMode");
+    const readSignal = document.getElementById("readSignal");
+    const readPitch = document.getElementById("readPitch");
+    const readRoll = document.getElementById("readRoll");
+    const readAngle = document.getElementById("readAngle");
+    const readDZ = document.getElementById("readDZ");
+    const readSm = document.getElementById("readSm");
+    const pillState = document.getElementById("pillState");
+    const pillTrim = document.getElementById("pillTrim");
+    const barFill = document.getElementById("barFill");
+
+    const controls = new EmberwingControls({
       smoothing: 0.09,
       deadzone: 0.04,
-      gainPitch: 1.2,
-      gainRoll: 1.35,
-      gainYaw: 0.45,
-      clamp: 0.9
+      gainPitch: 1.18,
+      gainRoll: 1.32,
+      clamp: 0.95
     });
 
-    function setStatus(on) {
+    readDZ.textContent = String(controls.opts.deadzone.toFixed(2));
+    readSm.textContent = String(controls.opts.smoothing.toFixed(2));
+
+    function setDot(on){
       dot.style.background = on ? "#3cff7a" : "#ff4d4d";
       dot.style.boxShadow = on ? "0 0 16px rgba(60,255,122,0.55)" : "0 0 16px rgba(255,77,77,0.55)";
     }
 
+    function setTouchVisible(v){
+      touchPad.style.display = v ? "block" : "none";
+    }
+
     btnEnable.addEventListener("click", async () => {
-      try {
+      try{
         const res = await controls.requestPermission();
-        if (!res.ok) {
+        if(!res.ok){
           controls.mode = "touch";
-          modeEl.textContent = `mode: touch (gyro unavailable: ${res.reason})`;
-          touchPad.style.display = "block";
-          setStatus(false);
+          controls.stopGyro();
+          setDot(false);
+          setTouchVisible(true);
+          readMode.textContent = "TOUCH";
+          readSignal.textContent = "GYRO BLOCKED";
+          pillState.textContent = "GLIDE";
           return;
         }
         controls.startGyro();
         controls.calibrate();
-        touchPad.style.display = "none";
-        setStatus(true);
-        modeEl.textContent = "mode: gyro (tilt to fly) — tap Calibrate if drift";
-      } catch (err) {
+        setDot(true);
+        setTouchVisible(false);
+        readMode.textContent = "GYRO";
+        readSignal.textContent = "CLEAR";
+        pillTrim.textContent = "CENTER";
+      } catch(e){
         controls.mode = "touch";
-        touchPad.style.display = "block";
-        setStatus(false);
-        modeEl.textContent = `mode: touch (error: ${String(err)})`;
+        controls.stopGyro();
+        setDot(false);
+        setTouchVisible(true);
+        readMode.textContent = "TOUCH";
+        readSignal.textContent = "ERROR";
       }
     });
 
     btnCal.addEventListener("click", () => {
       controls.calibrate();
-      modeEl.textContent = controls.mode === "gyro"
-        ? "mode: gyro (re-centered)"
-        : "mode: touch";
+      pillTrim.textContent = "CENTER";
+      // little pulse
+      pillTrim.style.transform = "scale(1.03)";
+      setTimeout(()=>pillTrim.style.transform="scale(1)", 120);
     });
 
     btnTouch.addEventListener("click", () => {
-      controls.stopGyro();
       controls.mode = "touch";
-      touchPad.style.display = "block";
-      setStatus(false);
-      modeEl.textContent = "mode: touch (drag the pad)";
+      controls.stopGyro();
+      setDot(false);
+      setTouchVisible(true);
+      readMode.textContent = "TOUCH";
+      readSignal.textContent = "CLEAR";
     });
 
-    // Touchpad handling
-    const padState = { pointerId: null, cx: 0, cy: 0, radius: 0 };
-
-    function padMetrics() {
-      const r = touchPad.getBoundingClientRect();
-      padState.cx = r.left + r.width / 2;
-      padState.cy = r.top + r.height / 2;
-      padState.radius = Math.min(r.width, r.height) * 0.34;
+    // Touchpad logic
+    const pad = { id:null, cx:0, cy:0, r:0 };
+    function measurePad(){
+      const rect = touchPad.getBoundingClientRect();
+      pad.cx = rect.left + rect.width/2;
+      pad.cy = rect.top + rect.height/2;
+      pad.r  = Math.min(rect.width, rect.height) * 0.34;
     }
-    addEventListener("resize", padMetrics, { passive: true });
-    padMetrics();
+    addEventListener("resize", measurePad, { passive:true });
+    measurePad();
 
-    function setKnob(nx, ny) {
-      const px = nx * padState.radius;
-      const py = ny * padState.radius;
-      touchKnob.style.left = `calc(50% + ${px}px)`;
-      touchKnob.style.top  = `calc(50% + ${py}px)`;
+    function setKnob(nx, ny){
+      knob.style.left = `calc(50% + ${nx * pad.r}px)`;
+      knob.style.top  = `calc(50% + ${ny * pad.r}px)`;
     }
 
-    touchPad.addEventListener("pointerdown", (e) => {
+    touchPad.addEventListener("pointerdown", (e)=>{
       touchPad.setPointerCapture(e.pointerId);
-      padState.pointerId = e.pointerId;
-      controls.setTouch(0, 0, true);
-      padMetrics();
+      pad.id = e.pointerId;
+      measurePad();
+      controls.setTouch(0,0,true);
     });
 
-    touchPad.addEventListener("pointermove", (e) => {
-      if (padState.pointerId !== e.pointerId) return;
-      const dx = (e.clientX - padState.cx);
-      const dy = (e.clientY - padState.cy);
-      const r = padState.radius;
-      let nx = dx / r;
-      let ny = dy / r;
-      const mag = Math.hypot(nx, ny);
-      if (mag > 1) { nx /= mag; ny /= mag; }
+    touchPad.addEventListener("pointermove", (e)=>{
+      if(pad.id !== e.pointerId) return;
+      const dx = e.clientX - pad.cx;
+      const dy = e.clientY - pad.cy;
+      let nx = dx / pad.r;
+      let ny = dy / pad.r;
+      const m = Math.hypot(nx, ny);
+      if(m > 1){ nx/=m; ny/=m; }
       controls.setTouch(nx, ny, true);
       setKnob(nx, ny);
     });
 
-    function endTouch(e) {
-      if (padState.pointerId !== e.pointerId) return;
-      padState.pointerId = null;
-      controls.setTouch(0, 0, false);
-      setKnob(0, 0);
+    function endTouch(e){
+      if(pad.id !== e.pointerId) return;
+      pad.id = null;
+      controls.setTouch(0,0,false);
+      setKnob(0,0);
     }
     touchPad.addEventListener("pointerup", endTouch);
     touchPad.addEventListener("pointercancel", endTouch);
 
-    // Minimal “flight” visualization
+    // Desktop default -> touch pad visible
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if(!isMobile){
+      controls.mode = "touch";
+      setDot(false);
+      setTouchVisible(true);
+      readMode.textContent = "TOUCH";
+      readSignal.textContent = "DESKTOP";
+    } else {
+      setDot(false);
+      readMode.textContent = "WAITING";
+      readSignal.textContent = "TAP ENABLE";
+    }
+
+    // ---------- Main loop ----------
     let tPrev = performance.now();
-    function loop(tNow) {
-      const dt = Math.min(0.05, (tNow - tPrev) / 1000);
+    function frame(tNow){
+      const dt = Math.min(0.05, (tNow - tPrev)/1000);
       tPrev = tNow;
 
       controls.update(dt);
+      const { pitch, roll } = controls.state;
 
-      // Use these values inside Emberwing:
-      // controls.state.pitch / roll / yaw
-      const { pitch, roll, yaw } = controls.state;
+      drawStarfield(dt, roll, pitch);
+      drawReticleCues(roll, pitch);
 
-      readout.textContent =
-        `pitch: ${pitch.toFixed(3)}  roll: ${roll.toFixed(3)}  yaw: ${yaw.toFixed(3)}`;
+      // UI readouts
+      const angle = getScreenAngle();
+      readAngle.textContent = `${angle}°`;
+      readPitch.textContent = pitch.toFixed(3);
+      readRoll.textContent  = roll.toFixed(3);
 
-      // Draw calm “horizon” that banks & pitches
-      ctx.clearRect(0, 0, innerWidth, innerHeight);
-      ctx.save();
-      ctx.translate(innerWidth/2, innerHeight/2);
-      ctx.rotate(-roll);
+      const mag = Math.min(1, Math.hypot(pitch, roll) / 0.9);
+      const watt = lerp(0.55, 0.98, mag);
+      barFill.style.width = `${Math.round(watt*100)}%`;
 
-      const horizonY = pitch * 220;
-      ctx.globalAlpha = 0.9;
+      // state label
+      if(mag < 0.12) pillState.textContent = "GLIDE";
+      else if(mag < 0.32) pillState.textContent = "STEADY";
+      else pillState.textContent = "IGNITION";
 
-      // Sky
-      ctx.fillStyle = "rgba(255,255,255,0.06)";
-      ctx.fillRect(-innerWidth, -innerHeight, innerWidth*2, innerHeight*2);
-
-      // Horizon line
-      ctx.strokeStyle = "rgba(255,255,255,0.55)";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-innerWidth, horizonY);
-      ctx.lineTo(innerWidth, horizonY);
-      ctx.stroke();
-
-      // Center reticle
-      ctx.globalAlpha = 0.8;
-      ctx.strokeStyle = "rgba(255,255,255,0.75)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(0, 0, 18, 0, Math.PI*2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-40, 0); ctx.lineTo(-18, 0);
-      ctx.moveTo(18, 0);  ctx.lineTo(40, 0);
-      ctx.stroke();
-
-      // Subtle yaw indicator
-      ctx.globalAlpha = 0.65;
-      ctx.fillStyle = "rgba(255,255,255,0.45)";
-      ctx.fillRect(-2, -90, 4, 28);
-      ctx.translate(yaw * 90, 0);
-      ctx.fillStyle = "rgba(255,255,255,0.85)";
-      ctx.fillRect(-2, -90, 4, 28);
-
-      ctx.restore();
-
-      requestAnimationFrame(loop);
+      requestAnimationFrame(frame);
     }
-    requestAnimationFrame(loop);
-
-    // Default: show touch pad on desktop
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (!isMobile) {
-      controls.mode = "touch";
-      touchPad.style.display = "block";
-      modeEl.textContent = "mode: touch (desktop)";
-      setStatus(false);
-    } else {
-      setStatus(false);
-      modeEl.textContent = "mode: waiting (tap Enable Gyro)";
-    }
+    requestAnimationFrame(frame);
   </script>
 </body>
 </html>
