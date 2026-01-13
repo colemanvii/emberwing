@@ -1,60 +1,56 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>EMBERWING // HAVEN</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>EMBERWING // HAVEN — Fighter Pilot</title>
   <style>
     :root{
-      --ink:rgba(236,246,255,.92);
-      --muted:rgba(236,246,255,.60);
-      --dim:rgba(236,246,255,.30);
-      --glass:rgba(10,14,18,.22);
-      --glass2:rgba(10,14,18,.34);
-      --line:rgba(236,246,255,.11);
-      --line2:rgba(236,246,255,.07);
-      --accent:rgba(150,210,255,.90);
-      --mint:rgba(170,240,210,.85);
-      --gold:rgba(255,230,170,.82);
-      --danger:rgba(255,140,140,.80);
+      --ink: rgba(236,246,255,.92);
+      --muted: rgba(236,246,255,.62);
+      --dim: rgba(236,246,255,.30);
+      --line: rgba(236,246,255,.11);
+      --line2: rgba(236,246,255,.07);
+      --glass: rgba(10,14,18,.22);
+      --glass2: rgba(10,14,18,.34);
+      --accent: rgba(150,210,255,.92);
+      --mint: rgba(170,240,210,.86);
+      --amber: rgba(255,226,160,.82);
+      --hot: rgba(255,120,120,.72);
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;
-      background:#070d13;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      color: var(--ink);
-      overflow:hidden;
+      margin:0; overflow:hidden;
+      background:#060b10;
+      color:var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
     }
-
     #stage{position:fixed; inset:0}
     canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
 
-    /* cinematic veil */
+    /* soft cinematic veil */
     #veil{
       position:absolute; inset:0; pointer-events:none;
       background:
-        radial-gradient(900px 600px at 50% 16%, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 60%),
-        radial-gradient(1200px 900px at 50% 60%, rgba(0,0,0,0) 0%, rgba(0,0,0,.18) 58%, rgba(0,0,0,.40) 100%),
-        linear-gradient(to bottom, rgba(0,0,0,.26) 0%, rgba(0,0,0,.05) 36%, rgba(0,0,0,.28) 100%);
+        radial-gradient(900px 600px at 50% 18%, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 60%),
+        radial-gradient(1200px 900px at 50% 62%, rgba(0,0,0,0) 0%, rgba(0,0,0,.20) 58%, rgba(0,0,0,.42) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,.30) 0%, rgba(0,0,0,.06) 40%, rgba(0,0,0,.34) 100%);
       mix-blend-mode:multiply;
     }
 
-    /* top UI */
+    /* UI */
     .topbar{
-      position:absolute; left:18px; right:18px; top:14px;
+      position:absolute; left:16px; right:16px; top:14px;
       display:flex; justify-content:space-between; gap:14px;
       pointer-events:none;
     }
-
     .brand{display:flex; flex-direction:column; gap:10px; min-width:340px}
     .brandRow{display:flex; align-items:center; gap:10px}
     .dot{
-      width:8px; height:8px; border-radius:99px;
+      width:8px; height:8px; border-radius:999px;
       background:rgba(255,255,255,.24);
-      box-shadow:0 0 26px rgba(170,220,255,.22);
+      box-shadow:0 0 26px rgba(150,210,255,.20);
     }
     .title{letter-spacing:.18em; font-size:12px; opacity:.92; white-space:nowrap}
     .pill{
@@ -64,30 +60,23 @@
       background:rgba(10,14,18,.18);
       color:var(--muted);
       font-size:11px; letter-spacing:.14em; text-transform:uppercase;
-      transition: filter .18s ease, transform .18s ease;
     }
-
     .mission{
-      max-width:640px;
+      max-width:680px;
       padding:10px 12px;
       border-radius:14px;
       border:1px solid var(--line2);
-      background:linear-gradient(to bottom, rgba(10,14,18,.24), rgba(10,14,18,.08));
-      box-shadow:0 18px 60px rgba(0,0,0,.22);
+      background:linear-gradient(to bottom, rgba(10,14,18,.26), rgba(10,14,18,.10));
+      box-shadow:0 18px 60px rgba(0,0,0,.24);
       color:rgba(236,246,255,.74);
       font-size:12px; line-height:1.35; letter-spacing:.04em;
       backdrop-filter: blur(10px);
     }
     .mission b{color:rgba(236,246,255,.92); font-weight:600}
-    .mission .jp{opacity:.65}
-    .mission .sub{
-      margin-top:6px;
-      opacity:.78;
-      letter-spacing:.03em;
-      min-height:16px;
-    }
+    .mission .jp{opacity:.62}
+    .mission .sub{margin-top:6px; opacity:.80; min-height:16px}
 
-    .hudWrap{display:flex; gap:14px; align-items:flex-start; justify-content:flex-end; pointer-events:none}
+    .hudWrap{display:flex; gap:12px; align-items:flex-start; justify-content:flex-end}
     .panel{
       width:320px;
       border-radius:16px;
@@ -96,8 +85,7 @@
       box-shadow:0 18px 55px rgba(0,0,0,.24);
       backdrop-filter: blur(10px);
       padding:12px 12px 10px;
-      transform: translateY(0);
-      transition: transform .18s ease, filter .18s ease, opacity .18s ease;
+      transition: opacity .18s ease, transform .18s ease, filter .18s ease;
     }
     .panelHeader{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:10px}
     .label{font-size:11px; letter-spacing:.18em; text-transform:uppercase; opacity:.62}
@@ -107,18 +95,15 @@
       border:1px solid var(--line);
       color:rgba(236,246,255,.62);
       background:rgba(10,14,18,.18);
-      transition: filter .18s ease, border-color .18s ease;
     }
     .grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; font-size:12px}
     .k{opacity:.55; letter-spacing:.08em}
     .v{text-align:right; opacity:.92; letter-spacing:.06em}
-    .v.muted{opacity:.70}
     .divider{height:1px; margin:10px 0; background:linear-gradient(to right, rgba(236,246,255,0), var(--line), rgba(236,246,255,0))}
 
-    /* bottom UI */
     .controls{
-      position:absolute; left:18px; bottom:18px;
-      display:flex; gap:8px; flex-wrap:wrap; max-width:860px;
+      position:absolute; left:16px; bottom:16px;
+      display:flex; gap:8px; flex-wrap:wrap; max-width:900px;
       pointer-events:none; opacity:.74;
       transition: opacity .18s ease, transform .18s ease;
     }
@@ -141,14 +126,14 @@
     }
 
     .wattage{
-      position:absolute; right:18px; bottom:18px; width:378px;
+      position:absolute; right:16px; bottom:16px; width:390px;
       border-radius:16px;
       border:1px solid var(--line2);
       background:linear-gradient(to bottom, rgba(10,14,18,.22), rgba(10,14,18,.10));
       box-shadow:0 18px 55px rgba(0,0,0,.24);
       backdrop-filter: blur(10px);
       padding:12px; pointer-events:none;
-      transition: transform .18s ease, filter .18s ease, opacity .18s ease;
+      transition: opacity .18s ease, transform .18s ease;
     }
     .wRow{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:10px}
     .bar{
@@ -160,114 +145,100 @@
     .fill{
       height:100%; width:50%; border-radius:999px;
       background:linear-gradient(90deg, rgba(150,210,255,.0), rgba(150,210,255,.62), rgba(170,240,210,.52));
-      transition: width .18s ease;
+      transition: width .12s ease;
     }
     .wGrid{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; margin-top:10px; font-size:12px}
 
-    /* center reticle */
+    /* Compelling center: velocity vector + flight path brackets (not the boring dot-cluster) */
     .reticle{
-      position:absolute;
-      left:50%; top:54%;
-      width:460px; height:280px;
-      transform:translate(-50%,-50%) scale(1);
+      position:absolute; left:50%; top:54%;
+      width:560px; height:340px;
+      transform:translate(-50%,-50%);
       pointer-events:none;
-      opacity:.18;
+      opacity:.26;
       filter: drop-shadow(0 14px 28px rgba(0,0,0,.22));
-      transition: transform .18s ease, opacity .18s ease, filter .18s ease;
+      transition: opacity .15s ease, transform .15s ease, filter .15s ease;
     }
     .reticle .h{
       position:absolute; left:0; right:0; top:50%;
       height:1px;
-      background:linear-gradient(to right, rgba(236,246,255,0), rgba(236,246,255,.22), rgba(236,246,255,0));
-      transition: background .18s ease;
+      background:linear-gradient(to right, rgba(236,246,255,0), rgba(236,246,255,.18), rgba(236,246,255,0));
     }
-    .reticle .c{
+    .reticle .ring{
       position:absolute; left:50%; top:50%;
-      width:72px; height:72px;
+      width:86px; height:86px;
       transform:translate(-50%,-50%);
       border-radius:999px;
-      border:1px solid rgba(236,246,255,.22);
+      border:1px solid rgba(236,246,255,.20);
       box-shadow:0 0 0 1px rgba(236,246,255,.06) inset;
-      transition: border-color .18s ease, box-shadow .18s ease;
     }
-    .reticle .p{
+    .reticle .pip{
       position:absolute; left:50%; top:50%;
       width:6px; height:6px;
       transform:translate(-50%,-50%);
       border-radius:99px;
-      background:rgba(236,246,255,.20);
-      box-shadow:0 0 0 12px rgba(236,246,255,.03);
-      transition: box-shadow .18s ease;
+      background:rgba(236,246,255,.22);
+      box-shadow:0 0 0 14px rgba(236,246,255,.03);
+    }
+    .reticle .br{
+      position:absolute; left:50%; top:50%;
+      width:180px; height:120px;
+      transform:translate(-50%,-50%);
+      opacity:.85;
+    }
+    .br:before,.br:after{
+      content:""; position:absolute; top:0; bottom:0; width:18px;
+      border-top:1px solid rgba(236,246,255,.18);
+      border-bottom:1px solid rgba(236,246,255,.18);
+    }
+    .br:before{left:0; border-left:1px solid rgba(236,246,255,.18)}
+    .br:after{right:0; border-right:1px solid rgba(236,246,255,.18)}
+    .reticle .vv{
+      position:absolute; left:50%; top:50%;
+      width:16px; height:16px;
+      transform:translate(-50%,-50%);
+      border-radius:99px;
+      border:1px solid rgba(170,240,210,.22);
+      box-shadow:0 0 26px rgba(170,240,210,.08);
     }
 
-    /* pulses */
-    .pulse{animation: pulse .35s ease}
-    @keyframes pulse{
-      0%{transform:translateY(0) scale(1); filter:brightness(1)}
-      35%{transform:translateY(-1px) scale(1.02); filter:brightness(1.08)}
-      100%{transform:translateY(0) scale(1); filter:brightness(1)}
+    /* lock + fighter bite */
+    .lock-on .reticle{
+      opacity:.40;
+      transform:translate(-50%,-50%) scale(1.02);
+      filter: drop-shadow(0 18px 34px rgba(0,0,0,.28));
+    }
+    .lock-on .reticle .ring{border-color: rgba(170,240,210,.34)}
+    .lock-on .reticle .vv{border-color: rgba(255,226,160,.28)}
+    .lock-on .reticle .h{
+      background:linear-gradient(to right, rgba(236,246,255,0), rgba(170,240,210,.22), rgba(236,246,255,0));
     }
 
-    /* HUD breath */
-    .hud-breathe .panel,
-    .hud-breathe .wattage{animation: breathe 1.35s ease-in-out infinite}
+    .hudHidden .panel,
+    .hudHidden .wattage,
+    .hudHidden .controls{
+      opacity:0; transform:translateY(6px);
+    }
+
+    /* subtle “warp syrup” breathing of HUD in monk */
+    .monk-breathe .panel,
+    .monk-breathe .wattage{
+      animation: breathe 1.35s ease-in-out infinite;
+    }
     @keyframes breathe{
       0%{filter:brightness(1); transform:translateY(0)}
       50%{filter:brightness(1.05); transform:translateY(-1px)}
       100%{filter:brightness(1); transform:translateY(0)}
     }
 
-    /* Gate Lock state */
-    .lock-on .reticle{
-      opacity:.30;
-      filter: drop-shadow(0 18px 34px rgba(0,0,0,.28));
-      transform:translate(-50%,-50%) scale(1.03);
-    }
-    .lock-on .reticle .c{
-      border-color: rgba(170,240,210,.34);
-      box-shadow:
-        0 0 0 1px rgba(236,246,255,.06) inset,
-        0 0 26px rgba(170,240,210,.14);
-    }
-    .lock-on .reticle .h{
-      background:linear-gradient(to right, rgba(236,246,255,0), rgba(170,240,210,.26), rgba(236,246,255,0));
-    }
-    .lock-on .reticle .p{
-      box-shadow:0 0 0 12px rgba(236,246,255,.03), 0 0 28px rgba(170,240,210,.10);
-    }
-
-    /* HUD hide */
-    .hudHidden .panel,
-    .hudHidden .wattage,
-    .hudHidden .controls{
-      opacity:0;
-      transform:translateY(6px);
-      transition:.22s ease;
-    }
-
-    /* tiny debug warning (only if canvas fails) */
-    #fatal{
-      position:absolute; left:18px; bottom:18px;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,180,180,.22);
-      background:rgba(30,10,10,.22);
-      color:rgba(255,220,220,.85);
-      font-size:12px; letter-spacing:.04em;
-      max-width:min(620px, calc(100vw - 36px));
-      display:none;
-      backdrop-filter: blur(10px);
-    }
-
     @media (max-width: 980px){
       .hudWrap{display:none}
       .mission{max-width:84vw}
-      .wattage{width:min(400px, calc(100vw - 36px))}
-      .reticle{opacity:.14}
+      .wattage{width:min(410px, calc(100vw - 32px))}
+      .reticle{opacity:.18}
     }
   </style>
 </head>
-
 <body>
 <div id="stage">
   <canvas id="scene"></canvas>
@@ -277,11 +248,11 @@
     <div class="brand">
       <div class="brandRow">
         <div class="dot"></div>
-        <div class="title">EMBERWING&nbsp;//&nbsp;HAVEN</div>
-        <div class="pill" id="pillMode">MONK</div>
+        <div class="title">EMBERWING // HAVEN</div>
+        <div class="pill" id="pillMode">FIGHTER</div>
       </div>
       <div class="mission" id="missionBox">
-        <b>Mission:</b> forward flight, steady hands. <span class="jp">ゆっくりと。今ここ。</span>
+        <b>Mission:</b> warp-speed glide, syrup control, perfect lines. <span class="jp">ゆっくりと。今ここ。</span>
         <div class="sub" id="missionSub"></div>
       </div>
     </div>
@@ -290,13 +261,13 @@
       <div class="panel">
         <div class="panelHeader">
           <div class="label">NAV</div>
-          <div class="mode" id="modeTag">FLOW</div>
+          <div class="mode" id="modeTag">FIGHTER</div>
         </div>
         <div class="grid">
           <div class="k">HDG</div><div class="v" id="hdg">000</div>
           <div class="k">ALT</div><div class="v" id="alt">00000</div>
           <div class="k">SPD</div><div class="v" id="spd">000</div>
-          <div class="k">BOOST</div><div class="v muted" id="boost">OFF</div>
+          <div class="k">WARP</div><div class="v" id="warp">OFF</div>
         </div>
         <div class="divider"></div>
         <div class="grid">
@@ -307,8 +278,8 @@
 
       <div class="panel">
         <div class="panelHeader">
-          <div class="label">MISSION</div>
-          <div class="mode" id="stabilityTag">STEADY</div>
+          <div class="label">RUN</div>
+          <div class="mode" id="stabilityTag">ACCURATE</div>
         </div>
         <div class="grid">
           <div class="k">GATES</div><div class="v" id="gates">0</div>
@@ -325,17 +296,20 @@
     </div>
   </div>
 
-  <div class="reticle">
+  <div class="reticle" id="reticle">
     <div class="h"></div>
-    <div class="c"></div>
-    <div class="p"></div>
+    <div class="ring"></div>
+    <div class="pip"></div>
+    <div class="br"></div>
+    <div class="vv" id="vv"></div>
   </div>
 
   <div class="controls">
-    <div class="chip"><span class="key">↑/↓</span> pitch</div>
+    <div class="chip"><span class="key">↑</span> pull (pitch up)</div>
+    <div class="chip"><span class="key">↓</span> push (pitch down)</div>
     <div class="chip"><span class="key">←/→</span> roll</div>
-    <div class="chip"><span class="key">space</span> boost</div>
-    <div class="chip"><span class="key">caps</span> monk</div>
+    <div class="chip"><span class="key">space</span> warp</div>
+    <div class="chip"><span class="key">f</span> fighter/monk</div>
     <div class="chip"><span class="key">enter</span> hud</div>
   </div>
 
@@ -347,199 +321,187 @@
     <div class="bar"><div class="fill" id="wFill"></div></div>
     <div class="wGrid">
       <div class="k">SIGNAL</div><div class="v" id="signal">CLEAR</div>
-      <div class="k">STATE</div><div class="v" id="stateTag">GLIDE</div>
+      <div class="k">STATE</div><div class="v" id="stateTag">LOCKED</div>
     </div>
   </div>
-
-  <div id="fatal"></div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const fatal = (msg) => {
-    const el = document.getElementById("fatal");
-    el.style.display = "block";
-    el.textContent = msg;
-  };
-
-  const canvas = document.getElementById("scene");
-  if(!canvas) return fatal("Canvas not found (id='scene').");
-  const ctx = canvas.getContext("2d", { alpha:false });
-  if(!ctx) return fatal("Canvas context failed. Try a modern browser.");
+(() => {
+  const c = document.getElementById("scene");
+  const ctx = c.getContext("2d", { alpha:false });
 
   const DPR = () => Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   let W=0,H=0,dpr=1;
-
   function resize(){
     dpr = DPR();
-    W = window.innerWidth|0; H = window.innerHeight|0;
-    canvas.width = (W*dpr)|0; canvas.height = (H*dpr)|0;
-    canvas.style.width = W+"px"; canvas.style.height = H+"px";
+    W = innerWidth|0; H = innerHeight|0;
+    c.width = (W*dpr)|0; c.height = (H*dpr)|0;
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.imageSmoothingEnabled = true;
   }
-  window.addEventListener("resize", resize, {passive:true});
+  addEventListener("resize", resize, {passive:true});
   resize();
 
-  // ---------- utils ----------
-  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
-  const lerp  = (a,b,t)=>a+(b-a)*t;
-  const smooth = t => t*t*(3-2*t);
-  const rnd = (a=1)=>Math.random()*a;
-  const easeTo = (v, target, k, dt) => v + (target - v) * (1 - Math.exp(-k * dt));
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const smooth=t=>t*t*(3-2*t);
+  const rnd=(a=1)=>Math.random()*a;
+  const easeTo=(v,target,k,dt)=>v + (target-v)*(1-Math.exp(-k*dt));
 
-  // stable-ish hash noise
+  // hash noise
   function hash(x,y){
     let n = x*374761393 + y*668265263;
     n = (n^(n>>>13)) * 1274126177;
     n = n^(n>>>16);
-    return (n>>>0) / 4294967295;
+    return (n>>>0)/4294967295;
   }
   function noise(x,y){
-    const xi = Math.floor(x), yi = Math.floor(y);
-    const xf = x - xi, yf = y - yi;
-    const v00 = hash(xi, yi);
-    const v10 = hash(xi+1, yi);
-    const v01 = hash(xi, yi+1);
-    const v11 = hash(xi+1, yi+1);
-    const u = smooth(xf), v = smooth(yf);
-    return lerp(lerp(v00, v10, u), lerp(v01, v11, u), v);
+    const xi=Math.floor(x), yi=Math.floor(y);
+    const xf=x-xi, yf=y-yi;
+    const v00=hash(xi,yi), v10=hash(xi+1,yi), v01=hash(xi,yi+1), v11=hash(xi+1,yi+1);
+    const u=smooth(xf), v=smooth(yf);
+    return lerp(lerp(v00,v10,u), lerp(v01,v11,u), v);
   }
   function fbm(x,y){
-    let v=0, a=0.55, f=1.0;
-    for(let i=0;i<6;i++){
-      v += a * noise(x*f, y*f);
-      f *= 2.0;
-      a *= 0.5;
-    }
+    let v=0,a=0.55,f=1.0;
+    for(let i=0;i<6;i++){ v += a*noise(x*f,y*f); f*=2; a*=0.5; }
     return v;
   }
 
-  // ---------- UI ----------
-  const $ = id => document.getElementById(id);
-  const ui = {
-    pillMode: $("pillMode"),
-    modeTag: $("modeTag"),
-    stabilityTag: $("stabilityTag"),
-    hdg:$("hdg"), alt:$("alt"), spd:$("spd"), boost:$("boost"),
+  // UI
+  const $ = (id)=>document.getElementById(id);
+  const ui={
+    pillMode:$("pillMode"), modeTag:$("modeTag"), stabilityTag:$("stabilityTag"),
+    hdg:$("hdg"), alt:$("alt"), spd:$("spd"), warp:$("warp"),
     pitch:$("pitch"), roll:$("roll"),
-    gates:$("gates"), miss:$("miss"), score:$("score"), range:$("range"),
-    combo:$("combo"), lock:$("lock"),
+    gates:$("gates"), miss:$("miss"), score:$("score"), range:$("range"), combo:$("combo"), lock:$("lock"),
     wFill:$("wFill"), wState:$("wState"), signal:$("signal"), stateTag:$("stateTag"),
     missionSub:$("missionSub"), missionBox:$("missionBox"),
+    vv:$("vv"),
   };
-  const fmt3 = n => String(Math.round(n)).padStart(3,'0');
-  const fmt5 = n => String(Math.round(n)).padStart(5,'0');
-
+  const fmt3=n=>String(Math.round(n)).padStart(3,"0");
+  const fmt5=n=>String(Math.round(n)).padStart(5,"0");
+  function whisper(text,ms=1200){
+    ui.missionSub.textContent=text;
+    clearTimeout(whisper._t);
+    whisper._t=setTimeout(()=>ui.missionSub.textContent="",ms);
+  }
   function pulse(el){
-    if(!el) return;
-    el.classList.remove("pulse");
-    void el.offsetWidth;
-    el.classList.add("pulse");
+    el.classList.remove("pulse"); void el.offsetWidth; el.classList.add("pulse");
   }
 
-  let whisperTimeout = null;
-  function whisper(text, ms=1400){
-    if(!ui.missionSub) return;
-    ui.missionSub.textContent = text;
-    clearTimeout(whisperTimeout);
-    whisperTimeout = setTimeout(()=>{ ui.missionSub.textContent = ""; }, ms);
-  }
-
-  // ---------- input ----------
-  const keys = new Set();
-  window.addEventListener("keydown", (e) => {
-    if (e.code === "Enter"){
-      state.hud = !state.hud;
+  // INPUT (FIXED: aviation feel — Up = pull = pitch up)
+  const keys=new Set();
+  addEventListener("keydown",(e)=>{
+    if(e.code==="Enter"){
+      state.hud=!state.hud;
       document.body.classList.toggle("hudHidden", !state.hud);
     }
-    if (e.code === "CapsLock"){
-      state.monk = !state.monk;
-      whisper(state.monk ? "Monk engaged: glide, soften, listen." : "Go mode: sharper turns, hotter score.", 1600);
-      pulse(ui.missionBox); pulse(ui.pillMode);
+    if(e.code==="KeyF"){
+      state.fighter = !state.fighter;
+      state.monk = !state.fighter;
+      applyMode();
     }
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
     keys.add(e.code);
-  }, {passive:false});
-  window.addEventListener("keyup", (e) => keys.delete(e.code), {passive:true});
+  },{passive:false});
+  addEventListener("keyup",(e)=>keys.delete(e.code),{passive:true});
 
-  // ---------- game state ----------
-  const state = {
+  // WORLD
+  const state={
     t:0,
+    // physics state (actual)
     pitch:0, roll:0,
-    hdg:352,
-    alt:38200,
-    spd:110,
-    boost:false,
-    monk:true,
+    // desired (from input) for syrup control
+    pitchCmd:0, rollCmd:0,
+
+    hdg:352, alt:38200,
+    spd:220,
+    warpOn:false,
+
+    monk:false,
+    fighter:true,
     hud:true,
 
-    range:0.0,
+    range:0,
     score:0,
     combo:1,
     gatesHit:0,
     miss:0,
 
     wattage:0.78,
-    drift:0,
     hitGlow:0,
 
-    // lock feel
     lockStrength:0,
     _lockWhispered:false,
 
-    // gate system
+    // warp lines
+    streaks:[],
+    // stars
+    stars:[],
+    // gates
     gates:[],
-    gateSpawn:0,
-
-    // particles
-    motes:[],
-    sparks:[],
-
-    // surprise beacon
-    beaconT:-3,
-    beaconX:0.5,
+    gateSpawn:0
   };
 
-  // ---------- world builders ----------
-  function spawnMotes(){
-    state.motes.length = 0;
-    const count = 70;
-    for(let i=0;i<count;i++){
-      state.motes.push({
+  function applyMode(){
+    if(state.fighter){
+      ui.pillMode.textContent="FIGHTER";
+      ui.modeTag.textContent="FIGHTER";
+      ui.stabilityTag.textContent="ACCURATE";
+      ui.stateTag.textContent="LOCKED";
+      document.body.classList.remove("monk-breathe");
+      whisper("Fighter engaged: accuracy is final.", 1500);
+    }else{
+      ui.pillMode.textContent="MONK";
+      ui.modeTag.textContent="FLOW";
+      ui.stabilityTag.textContent="STEADY";
+      ui.stateTag.textContent="GLIDE";
+      document.body.classList.add("monk-breathe");
+      whisper("Monk engaged: soften. glide. listen.", 1500);
+    }
+    pulse(ui.missionBox); pulse(ui.pillMode);
+  }
+  applyMode();
+
+  // Stars: calm base + warp streak overlay
+  function seedStars(){
+    state.stars.length=0;
+    const n=240;
+    for(let i=0;i<n;i++){
+      state.stars.push({
         x:rnd(), y:rnd(),
-        z:0.35 + rnd(0.9),
-        s:0.2 + rnd(0.9),
-        p:rnd(1000),
+        z:0.15+rnd(0.85),
+        tw:rnd(1000),
       });
     }
   }
+  function seedStreaks(){
+    state.streaks.length=0;
+    const n=220;
+    for(let i=0;i<n;i++){
+      const a = rnd(Math.PI*2);
+      const r = Math.pow(rnd(), 0.55); // concentrate toward edges
+      state.streaks.push({
+        a, r,
+        p:rnd(1000),
+        w:0.6+rnd(1.6)
+      });
+    }
+  }
+  seedStars(); seedStreaks();
 
   function spawnGate(){
-    const monk = state.monk;
-    const x = 0.50 + (rnd()-0.5) * (monk ? 0.16 : 0.22);
-    const y = 0.54 + (rnd()-0.5) * (monk ? 0.12 : 0.18);
-    const r = monk ? (0.066 + rnd(0.018)) : (0.058 + rnd(0.020));
-    const z = 1.30 + rnd(0.45);
+    // tighter, more “flight-test” placement — feels intentional, not random confetti
+    const centerBias = state.fighter ? 0.12 : 0.18;
+    const x = 0.50 + (rnd()-0.5)*centerBias*2;
+    const y = 0.54 + (rnd()-0.5)*(state.fighter ? 0.12 : 0.16);
+    const r = state.fighter ? (0.060 + rnd(0.012)) : (0.068 + rnd(0.016));
+    const z = 1.35 + rnd(0.55);
     state.gates.push({x,y,r,z,alive:true,missed:false,hit:false});
   }
-
-  function burstAt(nx, ny, strength=1){
-    const n = Math.floor(18 + strength*10);
-    const arr = [];
-    for(let i=0;i<n;i++){
-      const ang = rnd(Math.PI*2);
-      const spd = (0.12 + rnd(0.35)) * strength;
-      arr.push({
-        x:nx, y:ny,
-        vx:Math.cos(ang)*spd,
-        vy:Math.sin(ang)*spd,
-        life: 0.45 + rnd(0.35),
-        t:0
-      });
-    }
-    state.sparks.push(arr);
-  }
+  for(let i=0;i<3;i++) spawnGate();
 
   function nearestGateInfo(){
     const cx = 0.50 + state.roll*0.030;
@@ -548,480 +510,439 @@ document.addEventListener("DOMContentLoaded", () => {
     let best=null, bestScore=1e9;
     for(const g of state.gates){
       if(!g.alive || g.hit) continue;
-      if(g.z > 0.95 || g.z < 0.30) continue;
-
-      const d = Math.hypot(g.x - cx, g.y - cy);
-      const w = d * (0.55 + g.z*0.75);
-      if(w < bestScore){ bestScore=w; best=g; }
+      if(g.z>0.98 || g.z<0.30) continue;
+      const d=Math.hypot(g.x-cx,g.y-cy);
+      const w=d*(0.55+g.z*0.75);
+      if(w<bestScore){bestScore=w; best=g;}
     }
-    if(!best) return {g:null, cx, cy, dist:999};
-    return {g:best, cx, cy, dist:Math.hypot(best.x - cx, best.y - cy)};
+    if(!best) return {g:null,cx,cy,dist:999};
+    return {g:best,cx,cy,dist:Math.hypot(best.x-cx,best.y-cy)};
   }
 
-  // ---------- drawing ----------
-  function drawSky(horizonY){
-    const g = ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0.00, "#070f18");
-    g.addColorStop(0.18, "#081d2f");
-    g.addColorStop(0.42, "#133b58");
-    g.addColorStop(0.68, "#3b7ea5");
-    g.addColorStop(0.86, "#a9d3e9");
-    g.addColorStop(1.00, "#e7f6ff");
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,W,H);
+  // RENDER — calm sky + austere land + WARPTUNNEL overlay (compelling center)
+  function drawSky(hy){
+    const g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0.00,"#050b11");
+    g.addColorStop(0.18,"#071625");
+    g.addColorStop(0.42,"#0f2c45");
+    g.addColorStop(0.68,"#2d6e92");
+    g.addColorStop(0.86,"#9fcee6");
+    g.addColorStop(1.00,"#e7f6ff");
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
-    // sun haze
-    const cx = W*0.60, cy = H*0.24;
-    const r = Math.min(W,H)*0.70;
-    const rg = ctx.createRadialGradient(cx,cy, 0, cx,cy, r);
-    rg.addColorStop(0, "rgba(255,255,255,0.20)");
-    rg.addColorStop(0.40, "rgba(255,255,255,0.08)");
-    rg.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = rg;
-    ctx.fillRect(0,0,W,H);
+    const cx=W*0.62, cy=H*0.22, r=Math.min(W,H)*0.75;
+    const rg=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+    rg.addColorStop(0,"rgba(255,255,255,0.18)");
+    rg.addColorStop(0.45,"rgba(255,255,255,0.07)");
+    rg.addColorStop(1,"rgba(255,255,255,0)");
+    ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
 
-    // aurora shimmer (surprise, not neon)
-    const a = (state.monk ? 0.08 : 0.12);
-    const ay = H*0.22 + Math.sin(state.t*0.12)*18;
+    // very subtle aurora band
+    const a = state.monk ? 0.08 : 0.10;
+    const ay = H*0.22 + Math.sin(state.t*0.12)*16;
     const ag = ctx.createLinearGradient(0, ay, 0, ay+H*0.34);
     ag.addColorStop(0, `rgba(160,220,255,${a*0.0})`);
     ag.addColorStop(0.35, `rgba(160,220,255,${a*0.75})`);
     ag.addColorStop(0.70, `rgba(185,255,220,${a*0.55})`);
     ag.addColorStop(1, `rgba(160,220,255,${a*0.0})`);
-    ctx.globalCompositeOperation = "screen";
-    ctx.fillStyle = ag;
-    ctx.fillRect(0, ay, W, H*0.40);
-    ctx.globalCompositeOperation = "source-over";
+    ctx.globalCompositeOperation="screen";
+    ctx.fillStyle=ag; ctx.fillRect(0,ay,W,H*0.40);
+    ctx.globalCompositeOperation="source-over";
 
-    // horizon mist (comfort anchor)
-    const hg = ctx.createLinearGradient(0, horizonY-85, 0, horizonY+125);
-    hg.addColorStop(0, "rgba(255,255,255,0)");
-    hg.addColorStop(0.42, "rgba(255,255,255,0.12)");
-    hg.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = hg;
-    ctx.fillRect(0, horizonY-85, W, 220);
+    const mist=ctx.createLinearGradient(0,hy-85,0,hy+125);
+    mist.addColorStop(0,"rgba(255,255,255,0)");
+    mist.addColorStop(0.42,"rgba(255,255,255,0.12)");
+    mist.addColorStop(1,"rgba(255,255,255,0)");
+    ctx.fillStyle=mist; ctx.fillRect(0,hy-85,W,220);
   }
 
-  function drawMotes(horizonY){
-    const t = state.t;
-    ctx.globalCompositeOperation = "screen";
-    for(const m of state.motes){
-      const yBand = horizonY - H*0.56;
-      const ySpan = H*0.58;
-
-      const sway = Math.sin((t*0.35 + m.p)*0.7) * 0.018;
-      const drift = (state.drift*0.010) * (0.7 + m.z*0.6);
-
-      const x = ((m.x + drift + sway) % 1) * W;
-      const y = (yBand + (m.y*ySpan)) + Math.sin(t*0.25 + m.p)*6;
-
-      const a = (state.monk ? 0.085 : 0.12) * (0.45 + m.s*0.55) * (0.55 + m.z*0.45);
-      const rr = (1.0 + m.s*1.6) * (0.85 + m.z*0.55);
-
-      const g = ctx.createRadialGradient(x,y, 0, x,y, rr*6);
-      g.addColorStop(0, `rgba(190,245,220,${a*0.85})`);
-      g.addColorStop(0.35, `rgba(160,220,255,${a*0.60})`);
-      g.addColorStop(1, `rgba(160,220,255,0)`);
-      ctx.fillStyle = g;
-      ctx.fillRect(x-rr*8, y-rr*8, rr*16, rr*16);
+  function drawStars(hy){
+    ctx.globalCompositeOperation="screen";
+    for(const s of state.stars){
+      const drift = state.range*0.0008*(0.5+s.z);
+      const tw = 0.65 + 0.35*Math.sin(state.t*0.9 + s.tw);
+      const x = ((s.x + drift) % 1) * W;
+      const y = (s.y * (hy*0.98)) + 6;
+      const a = (0.05 + 0.10*s.z) * tw * (state.warpOn ? 0.55 : 1.0);
+      if(a<0.01) continue;
+      ctx.fillStyle = `rgba(210,240,255,${a})`;
+      ctx.fillRect(x,y,1,1);
     }
-    ctx.globalCompositeOperation = "source-over";
+    ctx.globalCompositeOperation="source-over";
   }
 
-  function drawClouds(horizonY){
-    const time = state.drift;
-    const passes = [
-      {scale:0.00115, alpha:0.16, drift:0.010, yTop:-0.42, yBot:0.12},
-      {scale:0.00165, alpha:0.22, drift:0.016, yTop:-0.38, yBot:0.14},
-      {scale:0.00220, alpha:0.26, drift:0.022, yTop:-0.34, yBot:0.16},
-    ];
+  function drawWarpTunnel(){
+    // “warp speed yet syrup”: fast visuals, stable center, low nausea
+    // Streaks radiate outward but DO NOT rotate wildly.
+    const centerX = W*0.5 + state.roll*W*0.010;
+    const centerY = H*0.54 + state.pitch*H*0.008;
 
-    const step = 5;
-    for(const p of passes){
-      const top = horizonY + H*p.yTop;
-      const bot = horizonY + H*p.yBot;
+    const spdN = clamp(state.spd/420, 0, 1);
+    const warp = state.warpOn ? 1 : 0;
+    const intensity = clamp(0.18 + spdN*0.28 + warp*0.45, 0, 0.95);
 
-      for(let y=top; y<bot; y+=step){
-        const yn = y/H;
-        const dens = clamp((yn - (horizonY/H - 0.48))*1.35, 0, 1);
-        const band = dens*dens;
+    if(intensity <= 0.001) return;
 
-        for(let x=0; x<W; x+=step){
-          const n = fbm(
-            (x + time*W*p.drift + state.roll*120)*p.scale,
-            (y + state.pitch*90)*p.scale
-          );
-
-          const v = clamp((n - 0.50)*2.1, 0, 1);
-          const puff = v*v*(3-2*v);
-          if(puff < 0.02) continue;
-
-          const haze = clamp(1 - Math.abs(y - horizonY)/280, 0, 1);
-          const a = p.alpha * puff * band * (0.55 + 0.55*haze);
-          if(a <= 0.004) continue;
-
-          ctx.fillStyle = `rgba(245,252,255,${a})`;
-          ctx.fillRect(x, y, step, step);
-        }
-      }
-    }
-  }
-
-  function drawBeacon(horizonY){
-    if(state.beaconT <= 0) return;
-
-    const x = state.beaconX * W;
-    const y = horizonY + 36;
-
-    ctx.globalCompositeOperation = "screen";
-    const a = clamp(state.beaconT/6, 0, 1) * (state.monk ? 0.22 : 0.30);
-    const r = 160;
-
-    const g = ctx.createRadialGradient(x,y, 0, x,y, r);
-    g.addColorStop(0, `rgba(255,235,180,${a})`);
-    g.addColorStop(0.55, `rgba(170,240,210,${a*0.35})`);
-    g.addColorStop(1, `rgba(255,235,180,0)`);
-    ctx.fillStyle = g;
-    ctx.fillRect(x-r, y-r, r*2, r*2);
-
-    ctx.globalAlpha = a*0.55;
-    ctx.fillStyle = "rgba(255,245,220,0.65)";
-    ctx.fillRect(x-1, y-64, 2, 64);
-    ctx.globalAlpha = 1;
-
-    ctx.globalCompositeOperation = "source-over";
-  }
-
-  function drawLand(horizonY){
-    const tilt = state.roll * 0.030;
     ctx.save();
-    ctx.translate(W/2, horizonY);
-    ctx.rotate(tilt);
-    ctx.translate(-W/2, -horizonY);
+    ctx.globalCompositeOperation="screen";
 
-    const layers = [
-      {dy: 28, a:0.22, amp:32, s:0.0034},
-      {dy: 44, a:0.28, amp:40, s:0.0030},
-      {dy: 62, a:0.34, amp:48, s:0.0026},
-    ];
+    // soft vignette glow “tunnel mouth”
+    const r = Math.min(W,H)*0.55;
+    const g = ctx.createRadialGradient(centerX,centerY, r*0.06, centerX,centerY, r);
+    g.addColorStop(0, `rgba(170,240,210,${0.06*intensity})`);
+    g.addColorStop(0.35, `rgba(150,210,255,${0.05*intensity})`);
+    g.addColorStop(1, `rgba(150,210,255,0)`);
+    ctx.fillStyle=g; ctx.fillRect(centerX-r,centerY-r,r*2,r*2);
 
-    for(let li=0; li<layers.length; li++){
-      const L = layers[li];
-      ctx.fillStyle = `rgba(0,0,0,${0.55 + li*0.08})`;
-      ctx.beginPath();
-      const yBase = horizonY + L.dy;
-      ctx.moveTo(-40, yBase);
-      const steps = 70;
-      for(let i=0;i<=steps;i++){
-        const x = (i/steps)*(W+80) - 40;
-        const n = fbm((x + state.drift*120*(1+li*0.18))*L.s, 8.0 + li*2.7);
-        const yy = yBase + (n-0.5)*L.amp;
-        ctx.lineTo(x,yy);
-      }
-      ctx.lineTo(W+40, H+60);
-      ctx.lineTo(-40, H+60);
-      ctx.closePath();
-      ctx.globalAlpha = L.a;
-      ctx.fill();
-      ctx.globalAlpha = 1;
+    // streaks
+    ctx.lineCap="round";
+    for(const st of state.streaks){
+      const a = st.a;
+      const edge = Math.pow(st.r, 0.85);
+
+      // base radius: favors edges for drama, center stays calm
+      const baseR = edge * Math.min(W,H) * 0.70;
+
+      // length grows with speed, but eased to keep “syrup”
+      const L = (22 + 220*intensity) * (0.65 + 0.6*edge) * (state.fighter ? 1.0 : 0.85);
+
+      const x1 = centerX + Math.cos(a)*baseR;
+      const y1 = centerY + Math.sin(a)*baseR;
+      const x2 = centerX + Math.cos(a)*(baseR + L);
+      const y2 = centerY + Math.sin(a)*(baseR + L);
+
+      const alpha = (0.015 + 0.085*intensity) * (0.25 + 0.75*edge);
+      const w = (0.6 + st.w) * (0.65 + 0.9*intensity);
+
+      ctx.strokeStyle = `rgba(170,240,210,${alpha})`;
+      ctx.lineWidth = w;
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
     }
 
     ctx.restore();
+  }
 
-    const g = ctx.createLinearGradient(0,horizonY+40,0,H);
-    g.addColorStop(0, "rgba(0,0,0,0.20)");
-    g.addColorStop(0.40, "rgba(0,0,0,0.58)");
-    g.addColorStop(1, "rgba(0,0,0,0.86)");
-    ctx.fillStyle = g;
+  function drawCloudVeil(hy){
+    // minimal cloud texture (austere) — no nausea “moving carpet”
+    const step = 7;
+    const top = hy - H*0.52;
+    const bot = hy + H*0.06;
 
+    for(let y=top; y<bot; y+=step){
+      const yn=y/H;
+      const band = clamp((yn - (hy/H - 0.50))*1.35, 0, 1);
+      const b=band*band;
+
+      for(let x=0; x<W; x+=step){
+        const n = fbm((x + state.range*120)*0.0016, (y + state.t*18)*0.0012);
+        const v = clamp((n-0.52)*2.1, 0, 1);
+        const a = 0.10 * v*v*(3-2*v) * b * (state.monk ? 1.15 : 1.0);
+        if(a<0.004) continue;
+        ctx.fillStyle = `rgba(245,252,255,${a})`;
+        ctx.fillRect(x,y,step,step);
+      }
+    }
+  }
+
+  function drawLand(hy){
+    const tilt = state.roll * 0.030;
+    ctx.save();
+    ctx.translate(W/2,hy);
+    ctx.rotate(tilt);
+    ctx.translate(-W/2,-hy);
+
+    const layers=[
+      {dy:26,a:0.22,amp:30,s:0.0036},
+      {dy:42,a:0.28,amp:38,s:0.0032},
+      {dy:60,a:0.34,amp:46,s:0.0028}
+    ];
+    for(let li=0; li<layers.length; li++){
+      const L=layers[li];
+      ctx.fillStyle=`rgba(0,0,0,${0.56+li*0.08})`;
+      ctx.beginPath();
+      const yBase=hy+L.dy;
+      ctx.moveTo(-40,yBase);
+      const steps=70;
+      for(let i=0;i<=steps;i++){
+        const x=(i/steps)*(W+80)-40;
+        const n=fbm((x+state.range*180*(1+li*0.18))*L.s, 8.0+li*2.7);
+        const yy=yBase+(n-0.5)*L.amp;
+        ctx.lineTo(x,yy);
+      }
+      ctx.lineTo(W+40,H+60);
+      ctx.lineTo(-40,H+60);
+      ctx.closePath();
+      ctx.globalAlpha=L.a; ctx.fill(); ctx.globalAlpha=1;
+    }
+    ctx.restore();
+
+    // cockpit shadow curve (keeps “pilot” feeling)
+    const g=ctx.createLinearGradient(0,hy+40,0,H);
+    g.addColorStop(0,"rgba(0,0,0,0.18)");
+    g.addColorStop(0.40,"rgba(0,0,0,0.58)");
+    g.addColorStop(1,"rgba(0,0,0,0.88)");
+    ctx.fillStyle=g;
     ctx.beginPath();
-    const curve = H*0.12;
-    ctx.moveTo(0, H);
-    ctx.quadraticCurveTo(W*0.5, horizonY+curve, W, H);
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
+    const curve=H*0.12;
+    ctx.moveTo(0,H);
+    ctx.quadraticCurveTo(W*0.5, hy+curve, W, H);
     ctx.closePath();
     ctx.fill();
-
-    const cg = ctx.createRadialGradient(W*0.5, H*1.12, H*0.12, W*0.5, H*1.12, H*0.62);
-    cg.addColorStop(0, "rgba(0,0,0,0.62)");
-    cg.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = cg;
-    ctx.fillRect(0, H*0.70, W, H*0.30);
   }
 
   function drawGates(){
-    const centerX = W*0.5;
-    const centerY = H*0.54;
+    const centerX=W*0.5, centerY=H*0.54;
 
-    // global hit glow
-    if(state.hitGlow > 0.001){
-      ctx.globalCompositeOperation = "screen";
-      const a = state.hitGlow * 0.22;
-      const g = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.min(W,H)*0.46);
-      g.addColorStop(0, `rgba(170,240,210,${a})`);
-      g.addColorStop(0.55, `rgba(150,210,255,${a*0.55})`);
-      g.addColorStop(1, `rgba(150,210,255,0)`);
-      ctx.fillStyle = g;
-      ctx.fillRect(0,0,W,H);
-      ctx.globalCompositeOperation = "source-over";
+    // global “hit” bloom
+    if(state.hitGlow>0.001){
+      ctx.globalCompositeOperation="screen";
+      const a=state.hitGlow*0.20;
+      const g=ctx.createRadialGradient(centerX,centerY,0,centerX,centerY,Math.min(W,H)*0.46);
+      g.addColorStop(0,`rgba(170,240,210,${a})`);
+      g.addColorStop(0.55,`rgba(150,210,255,${a*0.55})`);
+      g.addColorStop(1,`rgba(150,210,255,0)`);
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+      ctx.globalCompositeOperation="source-over";
     }
 
-    for(const g of state.gates){
-      if(!g.alive) continue;
+    for(const gt of state.gates){
+      if(!gt.alive) continue;
 
-      const z = g.z;
-      const px = lerp(centerX, g.x*W, 1/(z));
-      const py = lerp(centerY, g.y*H, 1/(z));
+      const z=gt.z;
+      const px=lerp(centerX, gt.x*W, 1/(z));
+      const py=lerp(centerY, gt.y*H, 1/(z));
+      const pr=(gt.r*Math.min(W,H))*(1/(z));
+      if(pr<4) continue;
 
-      const baseR = g.r * Math.min(W,H);
-      const pr = baseR * (1/(z));
-      if(pr < 4) continue;
-
-      const alpha = clamp((1.35 - z), 0.0, 1.0);
-      const strength = state.monk ? 0.60 : 0.78;
+      const alpha=clamp((1.35-z),0,1);
+      const bite = state.fighter ? 0.88 : 0.66;
 
       ctx.save();
-      ctx.globalCompositeOperation = "screen";
+      ctx.globalCompositeOperation="screen";
 
-      ctx.lineWidth = Math.max(2, pr*0.030);
-      ctx.strokeStyle = `rgba(150,210,255,${alpha*0.40*strength})`;
-      ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI*2); ctx.stroke();
+      // “aperture gate”: outer + inner + subtle chevrons
+      ctx.lineWidth=Math.max(2, pr*0.030);
+      ctx.strokeStyle=`rgba(150,210,255,${alpha*0.42*bite})`;
+      ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2); ctx.stroke();
 
-      ctx.lineWidth = Math.max(1.5, pr*0.018);
-      ctx.strokeStyle = `rgba(170,240,210,${alpha*0.36*strength})`;
-      ctx.beginPath(); ctx.arc(px, py, pr*0.78, 0, Math.PI*2); ctx.stroke();
+      ctx.lineWidth=Math.max(1.5, pr*0.018);
+      ctx.strokeStyle=`rgba(170,240,210,${alpha*0.38*bite})`;
+      ctx.beginPath(); ctx.arc(px,py,pr*0.78,0,Math.PI*2); ctx.stroke();
 
-      const haze = ctx.createRadialGradient(px,py, pr*0.2, px,py, pr*1.25);
-      haze.addColorStop(0, `rgba(170,240,210,${alpha*0.11*strength})`);
-      haze.addColorStop(0.55, `rgba(150,210,255,${alpha*0.06*strength})`);
-      haze.addColorStop(1, `rgba(150,210,255,0)`);
-      ctx.fillStyle = haze;
-      ctx.beginPath(); ctx.arc(px, py, pr*1.25, 0, Math.PI*2); ctx.fill();
+      const haze=ctx.createRadialGradient(px,py,pr*0.2,px,py,pr*1.35);
+      haze.addColorStop(0,`rgba(255,226,160,${alpha*0.08*bite})`);
+      haze.addColorStop(0.55,`rgba(170,240,210,${alpha*0.07*bite})`);
+      haze.addColorStop(1,`rgba(150,210,255,0)`);
+      ctx.fillStyle=haze;
+      ctx.beginPath(); ctx.arc(px,py,pr*1.35,0,Math.PI*2); ctx.fill();
+
+      // chevrons (directionality = “pilot”)
+      ctx.globalAlpha = alpha*0.22*bite;
+      ctx.strokeStyle="rgba(255,226,160,0.8)";
+      ctx.lineWidth=1;
+      for(let i=0;i<6;i++){
+        const ang = (i/6)*Math.PI*2;
+        const r0 = pr*0.86, r1=pr*1.05;
+        ctx.beginPath();
+        ctx.moveTo(px+Math.cos(ang)*r0, py+Math.sin(ang)*r0);
+        ctx.lineTo(px+Math.cos(ang)*r1, py+Math.sin(ang)*r1);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
 
       ctx.restore();
 
-      if(g.missed){
-        ctx.globalAlpha = 0.33;
-        ctx.strokeStyle = "rgba(255,230,170,0.20)";
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.arc(px, py, pr*1.05, 0, Math.PI*2); ctx.stroke();
-        ctx.globalAlpha = 1;
+      if(gt.missed){
+        ctx.globalAlpha=0.28;
+        ctx.strokeStyle="rgba(255,120,120,0.22)";
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.arc(px,py,pr*1.08,0,Math.PI*2); ctx.stroke();
+        ctx.globalAlpha=1;
       }
-    }
-
-    // sparks
-    if(state.sparks.length){
-      ctx.globalCompositeOperation = "screen";
-      for(const burst of state.sparks){
-        for(const p of burst){
-          const x = p.x*W, y = p.y*H;
-          const a = clamp(1 - p.t/p.life, 0, 1);
-          const r = 1.2 + a*2.2;
-          ctx.globalAlpha = a*0.35;
-          ctx.fillStyle = "rgba(200,255,230,0.9)";
-          ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-        }
-      }
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
     }
   }
 
-  // ---------- UI update ----------
+  // UPDATE UI + VV (velocity vector) placement
   function updateUI(){
     ui.hdg.textContent = fmt3(((state.hdg%360)+360)%360);
     ui.alt.textContent = fmt5(state.alt);
     ui.spd.textContent = fmt3(state.spd);
-    ui.boost.textContent = state.boost ? "ON" : "OFF";
+    ui.warp.textContent = state.warpOn ? "ON" : "OFF";
     ui.pitch.textContent = (state.pitch*6).toFixed(1);
-    ui.roll.textContent = (state.roll*12).toFixed(1);
+    ui.roll.textContent  = (state.roll*12).toFixed(1);
 
     ui.gates.textContent = state.gatesHit;
-    ui.miss.textContent = state.miss;
-    ui.score.textContent = String(state.score).padStart(4,'0');
-    ui.range.textContent = state.range.toFixed(1) + "km";
-    ui.combo.textContent = "x" + state.combo;
+    ui.miss.textContent  = state.miss;
+    ui.score.textContent = String(state.score).padStart(4,"0");
+    ui.range.textContent = state.range.toFixed(1)+"km";
+    ui.combo.textContent = "x"+state.combo;
 
-    ui.wFill.style.width = (state.wattage*100).toFixed(0) + "%";
-    const clean = state.wattage > 0.62;
+    const clean = state.wattage>0.62;
+    ui.wFill.style.width = (state.wattage*100).toFixed(0)+"%";
     ui.wState.textContent = clean ? "CLEAN" : "THIN";
     ui.signal.textContent = clean ? "CLEAR" : "NOISY";
-    ui.stateTag.textContent = state.monk ? "GLIDE" : "IGNITE";
+    ui.lock.textContent = state.lockStrength>0.35 ? "GATE" : "FORWARD";
 
-    ui.lock.textContent = state.lockStrength > 0.35 ? "GATE" : "FORWARD";
-    ui.modeTag.textContent = state.monk ? "FLOW" : "GO";
-    ui.stabilityTag.textContent = state.monk ? "STEADY" : "IGNITE";
-    ui.pillMode.textContent = state.monk ? "MONK" : "GO";
+    // VV moves slightly with “drift” but remains stable (no nausea)
+    const vx = (state.roll*0.030) * 280;   // px within reticle box
+    const vy = (state.pitch*0.024) * 240;
+    ui.vv.style.transform = `translate(calc(-50% + ${vx}px), calc(-50% + ${vy}px))`;
   }
 
-  // ---------- init ----------
-  spawnMotes();
-  for(let i=0;i<3;i++) spawnGate();
-  whisper("Enter the pocket. Find the next gate.", 1800);
-  updateUI();
-
-  // ---------- simulation ----------
+  // SIM
   function step(dt){
     state.t += dt;
 
-    const pitchIn = (keys.has("ArrowUp") ? -1 : 0) + (keys.has("ArrowDown") ? 1 : 0);
-    const rollIn  = (keys.has("ArrowLeft") ? -1 : 0) + (keys.has("ArrowRight") ? 1 : 0);
-    state.boost = keys.has("Space");
+    // MODE parameters: warp-speed visuals, syrup control, accuracy final
+    const fighter = state.fighter;
+    const monk = !fighter;
 
-    const monkFactor = state.monk ? 0.55 : 1.0;
-    const resp = 0.060 * monkFactor;
-    const damp = 0.93;
+    // INPUT (fixed + accurate)
+    // Up = pull = pitch up (positive), Down = pitch down (negative)
+    const pitchIn = (keys.has("ArrowUp") ? 1 : 0) + (keys.has("ArrowDown") ? -1 : 0);
+    const rollIn  = (keys.has("ArrowRight") ? 1 : 0) + (keys.has("ArrowLeft") ? -1 : 0);
+    state.warpOn = keys.has("Space");
 
-    state.pitch = clamp(state.pitch*damp + pitchIn*resp, -1, 1);
-    state.roll  = clamp(state.roll*damp  + rollIn*resp, -1, 1);
+    // Command shaping (deadzone + smoothing)
+    const dead = 0.06;
+    const targetPitchCmd = Math.abs(pitchIn) < dead ? 0 : pitchIn;
+    const targetRollCmd  = Math.abs(rollIn)  < dead ? 0 : rollIn;
 
-    const baseSpd = state.monk ? 108 : 138;
-    const boostAdd = state.boost ? (state.monk ? 18 : 32) : 0;
-    const targetSpd = baseSpd + boostAdd;
-    state.spd = Math.round(state.spd + (targetSpd - state.spd)*0.07);
+    state.pitchCmd = easeTo(state.pitchCmd, targetPitchCmd, fighter ? 18 : 10, dt);
+    state.rollCmd  = easeTo(state.rollCmd,  targetRollCmd,  fighter ? 18 : 10, dt);
 
-    state.hdg += state.roll * (state.monk ? 0.22 : 0.40);
-    state.alt = Math.round(state.alt + (-state.pitch) * (state.monk ? 5 : 10));
+    // Syrup dynamics: spring-damper, critically damped-ish
+    // Fighter: faster response, still smooth. Monk: slower, floatier.
+    const k = fighter ? 16.0 : 8.5;   // stiffness
+    const d = fighter ? 8.8  : 6.6;   // damping
+    // integrate “rate”
+    state.pitchRate = (state.pitchRate||0);
+    state.rollRate  = (state.rollRate||0);
 
-    const forward = (state.spd/120) * (state.boost ? 1.10 : 1.0);
-    state.drift += forward * dt * 0.85;
+    const pitchErr = state.pitchCmd - state.pitch;
+    const rollErr  = state.rollCmd  - state.roll;
 
-    state.range += forward * dt * 0.060;
-    state.score += Math.floor(forward * dt * (state.monk ? 0.45 : 0.70));
+    state.pitchRate += (pitchErr*k - state.pitchRate*d) * dt;
+    state.rollRate  += (rollErr*k  - state.rollRate*d)  * dt;
 
-    // wattage
+    // clamp rates for comfort
+    const rateMax = fighter ? 3.0 : 1.8;
+    state.pitchRate = clamp(state.pitchRate, -rateMax, rateMax);
+    state.rollRate  = clamp(state.rollRate,  -rateMax, rateMax);
+
+    state.pitch += state.pitchRate * dt;
+    state.roll  += state.rollRate  * dt;
+
+    state.pitch = clamp(state.pitch, -1, 1);
+    state.roll  = clamp(state.roll,  -1, 1);
+
+    // SPEED: warp-speed feel, but stable handling
+    const base = fighter ? 260 : 210;
+    const warpAdd = state.warpOn ? (fighter ? 210 : 170) : 0;
+    const targetSpd = base + warpAdd;
+    state.spd = Math.round(state.spd + (targetSpd - state.spd) * (fighter ? 0.10 : 0.07));
+
+    // NAV
+    state.hdg += state.roll * (fighter ? 0.55 : 0.28);
+    state.alt = Math.round(state.alt + (state.pitch) * (fighter ? 10 : 5)); // pull-up increases altitude
+
+    const forward = (state.spd/260) * (state.warpOn ? 1.25 : 1.0);
+    state.range += forward * dt * 0.090;
+    state.score += Math.floor(forward * dt * (fighter ? 1.00 : 0.60));
+    state.hitGlow = Math.max(0, state.hitGlow - dt*1.8);
+
+    // Wattage: fighter burns more under warp + aggressive input
     let w = state.wattage;
-    w += (state.monk ? 0.0009 : -0.0003) * (dt*60);
-    if(state.boost) w -= 0.0012 * (dt*60);
-    if(!state.monk && (Math.abs(pitchIn)+Math.abs(rollIn))>0) w -= 0.0007*(dt*60);
+    w += (monk ? 0.0009 : -0.00035) * (dt*60);
+    if(state.warpOn) w -= (fighter ? 0.0015 : 0.0011) * (dt*60);
+    if(fighter && (Math.abs(pitchIn)+Math.abs(rollIn))>0) w -= 0.0006*(dt*60);
     state.wattage = clamp(w, 0.18, 0.96);
 
-    state.hitGlow = Math.max(0, state.hitGlow - dt*1.6);
-
-    // gates spawn rhythm
-    const spawnEvery = state.monk ? 1.40 : 1.05;
+    // Gates: disciplined rhythm
     state.gateSpawn -= dt;
+    const spawnEvery = fighter ? 0.95 : 1.30;
     if(state.gateSpawn <= 0){
       spawnGate();
       state.gateSpawn = spawnEvery;
     }
 
-    // beacon surprise
-    state.beaconT -= dt;
-    if(state.beaconT <= -8){
-      state.beaconT = 6 + rnd(4);
-      state.beaconX = 0.18 + rnd(0.64);
-      whisper("Wayfinding light ahead.", 1400);
-      pulse(ui.missionBox);
-    }
-
-    // Gate Lock
+    // Gate lock + “accuracy final” assist (fighter: less assist)
     const info = nearestGateInfo();
     const g = info.g;
 
     let targetLock = 0;
     if(g){
-      const tol = state.monk ? (g.r * 1.15) : (g.r * 0.95);
+      const tol = g.r * (fighter ? 0.95 : 1.18);
       targetLock = clamp(1 - (info.dist / tol), 0, 1);
-      targetLock *= clamp((0.90 - g.z) / 0.55, 0, 1);
+      targetLock *= clamp((0.92 - g.z)/0.58, 0, 1);
     }
-    state.lockStrength = easeTo(state.lockStrength, targetLock, 10.0, dt);
+    state.lockStrength = easeTo(state.lockStrength, targetLock, 12.0, dt);
 
-    if(state.lockStrength > 0.22){
-      document.body.classList.add("lock-on");
-      document.body.classList.add("hud-breathe");
-    } else {
-      document.body.classList.remove("lock-on");
-      document.body.classList.remove("hud-breathe");
-    }
+    if(state.lockStrength > 0.22) document.body.classList.add("lock-on");
+    else document.body.classList.remove("lock-on");
 
-    // micro-assist (soft)
-    if(g && state.lockStrength > 0.15){
+    // micro-assist: monk gets more, fighter gets tiny
+    if(g && state.lockStrength > 0.18){
       const cx = 0.50 + state.roll*0.030;
       const cy = 0.54 + state.pitch*0.024;
       const dx = g.x - cx;
       const dy = g.y - cy;
 
-      const assist = (state.monk ? 0.55 : 0.42) * state.lockStrength;
-      state.roll  = clamp(state.roll  + (dx * 0.55) * assist, -1, 1);
-      state.pitch = clamp(state.pitch + (dy * 0.45) * assist, -1, 1);
+      const assist = (fighter ? 0.18 : 0.55) * state.lockStrength;
+      state.roll  = clamp(state.roll  + (dx * 0.50) * assist, -1, 1);
+      state.pitch = clamp(state.pitch + (dy * 0.42) * assist, -1, 1);
 
-      if(state.lockStrength > 0.58 && !state._lockWhispered){
+      if(state.lockStrength > 0.62 && !state._lockWhispered){
         state._lockWhispered = true;
-        whisper("Lock: gentle. Center holds.", 1100);
+        whisper("Lock: hold the line.", 1000);
         pulse(ui.missionBox);
       }
-      if(state.lockStrength < 0.25) state._lockWhispered = false;
+      if(state.lockStrength < 0.26) state._lockWhispered = false;
     } else {
       state._lockWhispered = false;
     }
 
-    // gates update / hit / miss
+    // Update gates + hit/miss
     const aimX = 0.50 + state.roll*0.030;
     const aimY = 0.54 + state.pitch*0.024;
 
     for(const gt of state.gates){
       if(!gt.alive) continue;
 
-      const zSpeed = (state.monk ? 0.55 : 0.78) * forward;
+      const zSpeed = (fighter ? 0.95 : 0.62) * forward;
       gt.z -= dt * zSpeed;
 
-      if(!gt.missed && gt.z < 0.52){
+      if(!gt.missed && gt.z < 0.50){
         gt.missed = true;
         state.miss += 1;
         state.combo = 1;
-        whisper("Miss. Return to center. Steady hands.", 1400);
+        whisper("Miss. Reset. Fly true.", 1100);
         pulse(ui.missionBox);
       }
-
       if(gt.z < 0.18) gt.alive = false;
 
-      if(gt.alive && !gt.hit && gt.z < 0.62 && gt.z > 0.32){
-        const dist = Math.hypot(gt.x - aimX, gt.y - aimY);
-        const tol = state.monk ? (gt.r * 0.95) : (gt.r * 0.80);
-
+      if(gt.alive && !gt.hit && gt.z < 0.64 && gt.z > 0.30){
+        const dist = Math.hypot(gt.x-aimX, gt.y-aimY);
+        const tol = gt.r * (fighter ? 0.78 : 0.94); // fighter stricter
         if(dist < tol){
-          gt.hit = true;
-          gt.alive = false;
-
+          gt.hit = true; gt.alive = false;
           state.gatesHit += 1;
           state.combo = Math.min(9, state.combo + 1);
-
-          const bonus = Math.floor(40 * state.combo * (state.monk ? 1.0 : 1.25));
+          const bonus = Math.floor((fighter ? 70 : 45) * state.combo);
           state.score += bonus;
-
-          state.hitGlow = Math.min(1, state.hitGlow + 0.9);
+          state.hitGlow = Math.min(1, state.hitGlow + 0.95);
           pulse(ui.score); pulse(ui.combo);
-
-          burstAt(gt.x, gt.y, state.monk ? 0.9 : 1.2);
-          whisper(`Gate clean. +${bonus} (combo x${state.combo}).`, 1200);
+          whisper(`Gate clean. +${bonus} (x${state.combo}).`, 1000);
         }
       }
     }
 
-    if(state.gates.length > 28){
-      state.gates = state.gates.filter(g=>g.alive);
-    }
-
-    // sparks update
-    if(state.sparks.length){
-      for(const burst of state.sparks){
-        for(const p of burst){
-          p.t += dt;
-          p.x += p.vx*dt;
-          p.y += p.vy*dt;
-          p.vx *= (1 - dt*1.8);
-          p.vy *= (1 - dt*1.8);
-        }
-      }
-      state.sparks = state.sparks.filter(b => b.some(p => p.t < p.life));
-    }
+    if(state.gates.length > 34) state.gates = state.gates.filter(g=>g.alive);
 
     updateUI();
   }
 
-  // ---------- render loop ----------
+  // LOOP
   let last = performance.now();
   function loop(now){
     const dt = Math.min(0.05, (now-last)/1000);
@@ -1029,27 +950,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     step(dt);
 
-    const horizonY = H*(0.62 + state.pitch*0.018);
-    const sway = (Math.sin(state.t*0.35)*6 + Math.sin(state.t*0.17)*4) * (state.monk ? 0.8 : 1.1);
+    // camera: syrup-stable (tiny motion only)
+    const hy = H*(0.62 - state.pitch*0.018);
+    const bob = (Math.sin(state.t*0.45)*4 + Math.sin(state.t*0.21)*3) * (state.monk ? 0.9 : 0.65);
 
     ctx.clearRect(0,0,W,H);
-
     ctx.save();
-    ctx.translate(0, sway);
+    ctx.translate(0, bob);
 
-    drawSky(horizonY);
-    drawMotes(horizonY);
-    drawClouds(horizonY);
-    drawBeacon(horizonY);
-    drawLand(horizonY);
+    drawSky(hy);
+    drawStars(hy);
+    drawCloudVeil(hy);
+    drawWarpTunnel();
+    drawLand(hy);
     drawGates();
 
     ctx.restore();
 
     requestAnimationFrame(loop);
   }
+
+  whisper("Fighter pilot mode engaged. Accuracy is final.", 1700);
   requestAnimationFrame(loop);
-});
+})();
 </script>
 </body>
 </html>
