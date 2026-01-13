@@ -64,10 +64,11 @@
       background:rgba(10,14,18,.18);
       color:var(--muted);
       font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+      transition: filter .18s ease, transform .18s ease;
     }
 
     .mission{
-      max-width:600px;
+      max-width:640px;
       padding:10px 12px;
       border-radius:14px;
       border:1px solid var(--line2);
@@ -83,11 +84,12 @@
       margin-top:6px;
       opacity:.78;
       letter-spacing:.03em;
+      min-height:16px;
     }
 
     .hudWrap{display:flex; gap:14px; align-items:flex-start; justify-content:flex-end; pointer-events:none}
     .panel{
-      width:312px;
+      width:320px;
       border-radius:16px;
       border:1px solid var(--line2);
       background:linear-gradient(to bottom, rgba(10,14,18,.22), rgba(10,14,18,.10));
@@ -116,8 +118,8 @@
     /* bottom UI */
     .controls{
       position:absolute; left:18px; bottom:18px;
-      display:flex; gap:8px; flex-wrap:wrap; max-width:840px;
-      pointer-events:none; opacity:.72;
+      display:flex; gap:8px; flex-wrap:wrap; max-width:860px;
+      pointer-events:none; opacity:.74;
       transition: opacity .18s ease, transform .18s ease;
     }
     .chip{
@@ -139,7 +141,7 @@
     }
 
     .wattage{
-      position:absolute; right:18px; bottom:18px; width:372px;
+      position:absolute; right:18px; bottom:18px; width:378px;
       border-radius:16px;
       border:1px solid var(--line2);
       background:linear-gradient(to bottom, rgba(10,14,18,.22), rgba(10,14,18,.10));
@@ -166,7 +168,7 @@
     .reticle{
       position:absolute;
       left:50%; top:54%;
-      width:440px; height:260px;
+      width:460px; height:280px;
       transform:translate(-50%,-50%) scale(1);
       pointer-events:none;
       opacity:.18;
@@ -181,7 +183,7 @@
     }
     .reticle .c{
       position:absolute; left:50%; top:50%;
-      width:70px; height:70px;
+      width:72px; height:72px;
       transform:translate(-50%,-50%);
       border-radius:999px;
       border:1px solid rgba(236,246,255,.22);
@@ -243,10 +245,24 @@
       transition:.22s ease;
     }
 
+    /* tiny debug warning (only if canvas fails) */
+    #fatal{
+      position:absolute; left:18px; bottom:18px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,180,180,.22);
+      background:rgba(30,10,10,.22);
+      color:rgba(255,220,220,.85);
+      font-size:12px; letter-spacing:.04em;
+      max-width:min(620px, calc(100vw - 36px));
+      display:none;
+      backdrop-filter: blur(10px);
+    }
+
     @media (max-width: 980px){
       .hudWrap{display:none}
       .mission{max-width:84vw}
-      .wattage{width:min(390px, calc(100vw - 36px))}
+      .wattage{width:min(400px, calc(100vw - 36px))}
       .reticle{opacity:.14}
     }
   </style>
@@ -266,7 +282,7 @@
       </div>
       <div class="mission" id="missionBox">
         <b>Mission:</b> forward flight, steady hands. <span class="jp">ゆっくりと。今ここ。</span>
-        <div class="sub" id="missionSub" style="display:none"></div>
+        <div class="sub" id="missionSub"></div>
       </div>
     </div>
 
@@ -303,7 +319,7 @@
         <div class="divider"></div>
         <div class="grid">
           <div class="k">COMBO</div><div class="v" id="combo">x1</div>
-          <div class="k">AURA</div><div class="v" id="aura">SOFT</div>
+          <div class="k">LOCK</div><div class="v" id="lock">FORWARD</div>
         </div>
       </div>
     </div>
@@ -331,36 +347,48 @@
     <div class="bar"><div class="fill" id="wFill"></div></div>
     <div class="wGrid">
       <div class="k">SIGNAL</div><div class="v" id="signal">CLEAR</div>
-      <div class="k">LOCK</div><div class="v" id="lock">FORWARD</div>
+      <div class="k">STATE</div><div class="v" id="stateTag">GLIDE</div>
     </div>
   </div>
+
+  <div id="fatal"></div>
 </div>
 
 <script>
-(() => {
-  // ---------- canvas setup ----------
-  const c = document.getElementById('scene');
-  const ctx = c.getContext('2d', { alpha:false });
+document.addEventListener("DOMContentLoaded", () => {
+  const fatal = (msg) => {
+    const el = document.getElementById("fatal");
+    el.style.display = "block";
+    el.textContent = msg;
+  };
+
+  const canvas = document.getElementById("scene");
+  if(!canvas) return fatal("Canvas not found (id='scene').");
+  const ctx = canvas.getContext("2d", { alpha:false });
+  if(!ctx) return fatal("Canvas context failed. Try a modern browser.");
 
   const DPR = () => Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   let W=0,H=0,dpr=1;
+
   function resize(){
     dpr = DPR();
     W = window.innerWidth|0; H = window.innerHeight|0;
-    c.width = (W*dpr)|0; c.height = (H*dpr)|0;
-    c.style.width = W+"px"; c.style.height = H+"px";
+    canvas.width = (W*dpr)|0; canvas.height = (H*dpr)|0;
+    canvas.style.width = W+"px"; canvas.style.height = H+"px";
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.imageSmoothingEnabled = true;
   }
-  addEventListener('resize', resize, {passive:true});
+  window.addEventListener("resize", resize, {passive:true});
   resize();
 
-  // ---------- utilities ----------
+  // ---------- utils ----------
   const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
   const lerp  = (a,b,t)=>a+(b-a)*t;
   const smooth = t => t*t*(3-2*t);
   const rnd = (a=1)=>Math.random()*a;
+  const easeTo = (v, target, k, dt) => v + (target - v) * (1 - Math.exp(-k * dt));
 
+  // stable-ish hash noise
   function hash(x,y){
     let n = x*374761393 + y*668265263;
     n = (n^(n>>>13)) * 1274126177;
@@ -387,95 +415,60 @@
     return v;
   }
 
-  function easeTo(v, target, k, dt){
-    return v + (target - v) * (1 - Math.exp(-k * dt));
-  }
-
   // ---------- UI ----------
   const $ = id => document.getElementById(id);
   const ui = {
-    pillMode: $('pillMode'),
-    modeTag: $('modeTag'),
-    stabilityTag: $('stabilityTag'),
-    hdg:$('hdg'), alt:$('alt'), spd:$('spd'), boost:$('boost'),
-    pitch:$('pitch'), roll:$('roll'),
-    gates:$('gates'), miss:$('miss'), score:$('score'), range:$('range'),
-    combo:$('combo'), aura:$('aura'),
-    wFill:$('wFill'), wState:$('wState'), signal:$('signal'), lock:$('lock'),
-    missionSub: $('missionSub'),
-    missionBox: $('missionBox'),
+    pillMode: $("pillMode"),
+    modeTag: $("modeTag"),
+    stabilityTag: $("stabilityTag"),
+    hdg:$("hdg"), alt:$("alt"), spd:$("spd"), boost:$("boost"),
+    pitch:$("pitch"), roll:$("roll"),
+    gates:$("gates"), miss:$("miss"), score:$("score"), range:$("range"),
+    combo:$("combo"), lock:$("lock"),
+    wFill:$("wFill"), wState:$("wState"), signal:$("signal"), stateTag:$("stateTag"),
+    missionSub:$("missionSub"), missionBox:$("missionBox"),
   };
   const fmt3 = n => String(Math.round(n)).padStart(3,'0');
   const fmt5 = n => String(Math.round(n)).padStart(5,'0');
 
   function pulse(el){
     if(!el) return;
-    el.classList.remove('pulse');
+    el.classList.remove("pulse");
     void el.offsetWidth;
-    el.classList.add('pulse');
+    el.classList.add("pulse");
   }
 
-  let subTimeout = null;
+  let whisperTimeout = null;
   function whisper(text, ms=1400){
-    ui.missionSub.style.display = "block";
+    if(!ui.missionSub) return;
     ui.missionSub.textContent = text;
-    clearTimeout(subTimeout);
-    subTimeout = setTimeout(()=>{
-      ui.missionSub.style.display = "none";
-      ui.missionSub.textContent = "";
-    }, ms);
-  }
-
-  function updateUI(){
-    ui.hdg.textContent = fmt3(((state.hdg%360)+360)%360);
-    ui.alt.textContent = fmt5(state.alt);
-    ui.spd.textContent = fmt3(state.spd);
-    ui.boost.textContent = state.boost ? "ON" : "OFF";
-    ui.pitch.textContent = (state.pitch*6).toFixed(1);
-    ui.roll.textContent = (state.roll*12).toFixed(1);
-
-    ui.gates.textContent = state.gatesHit;
-    ui.miss.textContent = state.miss;
-    ui.score.textContent = String(state.score).padStart(4,'0');
-    ui.range.textContent = state.range.toFixed(1) + "km";
-    ui.combo.textContent = "x" + state.combo;
-
-    ui.wFill.style.width = (state.wattage*100).toFixed(0) + "%";
-    const clean = state.wattage > 0.62;
-    ui.wState.textContent = clean ? "CLEAN" : "THIN";
-    ui.signal.textContent = clean ? "CLEAR" : "NOISY";
-    ui.lock.textContent = state.lockStrength > 0.35 ? "GATE" : "FORWARD";
-
-    ui.modeTag.textContent = state.monk ? "FLOW" : "GO";
-    ui.stabilityTag.textContent = state.monk ? "STEADY" : "IGNITE";
-    ui.pillMode.textContent = state.monk ? "MONK" : "GO";
-    ui.aura.textContent = state.monk ? "SOFT" : "BRIGHT";
+    clearTimeout(whisperTimeout);
+    whisperTimeout = setTimeout(()=>{ ui.missionSub.textContent = ""; }, ms);
   }
 
   // ---------- input ----------
   const keys = new Set();
-  addEventListener('keydown', (e) => {
+  window.addEventListener("keydown", (e) => {
     if (e.code === "Enter"){
       state.hud = !state.hud;
-      document.body.classList.toggle('hudHidden', !state.hud);
+      document.body.classList.toggle("hudHidden", !state.hud);
     }
     if (e.code === "CapsLock"){
       state.monk = !state.monk;
       whisper(state.monk ? "Monk engaged: glide, soften, listen." : "Go mode: sharper turns, hotter score.", 1600);
-      pulse(ui.missionBox);
-      pulse(ui.pillMode);
+      pulse(ui.missionBox); pulse(ui.pillMode);
     }
     if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
     keys.add(e.code);
   }, {passive:false});
-  addEventListener('keyup', (e) => keys.delete(e.code), {passive:true});
+  window.addEventListener("keyup", (e) => keys.delete(e.code), {passive:true});
 
-  // ---------- world state ----------
+  // ---------- game state ----------
   const state = {
     t:0,
     pitch:0, roll:0,
-    hdg:350,
-    alt:38196,
+    hdg:352,
+    alt:38200,
     spd:110,
     boost:false,
     monk:true,
@@ -491,32 +484,44 @@
     drift:0,
     hitGlow:0,
 
-    gates: [],
-    gateSpawnTimer: 0,
+    // lock feel
+    lockStrength:0,
+    _lockWhispered:false,
 
-    motes: [],
-    sparkBursts: [],
+    // gate system
+    gates:[],
+    gateSpawn:0,
 
-    beaconTimer: -2,
-    beaconX: 0.5,
+    // particles
+    motes:[],
+    sparks:[],
 
-    lockStrength: 0,
-    _lockWhispered: false,
+    // surprise beacon
+    beaconT:-3,
+    beaconX:0.5,
   };
 
-  // ---------- particles ----------
+  // ---------- world builders ----------
   function spawnMotes(){
     state.motes.length = 0;
-    const count = 66;
+    const count = 70;
     for(let i=0;i<count;i++){
       state.motes.push({
-        x: rnd(),
-        y: rnd(),
-        z: 0.35 + rnd(0.9),
-        s: 0.2 + rnd(0.9),
-        p: rnd(1000),
+        x:rnd(), y:rnd(),
+        z:0.35 + rnd(0.9),
+        s:0.2 + rnd(0.9),
+        p:rnd(1000),
       });
     }
+  }
+
+  function spawnGate(){
+    const monk = state.monk;
+    const x = 0.50 + (rnd()-0.5) * (monk ? 0.16 : 0.22);
+    const y = 0.54 + (rnd()-0.5) * (monk ? 0.12 : 0.18);
+    const r = monk ? (0.066 + rnd(0.018)) : (0.058 + rnd(0.020));
+    const z = 1.30 + rnd(0.45);
+    state.gates.push({x,y,r,z,alive:true,missed:false,hit:false});
   }
 
   function burstAt(nx, ny, strength=1){
@@ -533,48 +538,27 @@
         t:0
       });
     }
-    state.sparkBursts.push(arr);
-  }
-
-  // ---------- gates ----------
-  function spawnGate(){
-    const monk = state.monk;
-    const y = 0.54 + (rnd(1)-0.5) * (monk ? 0.12 : 0.18);
-    const x = 0.50 + (rnd(1)-0.5) * (monk ? 0.16 : 0.22);
-    const radius = monk ? (0.066 + rnd(0.018)) : (0.058 + rnd(0.020));
-    const z = 1.30 + rnd(0.40);
-    state.gates.push({ x, y, z, r: radius, alive:true, missed:false, hit:false });
+    state.sparks.push(arr);
   }
 
   function nearestGateInfo(){
     const cx = 0.50 + state.roll*0.030;
     const cy = 0.54 + state.pitch*0.024;
 
-    let best = null;
-    let bestScore = 1e9;
-
+    let best=null, bestScore=1e9;
     for(const g of state.gates){
       if(!g.alive || g.hit) continue;
       if(g.z > 0.95 || g.z < 0.30) continue;
 
-      const dx = g.x - cx;
-      const dy = g.y - cy;
-      const d  = Math.hypot(dx,dy);
-
-      // weigh by depth so near gates dominate
+      const d = Math.hypot(g.x - cx, g.y - cy);
       const w = d * (0.55 + g.z*0.75);
-      if(w < bestScore){
-        bestScore = w;
-        best = g;
-      }
+      if(w < bestScore){ bestScore=w; best=g; }
     }
-
-    if(!best) return { g:null, dist:999, cx, cy };
-    const dist = Math.hypot(best.x - cx, best.y - cy);
-    return { g:best, dist, cx, cy };
+    if(!best) return {g:null, cx, cy, dist:999};
+    return {g:best, cx, cy, dist:Math.hypot(best.x - cx, best.y - cy)};
   }
 
-  // ---------- rendering ----------
+  // ---------- drawing ----------
   function drawSky(horizonY){
     const g = ctx.createLinearGradient(0,0,0,H);
     g.addColorStop(0.00, "#070f18");
@@ -596,7 +580,7 @@
     ctx.fillStyle = rg;
     ctx.fillRect(0,0,W,H);
 
-    // aurora shimmer (tasteful)
+    // aurora shimmer (surprise, not neon)
     const a = (state.monk ? 0.08 : 0.12);
     const ay = H*0.22 + Math.sin(state.t*0.12)*18;
     const ag = ctx.createLinearGradient(0, ay, 0, ay+H*0.34);
@@ -609,7 +593,7 @@
     ctx.fillRect(0, ay, W, H*0.40);
     ctx.globalCompositeOperation = "source-over";
 
-    // horizon mist
+    // horizon mist (comfort anchor)
     const hg = ctx.createLinearGradient(0, horizonY-85, 0, horizonY+125);
     hg.addColorStop(0, "rgba(255,255,255,0)");
     hg.addColorStop(0.42, "rgba(255,255,255,0.12)");
@@ -632,20 +616,19 @@
       const y = (yBand + (m.y*ySpan)) + Math.sin(t*0.25 + m.p)*6;
 
       const a = (state.monk ? 0.085 : 0.12) * (0.45 + m.s*0.55) * (0.55 + m.z*0.45);
-      const r = (1.0 + m.s*1.6) * (0.85 + m.z*0.55);
+      const rr = (1.0 + m.s*1.6) * (0.85 + m.z*0.55);
 
-      const g = ctx.createRadialGradient(x,y, 0, x,y, r*6);
+      const g = ctx.createRadialGradient(x,y, 0, x,y, rr*6);
       g.addColorStop(0, `rgba(190,245,220,${a*0.85})`);
       g.addColorStop(0.35, `rgba(160,220,255,${a*0.60})`);
       g.addColorStop(1, `rgba(160,220,255,0)`);
       ctx.fillStyle = g;
-      ctx.fillRect(x-r*8, y-r*8, r*16, r*16);
+      ctx.fillRect(x-rr*8, y-rr*8, rr*16, rr*16);
     }
     ctx.globalCompositeOperation = "source-over";
   }
 
   function drawClouds(horizonY){
-    // painterly clouds: soft, volumetric
     const time = state.drift;
     const passes = [
       {scale:0.00115, alpha:0.16, drift:0.010, yTop:-0.42, yBot:0.12},
@@ -685,13 +668,13 @@
   }
 
   function drawBeacon(horizonY){
-    if(state.beaconTimer <= 0) return;
+    if(state.beaconT <= 0) return;
 
     const x = state.beaconX * W;
     const y = horizonY + 36;
 
     ctx.globalCompositeOperation = "screen";
-    const a = clamp(state.beaconTimer/6, 0, 1) * (state.monk ? 0.22 : 0.30);
+    const a = clamp(state.beaconT/6, 0, 1) * (state.monk ? 0.22 : 0.30);
     const r = 160;
 
     const g = ctx.createRadialGradient(x,y, 0, x,y, r);
@@ -732,8 +715,8 @@
       for(let i=0;i<=steps;i++){
         const x = (i/steps)*(W+80) - 40;
         const n = fbm((x + state.drift*120*(1+li*0.18))*L.s, 8.0 + li*2.7);
-        const y = yBase + (n-0.5)*L.amp;
-        ctx.lineTo(x,y);
+        const yy = yBase + (n-0.5)*L.amp;
+        ctx.lineTo(x,yy);
       }
       ctx.lineTo(W+40, H+60);
       ctx.lineTo(-40, H+60);
@@ -771,7 +754,7 @@
     const centerX = W*0.5;
     const centerY = H*0.54;
 
-    // subtle hit glow (global)
+    // global hit glow
     if(state.hitGlow > 0.001){
       ctx.globalCompositeOperation = "screen";
       const a = state.hitGlow * 0.22;
@@ -801,17 +784,14 @@
       ctx.save();
       ctx.globalCompositeOperation = "screen";
 
-      // outer ring
       ctx.lineWidth = Math.max(2, pr*0.030);
       ctx.strokeStyle = `rgba(150,210,255,${alpha*0.40*strength})`;
       ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI*2); ctx.stroke();
 
-      // inner ring
       ctx.lineWidth = Math.max(1.5, pr*0.018);
       ctx.strokeStyle = `rgba(170,240,210,${alpha*0.36*strength})`;
       ctx.beginPath(); ctx.arc(px, py, pr*0.78, 0, Math.PI*2); ctx.stroke();
 
-      // haze
       const haze = ctx.createRadialGradient(px,py, pr*0.2, px,py, pr*1.25);
       haze.addColorStop(0, `rgba(170,240,210,${alpha*0.11*strength})`);
       haze.addColorStop(0.55, `rgba(150,210,255,${alpha*0.06*strength})`);
@@ -830,10 +810,10 @@
       }
     }
 
-    // spark bursts
-    if(state.sparkBursts.length){
+    // sparks
+    if(state.sparks.length){
       ctx.globalCompositeOperation = "screen";
-      for(const burst of state.sparkBursts){
+      for(const burst of state.sparks){
         for(const p of burst){
           const x = p.x*W, y = p.y*H;
           const a = clamp(1 - p.t/p.life, 0, 1);
@@ -848,16 +828,43 @@
     }
   }
 
-  // ---------- boot world ----------
+  // ---------- UI update ----------
+  function updateUI(){
+    ui.hdg.textContent = fmt3(((state.hdg%360)+360)%360);
+    ui.alt.textContent = fmt5(state.alt);
+    ui.spd.textContent = fmt3(state.spd);
+    ui.boost.textContent = state.boost ? "ON" : "OFF";
+    ui.pitch.textContent = (state.pitch*6).toFixed(1);
+    ui.roll.textContent = (state.roll*12).toFixed(1);
+
+    ui.gates.textContent = state.gatesHit;
+    ui.miss.textContent = state.miss;
+    ui.score.textContent = String(state.score).padStart(4,'0');
+    ui.range.textContent = state.range.toFixed(1) + "km";
+    ui.combo.textContent = "x" + state.combo;
+
+    ui.wFill.style.width = (state.wattage*100).toFixed(0) + "%";
+    const clean = state.wattage > 0.62;
+    ui.wState.textContent = clean ? "CLEAN" : "THIN";
+    ui.signal.textContent = clean ? "CLEAR" : "NOISY";
+    ui.stateTag.textContent = state.monk ? "GLIDE" : "IGNITE";
+
+    ui.lock.textContent = state.lockStrength > 0.35 ? "GATE" : "FORWARD";
+    ui.modeTag.textContent = state.monk ? "FLOW" : "GO";
+    ui.stabilityTag.textContent = state.monk ? "STEADY" : "IGNITE";
+    ui.pillMode.textContent = state.monk ? "MONK" : "GO";
+  }
+
+  // ---------- init ----------
   spawnMotes();
   for(let i=0;i<3;i++) spawnGate();
   whisper("Enter the pocket. Find the next gate.", 1800);
+  updateUI();
 
   // ---------- simulation ----------
   function step(dt){
     state.t += dt;
 
-    // input to controls
     const pitchIn = (keys.has("ArrowUp") ? -1 : 0) + (keys.has("ArrowDown") ? 1 : 0);
     const rollIn  = (keys.has("ArrowLeft") ? -1 : 0) + (keys.has("ArrowRight") ? 1 : 0);
     state.boost = keys.has("Space");
@@ -869,21 +876,17 @@
     state.pitch = clamp(state.pitch*damp + pitchIn*resp, -1, 1);
     state.roll  = clamp(state.roll*damp  + rollIn*resp, -1, 1);
 
-    // speed (glide)
     const baseSpd = state.monk ? 108 : 138;
     const boostAdd = state.boost ? (state.monk ? 18 : 32) : 0;
     const targetSpd = baseSpd + boostAdd;
     state.spd = Math.round(state.spd + (targetSpd - state.spd)*0.07);
 
-    // heading / altitude
     state.hdg += state.roll * (state.monk ? 0.22 : 0.40);
     state.alt = Math.round(state.alt + (-state.pitch) * (state.monk ? 5 : 10));
 
-    // forward drift
     const forward = (state.spd/120) * (state.boost ? 1.10 : 1.0);
     state.drift += forward * dt * 0.85;
 
-    // progress
     state.range += forward * dt * 0.060;
     state.score += Math.floor(forward * dt * (state.monk ? 0.45 : 0.70));
 
@@ -894,27 +897,26 @@
     if(!state.monk && (Math.abs(pitchIn)+Math.abs(rollIn))>0) w -= 0.0007*(dt*60);
     state.wattage = clamp(w, 0.18, 0.96);
 
-    // decay hit glow
     state.hitGlow = Math.max(0, state.hitGlow - dt*1.6);
 
-    // spawn gates
+    // gates spawn rhythm
     const spawnEvery = state.monk ? 1.40 : 1.05;
-    state.gateSpawnTimer -= dt;
-    if(state.gateSpawnTimer <= 0){
+    state.gateSpawn -= dt;
+    if(state.gateSpawn <= 0){
       spawnGate();
-      state.gateSpawnTimer = spawnEvery;
+      state.gateSpawn = spawnEvery;
     }
 
-    // occasional beacon
-    state.beaconTimer -= dt;
-    if(state.beaconTimer <= -8){
-      state.beaconTimer = 6 + rnd(4);
+    // beacon surprise
+    state.beaconT -= dt;
+    if(state.beaconT <= -8){
+      state.beaconT = 6 + rnd(4);
       state.beaconX = 0.18 + rnd(0.64);
       whisper("Wayfinding light ahead.", 1400);
       pulse(ui.missionBox);
     }
 
-    // ---------- Gate Lock (whisper snap + UI breath) ----------
+    // Gate Lock
     const info = nearestGateInfo();
     const g = info.g;
 
@@ -927,14 +929,14 @@
     state.lockStrength = easeTo(state.lockStrength, targetLock, 10.0, dt);
 
     if(state.lockStrength > 0.22){
-      document.body.classList.add('lock-on');
-      document.body.classList.add('hud-breathe');
+      document.body.classList.add("lock-on");
+      document.body.classList.add("hud-breathe");
     } else {
-      document.body.classList.remove('lock-on');
-      document.body.classList.remove('hud-breathe');
+      document.body.classList.remove("lock-on");
+      document.body.classList.remove("hud-breathe");
     }
 
-    // micro-assist (never autopilot)
+    // micro-assist (soft)
     if(g && state.lockStrength > 0.15){
       const cx = 0.50 + state.roll*0.030;
       const cy = 0.54 + state.pitch*0.024;
@@ -955,7 +957,7 @@
       state._lockWhispered = false;
     }
 
-    // ---------- gates update / hit / miss ----------
+    // gates update / hit / miss
     const aimX = 0.50 + state.roll*0.030;
     const aimY = 0.54 + state.pitch*0.024;
 
@@ -965,7 +967,6 @@
       const zSpeed = (state.monk ? 0.55 : 0.78) * forward;
       gt.z -= dt * zSpeed;
 
-      // miss
       if(!gt.missed && gt.z < 0.52){
         gt.missed = true;
         state.miss += 1;
@@ -974,10 +975,8 @@
         pulse(ui.missionBox);
       }
 
-      // remove behind
       if(gt.z < 0.18) gt.alive = false;
 
-      // hit window
       if(gt.alive && !gt.hit && gt.z < 0.62 && gt.z > 0.32){
         const dist = Math.hypot(gt.x - aimX, gt.y - aimY);
         const tol = state.monk ? (gt.r * 0.95) : (gt.r * 0.80);
@@ -993,11 +992,9 @@
           state.score += bonus;
 
           state.hitGlow = Math.min(1, state.hitGlow + 0.9);
-          pulse(ui.score);
-          pulse(ui.combo);
+          pulse(ui.score); pulse(ui.combo);
 
           burstAt(gt.x, gt.y, state.monk ? 0.9 : 1.2);
-
           whisper(`Gate clean. +${bonus} (combo x${state.combo}).`, 1200);
         }
       }
@@ -1008,8 +1005,8 @@
     }
 
     // sparks update
-    if(state.sparkBursts.length){
-      for(const burst of state.sparkBursts){
+    if(state.sparks.length){
+      for(const burst of state.sparks){
         for(const p of burst){
           p.t += dt;
           p.x += p.vx*dt;
@@ -1018,13 +1015,13 @@
           p.vy *= (1 - dt*1.8);
         }
       }
-      state.sparkBursts = state.sparkBursts.filter(b => b.some(p => p.t < p.life));
+      state.sparks = state.sparks.filter(b => b.some(p => p.t < p.life));
     }
 
     updateUI();
   }
 
-  // ---------- main loop ----------
+  // ---------- render loop ----------
   let last = performance.now();
   function loop(now){
     const dt = Math.min(0.05, (now-last)/1000);
@@ -1051,11 +1048,8 @@
 
     requestAnimationFrame(loop);
   }
-
-  document.body.classList.toggle('hudHidden', !state.hud);
-  updateUI();
   requestAnimationFrame(loop);
-})();
+});
 </script>
 </body>
 </html>
