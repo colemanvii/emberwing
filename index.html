@@ -2,759 +2,158 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Emberwing // Cockpit</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Emberwing — First Flight</title>
   <style>
-    :root { color-scheme: dark; }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; overflow: hidden; background: #04050a; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
-
-    /* Subtle nebula backdrop */
-    body::before{
-      content:"";
-      position:fixed; inset:-20%;
-      background:
-        radial-gradient(1200px 900px at 45% 25%, rgba(120,180,255,0.11), transparent 60%),
-        radial-gradient(900px 700px at 20% 70%, rgba(255,180,120,0.07), transparent 62%),
-        radial-gradient(700px 900px at 85% 65%, rgba(170,120,255,0.05), transparent 62%),
-        linear-gradient(180deg, rgba(255,255,255,0.02), transparent 55%);
-      filter: blur(2px);
-      pointer-events:none;
-    }
-
-    canvas { display:block; width:100vw; height:100vh; }
-
-    /* Cockpit HUD */
-    #hud {
-      position: fixed; inset: 0;
-      pointer-events: none;
-    }
-
-    /* Header bar */
-    #topBar{
-      position: fixed; left: 16px; right: 16px; top: calc(12px + env(safe-area-inset-top));
-      display:flex; align-items:center; justify-content:space-between;
-      padding: 10px 12px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.045);
-      border: 1px solid rgba(170,210,255,0.12);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 24px 80px rgba(0,0,0,0.55);
-      pointer-events: auto; /* allow taps */
-    }
-    #brand{
-      display:flex; align-items:center; gap:10px;
-      letter-spacing: 0.18em;
-      font-weight: 700;
-      color: rgba(220,240,255,0.90);
-      text-transform: uppercase;
-      font-size: 12px;
-      user-select: none;
-    }
-    #dot{
-      width:10px; height:10px; border-radius:999px;
-      background:#ff4d4d;
-      box-shadow: 0 0 16px rgba(255,77,77,0.55);
-      flex: 0 0 auto;
-    }
-    #tag{
-      opacity:0.7; font-weight:600; letter-spacing:0.14em; font-size:11px;
-      padding: 6px 10px; border-radius: 999px;
-      border: 1px solid rgba(170,210,255,0.12);
-      background: rgba(255,255,255,0.03);
-    }
-
-    /* Control buttons */
-    #controls{
-      display:flex; gap:8px; align-items:center;
-      user-select:none;
-    }
-    .btn{
-      pointer-events:auto;
-      appearance:none;
-      border: 1px solid rgba(170,210,255,0.16);
-      background: linear-gradient(180deg, rgba(180,220,255,0.14), rgba(255,255,255,0.05));
-      color: rgba(230,245,255,0.92);
-      padding: 9px 10px;
-      border-radius: 12px;
-      font-weight: 650;
-      letter-spacing: 0.04em;
-      font-size: 12px;
-    }
-    .btn:active{ transform: translateY(1px); }
-
-    /* Mission strip */
-    #mission{
-      position: fixed; left: 16px; right: 16px;
-      top: calc(70px + env(safe-area-inset-top));
-      padding: 12px 14px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.035);
-      border: 1px solid rgba(170,210,255,0.10);
-      backdrop-filter: blur(10px);
-      color: rgba(220,240,255,0.80);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size: 12px;
-      letter-spacing: 0.06em;
-      text-shadow: 0 0 24px rgba(120,180,255,0.20);
-      pointer-events:none;
-    }
-    #mission b{ color: rgba(235,250,255,0.92); }
-
-    /* Bottom instruments */
-    #bottom{
-      position: fixed; left: 16px; right: 16px;
-      bottom: calc(14px + env(safe-area-inset-bottom));
-      display:grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 12px;
-      align-items:end;
-      pointer-events:none;
-    }
-    .panel{
-      border-radius: 18px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(170,210,255,0.10);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 24px 90px rgba(0,0,0,0.58);
-      padding: 12px 12px;
-    }
-    .panelTitle{
-      display:flex; align-items:center; justify-content:space-between;
-      font-size: 11px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: rgba(220,240,255,0.72);
-      margin-bottom: 10px;
-      font-weight: 700;
-    }
-    .pill{
-      padding: 5px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(170,210,255,0.12);
-      background: rgba(255,255,255,0.03);
-      color: rgba(235,250,255,0.78);
-      font-weight: 650;
-      letter-spacing: 0.12em;
-      font-size: 10px;
-    }
-    .barWrap{
-      height: 12px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(170,210,255,0.10);
-      overflow:hidden;
-      position:relative;
-    }
-    .barFill{
-      height:100%;
-      width: 60%;
-      background: linear-gradient(90deg, rgba(120,180,255,0.35), rgba(120,255,200,0.35));
-      box-shadow: 0 0 30px rgba(120,180,255,0.25);
-    }
-    .rows{
-      margin-top: 10px;
-      display:grid;
-      grid-template-columns: 1fr auto;
-      row-gap: 6px;
-      column-gap: 10px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size: 12px;
-      color: rgba(235,250,255,0.78);
-      letter-spacing: 0.06em;
-    }
-    .muted{ color: rgba(235,250,255,0.55); }
-
-    /* Center reticle overlay (glass) */
-    #reticle{
-      position: fixed; left:50%; top:50%;
-      width: min(48vmin, 420px);
-      height: min(48vmin, 420px);
-      transform: translate(-50%, -50%);
-      border-radius: 999px;
-      border: 1px solid rgba(170,210,255,0.08);
-      background: radial-gradient(circle at 50% 50%, rgba(120,180,255,0.06), transparent 60%);
-      box-shadow: 0 0 80px rgba(0,0,0,0.35);
-      pointer-events:none;
-    }
-    #reticle::before{
-      content:"";
-      position:absolute; inset: 14%;
-      border-radius: 999px;
-      border: 1px solid rgba(170,210,255,0.10);
-    }
-    #reticle::after{
-      content:"";
-      position:absolute; left:50%; top:50%;
-      width: 18px; height: 18px;
-      transform: translate(-50%, -50%);
-      border-radius: 999px;
-      border: 1px solid rgba(235,250,255,0.55);
-      box-shadow: 0 0 24px rgba(120,180,255,0.25);
-    }
-
-    /* Subtle scanlines for “helmet glass” */
-    #scanlines{
-      position:fixed; inset:0;
-      background: repeating-linear-gradient(
-        to bottom,
-        rgba(255,255,255,0.02),
-        rgba(255,255,255,0.02) 1px,
-        transparent 1px,
-        transparent 7px
-      );
-      mix-blend-mode: overlay;
-      opacity: 0.25;
-      pointer-events:none;
-    }
-
-    /* Touch pad fallback */
-    #touchPad{
-      position: fixed;
-      right: 16px; bottom: calc(130px + env(safe-area-inset-bottom));
-      width: min(42vw, 220px);
-      height: min(42vw, 220px);
-      border-radius: 24px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
-      border: 1px solid rgba(170,210,255,0.10);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 18px 70px rgba(0,0,0,0.5);
-      touch-action: none;
-      display: none;
-      pointer-events: auto;
-    }
-    #knob{
-      position:absolute; left:50%; top:50%;
-      width: 64px; height: 64px;
-      border-radius: 999px;
-      transform: translate(-50%, -50%);
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(170,210,255,0.14);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-    }
-
-    /* Small screens */
-    @media (max-width: 420px){
-      #mission{ display:none; }
-      #bottom{ grid-template-columns: 1fr; }
-      #touchPad{ bottom: calc(106px + env(safe-area-inset-bottom)); }
-    }
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17131b;color:#f5efe7;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}canvas{display:block}
+    #hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 2px 8px #0008}
+    #mark{position:absolute;top:20px;left:22px;font-size:12px;letter-spacing:.22em;font-weight:700}
+    #speed{position:absolute;top:20px;right:22px;font-size:12px;letter-spacing:.12em}
+    #hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:.08em;opacity:.72;white-space:nowrap}
+    #reticle{position:absolute;left:50%;top:47%;width:18px;height:18px;transform:translate(-50%,-50%);border:1px solid #fff9;border-radius:50%}
+    #reticle:before,#reticle:after{content:"";position:absolute;background:#fff9}#reticle:before{width:28px;height:1px;left:-6px;top:8px}#reticle:after{width:1px;height:28px;left:8px;top:-6px}
+    #crash{position:absolute;inset:0;display:none;place-items:center;background:#120b0bcc;font:700 18px ui-monospace;letter-spacing:.18em}#crash span{display:block;text-align:center}#crash small{display:block;margin-top:12px;font-size:10px;opacity:.7}
   </style>
 </head>
 <body>
-  <canvas id="c"></canvas>
-
   <div id="hud">
-    <div id="topBar">
-      <div id="brand">
-        <span id="dot"></span>
-        <span>EMBERWING //</span>
-        <span style="opacity:.75">HAVEN</span>
-        <span id="tag">MONK</span>
-      </div>
-      <div id="controls">
-        <button class="btn" id="btnEnable">Enable Gyro</button>
-        <button class="btn" id="btnCal">Calibrate</button>
-        <button class="btn" id="btnTouch">Touch</button>
-      </div>
-    </div>
-
-    <div id="mission">
-      <b>Mission:</b> warp-speed glide, syrup control, steady hands. ゆっくりと。今ここ。
-    </div>
-
+    <div id="mark">EMBERWING / FIRST FLIGHT</div>
+    <div id="speed">100</div>
     <div id="reticle"></div>
-    <div id="scanlines"></div>
-
-    <div id="touchPad"><div id="knob"></div></div>
-
-    <div id="bottom">
-      <div class="panel">
-        <div class="panelTitle">
-          <span>Wattage</span>
-          <span class="pill" id="pillState">GLIDE</span>
-        </div>
-        <div class="barWrap"><div class="barFill" id="barFill"></div></div>
-
-        <div class="rows">
-          <div class="muted">MODE</div><div id="readMode">WAITING</div>
-          <div class="muted">SIGNAL</div><div id="readSignal">—</div>
-          <div class="muted">PITCH</div><div id="readPitch">0.000</div>
-          <div class="muted">ROLL</div><div id="readRoll">0.000</div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panelTitle">
-          <span>Trim</span>
-          <span class="pill" id="pillTrim">CENTER</span>
-        </div>
-        <div class="rows">
-          <div class="muted">ANGLE</div><div id="readAngle">0°</div>
-          <div class="muted">DEADZONE</div><div id="readDZ">0.04</div>
-          <div class="muted">SMOOTH</div><div id="readSm">0.09</div>
-          <div class="muted">TIP</div><div class="muted">tap Calibrate if drift</div>
-        </div>
-      </div>
-    </div>
+    <div id="hint">W/S PITCH · A/D ROLL · SHIFT/CTRL SPEED · R RESET</div>
+    <div id="crash"><span>IMPACT<small>PRESS R TO FLY AGAIN</small></span></div>
   </div>
 
-  <script>
-    // ---------- Utilities ----------
-    function clamp(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
-    function lerp(a,b,t){ return a + (b-a)*t; }
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 
-    function getScreenAngle(){
-      const a = (screen.orientation && typeof screen.orientation.angle === "number")
-        ? screen.orientation.angle
-        : (typeof window.orientation === "number" ? window.orientation : 0);
-      return ((a % 360) + 360) % 360;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x9b7180);
+    scene.fog = new THREE.Fog(0x9b7180, 240, 1250);
+
+    const camera = new THREE.PerspectiveCamera(66, innerWidth/innerHeight, .1, 2200);
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    document.body.prepend(renderer.domElement);
+
+    const hemi = new THREE.HemisphereLight(0xf3c5a5, 0x4b2630, 2.1);
+    scene.add(hemi);
+    const sun = new THREE.DirectionalLight(0xffd09a, 4.2);
+    sun.position.set(-380, 260, -180);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048,2048);
+    sun.shadow.camera.left=-350;sun.shadow.camera.right=350;sun.shadow.camera.top=350;sun.shadow.camera.bottom=-350;
+    scene.add(sun);
+
+    // One bounded landscape. Cheap geometry, strong relief, lots of low-altitude optical flow.
+    const SIZE=2200, SEG=150;
+    const geo = new THREE.PlaneGeometry(SIZE,SIZE,SEG,SEG);
+    geo.rotateX(-Math.PI/2);
+    function terrainHeight(x,z){
+      const broad = Math.sin(x*.008)*24 + Math.cos(z*.009)*20 + Math.sin((x+z)*.004)*30;
+      const ridges = Math.abs(Math.sin(x*.015 + Math.sin(z*.006)*2))*42;
+      const detail = Math.sin(x*.047)*Math.cos(z*.041)*5;
+      return broad + ridges + detail - 45;
+    }
+    const p=geo.attributes.position;
+    for(let i=0;i<p.count;i++) p.setY(i,terrainHeight(p.getX(i),p.getZ(i)));
+    geo.computeVertexNormals();
+    const ground = new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x8c4938,roughness:.94,metalness:0}));
+    ground.receiveShadow=true;scene.add(ground);
+
+    // Sparse monoliths make speed and scale legible without textures.
+    const rockMat=new THREE.MeshStandardMaterial({color:0x6d332e,roughness:1});
+    for(let i=0;i<85;i++){
+      const x=(Math.random()-.5)*1800,z=(Math.random()-.5)*1800;
+      const h=8+Math.random()*45,w=3+Math.random()*12;
+      const rock=new THREE.Mesh(new THREE.BoxGeometry(w,h,w*(.7+Math.random()*.8)),rockMat);
+      rock.position.set(x,terrainHeight(x,z)+h/2,z);rock.rotation.y=Math.random()*Math.PI;rock.castShadow=true;rock.receiveShadow=true;scene.add(rock);
     }
 
-    function remap(beta, gamma, angle){
-      // beta: front/back, gamma: left/right
-      // returns pitchSrc/rollSrc in degrees aligned to the user's “airplane” feel
-      switch(angle){
-        case 90:  return { pitchSrc: gamma,  rollSrc: -beta }; // landscape right
-        case 270: return { pitchSrc: -gamma, rollSrc: beta  }; // landscape left
-        case 180: return { pitchSrc: -beta,  rollSrc: -gamma }; // upside-down portrait
-        default:  return { pitchSrc: beta,   rollSrc: gamma  }; // portrait
-      }
+    // Original primitive fighter: narrow body, forward-swept wings, twin tail fins.
+    const ship=new THREE.Group();
+    const bodyMat=new THREE.MeshStandardMaterial({color:0xd9d0bd,roughness:.55,metalness:.25});
+    const darkMat=new THREE.MeshStandardMaterial({color:0x29262a,roughness:.45,metalness:.4});
+    const emberMat=new THREE.MeshBasicMaterial({color:0xff6a32});
+    const body=new THREE.Mesh(new THREE.ConeGeometry(1.15,7.5,5),bodyMat);body.rotation.x=-Math.PI/2;body.position.z=-.4;body.castShadow=true;ship.add(body);
+    const cockpit=new THREE.Mesh(new THREE.SphereGeometry(.75,12,8),darkMat);cockpit.scale.set(.8,.45,1.4);cockpit.position.set(0,.55,-1.2);ship.add(cockpit);
+    const wingGeo=new THREE.BoxGeometry(5.8,.16,1.25);
+    const wing=new THREE.Mesh(wingGeo,bodyMat);wing.position.z=.65;wing.rotation.y=-.18;wing.castShadow=true;ship.add(wing);
+    const tailL=new THREE.Mesh(new THREE.BoxGeometry(.15,1.35,1.1),bodyMat);tailL.position.set(-.65,.7,2.1);tailL.rotation.z=-.22;ship.add(tailL);
+    const tailR=tailL.clone();tailR.position.x=.65;tailR.rotation.z=.22;ship.add(tailR);
+    for(const x of [-.52,.52]){const e=new THREE.Mesh(new THREE.SphereGeometry(.24,10,8),emberMat);e.scale.z=2.2;e.position.set(x,0,3.25);ship.add(e)}
+    scene.add(ship);
+
+    const keys={};
+    addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyR')reset()});
+    addEventListener('keyup',e=>keys[e.code]=false);
+
+    let speed=100,pitchRate=0,rollRate=0,crashed=false;
+    const clock=new THREE.Clock();
+    const forward=new THREE.Vector3(),up=new THREE.Vector3(),desiredCam=new THREE.Vector3(),look=new THREE.Vector3();
+    const qPitch=new THREE.Quaternion(),qRoll=new THREE.Quaternion(),qYaw=new THREE.Quaternion();
+    const axisX=new THREE.Vector3(1,0,0),axisZ=new THREE.Vector3(0,0,1),axisY=new THREE.Vector3(0,1,0);
+
+    function smooth(current,target,dt,tau){return THREE.MathUtils.lerp(current,target,1-Math.exp(-dt/tau))}
+    function reset(){
+      ship.position.set(0,95,260);ship.quaternion.identity();speed=100;pitchRate=rollRate=0;crashed=false;
+      document.getElementById('crash').style.display='none';
+      camera.position.set(0,100,278);
+    }
+    reset();
+
+    function updateFlight(dt){
+      if(crashed)return;
+      const pitchInput=(keys.KeyS?1:0)-(keys.KeyW?1:0);
+      const rollInput=(keys.KeyD?1:0)-(keys.KeyA?1:0);
+      pitchRate=smooth(pitchRate,pitchInput*1.35,dt,.15);
+      rollRate=smooth(rollRate,rollInput*2.35,dt,.12);
+      if(keys.ShiftLeft||keys.ShiftRight)speed=Math.min(175,speed+45*dt);
+      else if(keys.ControlLeft||keys.ControlRight)speed=Math.max(55,speed-45*dt);
+      else speed=smooth(speed,100,dt,1.8);
+
+      qPitch.setFromAxisAngle(axisX,pitchRate*dt);
+      qRoll.setFromAxisAngle(axisZ,-rollRate*dt);
+      ship.quaternion.multiply(qPitch).multiply(qRoll).normalize();
+
+      // Coordinated yaw: bank creates the turn, pitch remains under the pilot's hand.
+      up.set(0,1,0).applyQuaternion(ship.quaternion);
+      const bank=Math.atan2(up.x,up.y);
+      qYaw.setFromAxisAngle(axisY,-bank*.48*dt);
+      ship.quaternion.premultiply(qYaw).normalize();
+
+      forward.set(0,0,-1).applyQuaternion(ship.quaternion).normalize();
+      ship.position.addScaledVector(forward,speed*dt);
+
+      const floor=terrainHeight(ship.position.x,ship.position.z)+2.2;
+      if(ship.position.y<floor){ship.position.y=floor;crashed=true;document.getElementById('crash').style.display='grid'}
+      if(Math.abs(ship.position.x)>1000||Math.abs(ship.position.z)>1000) reset();
     }
 
-    // ---------- Controls ----------
-    class EmberwingControls {
-      constructor(opts = {}){
-        this.opts = {
-          smoothing: opts.smoothing ?? 0.09,
-          deadzone:  opts.deadzone  ?? 0.04,
-          gainPitch: opts.gainPitch ?? 1.15,
-          gainRoll:  opts.gainRoll  ?? 1.35,
-          clamp:     opts.clamp     ?? 0.95,
-          invertPitch: opts.invertPitch ?? false,
-        };
-        this.mode = "waiting"; // waiting | gyro | touch
-        this.enabled = false;
-
-        this._raw = { beta: 0, gamma: 0, alpha: 0 };
-        this._baseline = { beta: 0, gamma: 0, alpha: 0 };
-
-        this._sm = { pitch: 0, roll: 0 };
-        this.state = { pitch: 0, roll: 0 }; // "radians-ish" small outputs
-
-        this.touch = { active:false, x:0, y:0 };
-
-        this._onOrientation = this._onOrientation.bind(this);
-      }
-
-      async requestPermission(){
-        const DOE = window.DeviceOrientationEvent;
-        if(!DOE) return { ok:false, reason:"DeviceOrientationEvent unsupported" };
-
-        if(typeof DOE.requestPermission === "function"){
-          const res = await DOE.requestPermission();
-          if(res !== "granted") return { ok:false, reason:"permission denied" };
-        }
-        return { ok:true };
-      }
-
-      startGyro(){
-        if(this.enabled) return;
-        this.enabled = true;
-        this.mode = "gyro";
-        window.addEventListener("deviceorientation", this._onOrientation, { passive:true });
-      }
-      stopGyro(){
-        this.enabled = false;
-        window.removeEventListener("deviceorientation", this._onOrientation);
-      }
-
-      calibrate(){
-        this._baseline.beta = this._raw.beta;
-        this._baseline.gamma = this._raw.gamma;
-        this._baseline.alpha = this._raw.alpha;
-      }
-
-      setTouch(nx, ny, active){
-        this.mode = "touch";
-        this.touch.active = !!active;
-        this.touch.x = nx;
-        this.touch.y = ny;
-      }
-
-      _deadzone(v, dz){
-        const av = Math.abs(v);
-        if(av < dz) return 0;
-        const s = (av - dz) / (1 - dz);
-        return Math.sign(v) * s;
-      }
-
-      update(dt){
-        let pitchN = 0, rollN = 0;
-
-        if(this.mode === "gyro" && this.enabled){
-          const beta = (this._raw.beta - this._baseline.beta);
-          const gamma = (this._raw.gamma - this._baseline.gamma);
-          const angle = getScreenAngle();
-          const { pitchSrc, rollSrc } = remap(beta, gamma, angle);
-
-          pitchN = (pitchSrc / 25) * this.opts.gainPitch;
-          rollN  = (rollSrc  / 25) * this.opts.gainRoll;
-
-          if(this.opts.invertPitch) pitchN *= -1;
-
-        } else if(this.mode === "touch"){
-          pitchN = -this.touch.y;
-          rollN  =  this.touch.x;
-        }
-
-        pitchN = this._deadzone(pitchN, this.opts.deadzone);
-        rollN  = this._deadzone(rollN,  this.opts.deadzone);
-
-        pitchN = clamp(pitchN, -this.opts.clamp, this.opts.clamp);
-        rollN  = clamp(rollN,  -this.opts.clamp, this.opts.clamp);
-
-        // Exponential smoothing (stable across frame rates)
-        const a = 1 - Math.exp(-dt / Math.max(1e-4, this.opts.smoothing));
-        this._sm.pitch += (pitchN - this._sm.pitch) * a;
-        this._sm.roll  += (rollN  - this._sm.roll)  * a;
-
-        // Output small values suitable for camera/ship rotations
-        this.state.pitch = this._sm.pitch * 0.62;
-        this.state.roll  = this._sm.roll  * 0.86;
-      }
-
-      _onOrientation(e){
-        if(e.beta == null || e.gamma == null) return;
-        this._raw.beta = e.beta;
-        this._raw.gamma = e.gamma;
-        this._raw.alpha = e.alpha ?? 0;
-      }
+    function updateCamera(dt){
+      forward.set(0,0,-1).applyQuaternion(ship.quaternion).normalize();
+      // World-up bias stabilizes the horizon while the fighter rolls dramatically.
+      desiredCam.copy(ship.position).addScaledVector(forward,-15).add(new THREE.Vector3(0,5.2,0));
+      camera.position.lerp(desiredCam,1-Math.exp(-dt/.24));
+      look.copy(ship.position).addScaledVector(forward,24).add(new THREE.Vector3(0,1.2,0));
+      camera.lookAt(look);
+      camera.fov=smooth(camera.fov,64+(speed-55)/(175-55)*8,dt,.35);camera.updateProjectionMatrix();
     }
 
-    // ---------- Renderer (starfield + cockpit cues) ----------
-    const canvas = document.getElementById("c");
-    const ctx = canvas.getContext("2d", { alpha: false });
-
-    function resize(){
-      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-      canvas.width = Math.floor(innerWidth * dpr);
-      canvas.height = Math.floor(innerHeight * dpr);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
+    function loop(){
+      const dt=Math.min(clock.getDelta(),.033);
+      updateFlight(dt);updateCamera(dt);
+      document.getElementById('speed').textContent=`${Math.round(speed)} / ${Math.round(ship.position.y-terrainHeight(ship.position.x,ship.position.z))} ALT`;
+      renderer.render(scene,camera);requestAnimationFrame(loop);
     }
-    addEventListener("resize", resize, { passive:true });
-    resize();
-
-    // Stars
-    const stars = [];
-    const STAR_COUNT = 900;
-    function seedStars(){
-      stars.length = 0;
-      for(let i=0;i<STAR_COUNT;i++){
-        stars.push({
-          x: (Math.random()*2-1),
-          y: (Math.random()*2-1),
-          z: Math.random(),          // depth 0..1
-          b: 0.4 + Math.random()*0.6 // brightness
-        });
-      }
-    }
-    seedStars();
-
-    function drawStarfield(dt, roll, pitch){
-      // "Warp-glide": forward drift + streaks that remain calm
-      const w = innerWidth, h = innerHeight;
-      const cx = w/2, cy = h/2;
-
-      // speed curve from how much you're moving (more input = more streak)
-      const mag = Math.min(1, Math.hypot(roll, pitch) / 0.9);
-      const baseSpeed = 0.18;              // constant forward drift
-      const warp = lerp(0.22, 0.85, mag);  // controlled, not nauseating
-      const speed = baseSpeed + warp;
-
-      // background wash
-      ctx.fillStyle = "rgb(4,5,10)";
-      ctx.fillRect(0,0,w,h);
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(-roll * 0.85);
-
-      // Gentle parallax from pitch (moves "horizon" feel)
-      const tiltY = pitch * 180;
-
-      // Draw stars
-      for(const s of stars){
-        // Move forward (increase z), wrap
-        s.z -= dt * speed * (0.25 + (1 - s.z) * 1.2);
-        if(s.z <= 0.001){
-          s.x = (Math.random()*2-1);
-          s.y = (Math.random()*2-1);
-          s.z = 1;
-          s.b = 0.4 + Math.random()*0.6;
-        }
-
-        const depth = Math.max(0.04, s.z);
-        const px = s.x / depth * (cx * 0.65);
-        const py = (s.y / depth * (cy * 0.65)) + tiltY;
-
-        const r = clamp((1 - depth) * 2.2, 0.7, 2.2);
-        const alpha = clamp((1 - depth) * 0.9, 0.12, 0.9) * s.b;
-
-        // Streak length scales with speed + depth
-        const streak = (speed * 110) * (1 - depth) * (0.35 + mag);
-        const dx = 0;
-        const dy = -streak; // streak "forward"
-
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = "rgba(200,230,255,0.85)";
-        ctx.lineWidth = r;
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.lineTo(px + dx, py + dy);
-        ctx.stroke();
-
-        // tiny star head
-        ctx.globalAlpha = alpha * 0.85;
-        ctx.fillStyle = "rgba(255,255,255,0.9)";
-        ctx.beginPath();
-        ctx.arc(px, py, r*0.55, 0, Math.PI*2);
-        ctx.fill();
-      }
-
-      ctx.restore();
-
-      // Very subtle vignette
-      const g = ctx.createRadialGradient(cx, cy, Math.min(cx,cy)*0.35, cx, cy, Math.max(cx,cy));
-      g.addColorStop(0, "rgba(0,0,0,0)");
-      g.addColorStop(1, "rgba(0,0,0,0.55)");
-      ctx.fillStyle = g;
-      ctx.fillRect(0,0,w,h);
-    }
-
-    function drawReticleCues(roll, pitch){
-      // Add minimal “target brackets” that sway with controls
-      const w = innerWidth, h = innerHeight;
-      const cx = w/2, cy = h/2;
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(-roll);
-
-      const offsetY = pitch * 200;
-
-      ctx.globalAlpha = 0.6;
-      ctx.strokeStyle = "rgba(180,220,255,0.65)";
-      ctx.lineWidth = 1.25;
-
-      const size = Math.min(w,h) * 0.14;
-      const gap = 18;
-
-      // four corner brackets
-      const pts = [
-        [-size, -size + offsetY],
-        [ size, -size + offsetY],
-        [-size,  size + offsetY],
-        [ size,  size + offsetY],
-      ];
-
-      for(const [x,y] of pts){
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + Math.sign(x)*gap, y);
-        ctx.moveTo(x, y);
-        ctx.lineTo(x, y + Math.sign(y)*gap);
-        ctx.stroke();
-      }
-
-      // center crosshair
-      ctx.globalAlpha = 0.75;
-      ctx.strokeStyle = "rgba(220,245,255,0.75)";
-      ctx.beginPath();
-      ctx.moveTo(-42, offsetY); ctx.lineTo(-14, offsetY);
-      ctx.moveTo( 14, offsetY); ctx.lineTo( 42, offsetY);
-      ctx.moveTo(0, offsetY-42); ctx.lineTo(0, offsetY-14);
-      ctx.moveTo(0, offsetY+14); ctx.lineTo(0, offsetY+42);
-      ctx.stroke();
-
-      ctx.restore();
-    }
-
-    // ---------- UI wiring ----------
-    const dot = document.getElementById("dot");
-    const btnEnable = document.getElementById("btnEnable");
-    const btnCal = document.getElementById("btnCal");
-    const btnTouch = document.getElementById("btnTouch");
-
-    const touchPad = document.getElementById("touchPad");
-    const knob = document.getElementById("knob");
-
-    const readMode = document.getElementById("readMode");
-    const readSignal = document.getElementById("readSignal");
-    const readPitch = document.getElementById("readPitch");
-    const readRoll = document.getElementById("readRoll");
-    const readAngle = document.getElementById("readAngle");
-    const readDZ = document.getElementById("readDZ");
-    const readSm = document.getElementById("readSm");
-    const pillState = document.getElementById("pillState");
-    const pillTrim = document.getElementById("pillTrim");
-    const barFill = document.getElementById("barFill");
-
-    const controls = new EmberwingControls({
-      smoothing: 0.09,
-      deadzone: 0.04,
-      gainPitch: 1.18,
-      gainRoll: 1.32,
-      clamp: 0.95
-    });
-
-    readDZ.textContent = String(controls.opts.deadzone.toFixed(2));
-    readSm.textContent = String(controls.opts.smoothing.toFixed(2));
-
-    function setDot(on){
-      dot.style.background = on ? "#3cff7a" : "#ff4d4d";
-      dot.style.boxShadow = on ? "0 0 16px rgba(60,255,122,0.55)" : "0 0 16px rgba(255,77,77,0.55)";
-    }
-
-    function setTouchVisible(v){
-      touchPad.style.display = v ? "block" : "none";
-    }
-
-    btnEnable.addEventListener("click", async () => {
-      try{
-        const res = await controls.requestPermission();
-        if(!res.ok){
-          controls.mode = "touch";
-          controls.stopGyro();
-          setDot(false);
-          setTouchVisible(true);
-          readMode.textContent = "TOUCH";
-          readSignal.textContent = "GYRO BLOCKED";
-          pillState.textContent = "GLIDE";
-          return;
-        }
-        controls.startGyro();
-        controls.calibrate();
-        setDot(true);
-        setTouchVisible(false);
-        readMode.textContent = "GYRO";
-        readSignal.textContent = "CLEAR";
-        pillTrim.textContent = "CENTER";
-      } catch(e){
-        controls.mode = "touch";
-        controls.stopGyro();
-        setDot(false);
-        setTouchVisible(true);
-        readMode.textContent = "TOUCH";
-        readSignal.textContent = "ERROR";
-      }
-    });
-
-    btnCal.addEventListener("click", () => {
-      controls.calibrate();
-      pillTrim.textContent = "CENTER";
-      // little pulse
-      pillTrim.style.transform = "scale(1.03)";
-      setTimeout(()=>pillTrim.style.transform="scale(1)", 120);
-    });
-
-    btnTouch.addEventListener("click", () => {
-      controls.mode = "touch";
-      controls.stopGyro();
-      setDot(false);
-      setTouchVisible(true);
-      readMode.textContent = "TOUCH";
-      readSignal.textContent = "CLEAR";
-    });
-
-    // Touchpad logic
-    const pad = { id:null, cx:0, cy:0, r:0 };
-    function measurePad(){
-      const rect = touchPad.getBoundingClientRect();
-      pad.cx = rect.left + rect.width/2;
-      pad.cy = rect.top + rect.height/2;
-      pad.r  = Math.min(rect.width, rect.height) * 0.34;
-    }
-    addEventListener("resize", measurePad, { passive:true });
-    measurePad();
-
-    function setKnob(nx, ny){
-      knob.style.left = `calc(50% + ${nx * pad.r}px)`;
-      knob.style.top  = `calc(50% + ${ny * pad.r}px)`;
-    }
-
-    touchPad.addEventListener("pointerdown", (e)=>{
-      touchPad.setPointerCapture(e.pointerId);
-      pad.id = e.pointerId;
-      measurePad();
-      controls.setTouch(0,0,true);
-    });
-
-    touchPad.addEventListener("pointermove", (e)=>{
-      if(pad.id !== e.pointerId) return;
-      const dx = e.clientX - pad.cx;
-      const dy = e.clientY - pad.cy;
-      let nx = dx / pad.r;
-      let ny = dy / pad.r;
-      const m = Math.hypot(nx, ny);
-      if(m > 1){ nx/=m; ny/=m; }
-      controls.setTouch(nx, ny, true);
-      setKnob(nx, ny);
-    });
-
-    function endTouch(e){
-      if(pad.id !== e.pointerId) return;
-      pad.id = null;
-      controls.setTouch(0,0,false);
-      setKnob(0,0);
-    }
-    touchPad.addEventListener("pointerup", endTouch);
-    touchPad.addEventListener("pointercancel", endTouch);
-
-    // Desktop default -> touch pad visible
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if(!isMobile){
-      controls.mode = "touch";
-      setDot(false);
-      setTouchVisible(true);
-      readMode.textContent = "TOUCH";
-      readSignal.textContent = "DESKTOP";
-    } else {
-      setDot(false);
-      readMode.textContent = "WAITING";
-      readSignal.textContent = "TAP ENABLE";
-    }
-
-    // ---------- Main loop ----------
-    let tPrev = performance.now();
-    function frame(tNow){
-      const dt = Math.min(0.05, (tNow - tPrev)/1000);
-      tPrev = tNow;
-
-      controls.update(dt);
-      const { pitch, roll } = controls.state;
-
-      drawStarfield(dt, roll, pitch);
-      drawReticleCues(roll, pitch);
-
-      // UI readouts
-      const angle = getScreenAngle();
-      readAngle.textContent = `${angle}°`;
-      readPitch.textContent = pitch.toFixed(3);
-      readRoll.textContent  = roll.toFixed(3);
-
-      const mag = Math.min(1, Math.hypot(pitch, roll) / 0.9);
-      const watt = lerp(0.55, 0.98, mag);
-      barFill.style.width = `${Math.round(watt*100)}%`;
-
-      // state label
-      if(mag < 0.12) pillState.textContent = "GLIDE";
-      else if(mag < 0.32) pillState.textContent = "STEADY";
-      else pillState.textContent = "IGNITION";
-
-      requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
+    requestAnimationFrame(loop);
+    addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
   </script>
 </body>
 </html>
