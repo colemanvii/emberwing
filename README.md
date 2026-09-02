@@ -1,9 +1,16 @@
 # Emberwing
 
-A small browser flight game.
+A tiny third-person arcade flight game built around one idea: easy to fly, difficult to stop playing.
 
-The current build is **First Flight**: one original fighter, one landscape, arcade flight controls, and a third-person chase camera. The only question right now is whether flying the ship feels good.
+**First Flight** puts one original fighter over a low-altitude desert combat space. Find and destroy three bandits with the cannon or assisted missile seeker, then fly it again.
 
-Open `index.html` in a modern desktop browser. Controls: **W/S** pitch, **A/D** roll, **Shift/Ctrl** speed, **R** reset.
+Open `index.html` in a modern desktop browser.
+
+- **Arrow keys** — pitch and bank
+- **Space** — cannon
+- **A** — cage / uncage missile seeker
+- **X** — release missile when locked
+- **Shift** — afterburner
+- **R** — restart
 
 No accounts. No progression. No lore. Build first.
