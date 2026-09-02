@@ -6,11 +6,12 @@ A tiny third-person arcade flight game built around one idea: easy to fly, diffi
 
 Open `index.html` in a modern desktop browser.
 
-- **Arrow keys** — pitch and bank
+- **Trackpad** — primary pitch and bank after clicking the game
+- **Arrow keys** — fallback pitch and bank
 - **Space** — cannon
-- **A** — cage / uncage missile seeker
-- **X** — release missile when locked
-- **Shift** — afterburner
+- **E** — cage / uncage missile seeker
+- **Q** — release missile when locked
+- **Shift** — turbo / afterburner
 - **R** — restart
 
 No accounts. No progression. No lore. Build first.
