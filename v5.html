@@ -101,26 +101,42 @@ function v5GradeTerrain(){const col=ggeo.attributes.color,nrm=ggeo.attributes.no
 const v5RebuildTerrainBase=rebuildTerrain;rebuildTerrain=function(cx,cz){v5RebuildTerrainBase(cx,cz);v5GradeTerrain()};v5GradeTerrain();
 const v5SetWorldThemeBase=setWorldTheme;setWorldTheme=function(alpine){v5SetWorldThemeBase(alpine);farRidgeMat.color.setHex(alpine?0x6f8796:0x6e4b49)};
 
-// Collision fairness: impact must match what the player can actually see.
+// Collision fairness II: collide with the shapes the player actually sees, not broad metadata cylinders.
+const v5HitLocal=new THREE.Vector3(),v5HitInv=new THREE.Matrix4();
+function v5MeshContainsPoint(mesh,worldPoint,shrink=.72){
+ const g=mesh.geometry;if(!g)return false;
+ mesh.updateWorldMatrix(true,false);
+ v5HitLocal.copy(worldPoint).applyMatrix4(v5HitInv.copy(mesh.matrixWorld).invert());
+ const p=g.parameters||{},x=v5HitLocal.x,y=v5HitLocal.y,z=v5HitLocal.z,type=g.type;
+ if(type==='ConeGeometry'||type==='CylinderGeometry'){
+  const h=p.height||1,half=h*.5;if(y<=-half*.94||y>=half*.94)return false;
+  const t=THREE.MathUtils.clamp((y+half)/h,0,1),rb=p.radiusBottom??1,rt=p.radiusTop??0,r=THREE.MathUtils.lerp(rb,rt,t)*shrink;
+  return x*x+z*z<r*r;
+ }
+ if(type==='BoxGeometry'){const hx=(p.width||1)*.5*shrink,hy=(p.height||1)*.5*.88,hz=(p.depth||1)*.5*shrink;return Math.abs(x)<hx&&Math.abs(y)<hy&&Math.abs(z)<hz}
+ if(type==='DodecahedronGeometry'||type==='IcosahedronGeometry'||type==='OctahedronGeometry'||type==='TetrahedronGeometry'){const r=(p.radius||1)*shrink;return x*x+y*y+z*z<r*r}
+ if(!g.boundingBox)g.computeBoundingBox();const b=g.boundingBox;if(!b)return false,cx=(b.min.x+b.max.x)*.5,cy=(b.min.y+b.max.y)*.5,cz=(b.min.z+b.max.z)*.5,hx=(b.max.x-b.min.x)*.5*shrink,hy=(b.max.y-b.min.y)*.5*.88,hz=(b.max.z-b.min.z)*.5*shrink;return Math.abs(x-cx)<hx&&Math.abs(y-cy)<hy&&Math.abs(z-cz)<hz
+}
+function v5VisibleTerrainHeight(wx,wz){
+ const lx=wx-ground.position.x,lz=wz-ground.position.z,row=seg+1,x0=baseXZ[0],z0=baseXZ[1],xStep=baseXZ[2]-x0,zStep=baseXZ[row*2+1]-z0;
+ if(Math.abs(xStep)<1e-6||Math.abs(zStep)<1e-6)return terrainHeight(wx,wz);
+ const gx=(lx-x0)/xStep,gz=(lz-z0)/zStep;if(gx<0||gz<0||gx>seg||gz>seg)return terrainHeight(wx,wz);
+ const ix=Math.min(seg-1,Math.max(0,Math.floor(gx))),iz=Math.min(seg-1,Math.max(0,Math.floor(gz))),fx=gx-ix,fz=gz-iz,a=iz*row+ix,b=(iz+1)*row+ix,c=(iz+1)*row+ix+1,d=iz*row+ix+1,ha=gp.getY(a),hb=gp.getY(b),hc=gp.getY(c),hd=gp.getY(d);
+ return fx+fz<=1?ha+(hd-ha)*fx+(hb-ha)*fz:hb*(1-fx)+hd*(1-fz)+hc*(fx+fz-1)
+}
 checkObstacleCollision=function(){
  for(const m of scenery){
   if(!m.visible)continue;
-  if(m.userData.mountain){
-   const crags=m.children.filter(c=>c.isMesh);
-   let hit=false;
-   for(const c of crags){
-    const cx=m.position.x+c.position.x,cy=m.position.y+c.position.y,cz=m.position.z+c.position.z,halfH=Math.max(1,c.scale.y*.49),dy=ship.position.y-cy;
-    if(dy<=-halfH||dy>=halfH)continue;
-    const rise=THREE.MathUtils.clamp((dy+halfH)/(halfH*2),0,1),taper=.2+(1-rise)*.72,baseR=Math.max(c.scale.x,c.scale.z),r=baseR*taper+1.15,dx=ship.position.x-cx,dz=ship.position.z-cz;
-    if(dx*dx+dz*dz<r*r){hit=true;break}
-   }
-   if(hit){crashNow();return}
+  const dx=ship.position.x-m.position.x,dz=ship.position.z-m.position.z,rawR=m.userData.collisionR||10,broadR=rawR+18,broadH=(m.userData.collisionH||10)+24;
+  if(dx*dx+dz*dz>broadR*broadR||Math.abs(ship.position.y-m.position.y)>broadH)continue;
+  if(m.userData.mountain||m.userData.city){
+   m.updateWorldMatrix(true,true);const shrink=m.userData.mountain?.68:.74;
+   for(const child of m.children)if(child.isMesh&&v5MeshContainsPoint(child,ship.position,shrink)){crashNow();return}
    continue;
   }
-  const dx=ship.position.x-m.position.x,dz=ship.position.z-m.position.z,rawR=m.userData.collisionR||0,r=rawR*.62,h=(m.userData.collisionH||8)*.68;
-  if(dx*dx+dz*dz<r*r&&Math.abs(ship.position.y-m.position.y)<h){crashNow();return}
+  if(m.isMesh&&v5MeshContainsPoint(m,ship.position,.7)){crashNow();return}
  }
 };
 const v5UpdateCameraBase=updateCamera;updateCamera=function(dt){v5UpdateCameraBase(dt);sun.position.set(ship.position.x-520,ship.position.y+390,ship.position.z-650);sun.target.position.copy(ship.position);sun.target.updateMatrixWorld();v5Rim.position.set(ship.position.x+310,ship.position.y+240,ship.position.z+420);v5Rim.target.position.copy(ship.position);v5Rim.target.updateMatrixWorld();v5Rim.color.setHex(worldIndex?0xb9dcf2:0x8eb7d1);v5Rim.intensity=worldIndex?.76:.5};
 `;
-html=html.replace('const floor=terrainHeight(ship.position.x,ship.position.z)+3;','const floor=terrainHeight(ship.position.x,ship.position.z)+.9;').replace(anchor,v5+anchor).replace('<title>Emberwing V3</title>','<title>Emberwing V5</title>').replace('<!-- EMBERWING V3 // standalone snapshot // generated from accepted pinned flight core -->','<!-- EMBERWING V5 // fighter silhouette + landscape beauty over accepted V3 flight core -->');document.open();document.write(html);document.close()})().catch(e=>{document.getElementById('boot').textContent='V5 AIRFRAME // '+e.message})</script></body></html>
+html=html.replace('const floor=terrainHeight(ship.position.x,ship.position.z)+3;','const floor=v5VisibleTerrainHeight(ship.position.x,ship.position.z)+.55;').replace(anchor,v5+anchor).replace('<title>Emberwing V3</title>','<title>Emberwing V5</title>').replace('<!-- EMBERWING V3 // standalone snapshot // generated from accepted pinned flight core -->','<!-- EMBERWING V5 // fighter silhouette + landscape beauty over accepted V3 flight core -->');document.open();document.write(html);document.close()})().catch(e=>{document.getElementById('boot').textContent='V5 AIRFRAME // '+e.message})</script></body></html>
