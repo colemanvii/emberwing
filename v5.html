@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Emberwing V5</title><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05080a}#boot{position:fixed;inset:0;display:grid;place-items:center;color:#eef4f7;font:600 8px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.34em;background:#05080a}</style></head><body><div id="boot">EMBERWING // V5 AIRFRAME</div><script>(async()=>{const res=await fetch('https://cdn.jsdelivr.net/gh/colemanvii/emberwing@fa7f28e7e1987f151250fba078d9f10ad808d38d/v3.html',{cache:'no-store'});if(!res.ok)throw new Error('Could not load V3 flight core');let html=await res.text();const anchor='const clock=new THREE.Clock();';if(!html.includes(anchor))throw new Error('V5 anchor missing');const v5=`
-// EMBERWING V5 // real fighter silhouette pass
+// EMBERWING V5 // fighter silhouette + landscape beauty pass
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.shadowMap.autoUpdate=true;
@@ -53,11 +53,53 @@ for(const s of[-1,1]){const fin=new THREE.Mesh(v5VerticalPlate([[0,-1.06],[1.62,
 // Mechanical exhaust coordinates stay exact.
 for(const x of[-5,-1.7,1.7,5]){const outer=Math.abs(x)>4,rad=outer?.31:.42,shroud=new THREE.Mesh(new THREE.CylinderGeometry(rad*.95,rad*1.10,.62,10),v5DarkMat);shroud.rotation.x=Math.PI/2;shroud.position.set(x,0,3.10);v5Airframe.add(shroud);const e=new THREE.Mesh(new THREE.SphereGeometry(rad,8,6),new THREE.MeshBasicMaterial({color:0xff9a43,transparent:true,opacity:outer?.58:.80,blending:THREE.AdditiveBlending,depthWrite:false}));e.position.set(x,0,3.35);v5Airframe.add(e);ship.userData.engines.push(e);const ring=new THREE.Mesh(new THREE.TorusGeometry(rad*1.05,.047,6,18),new THREE.MeshBasicMaterial({color:0xffb06a,transparent:true,opacity:outer?.14:.24,blending:THREE.AdditiveBlending,depthWrite:false}));ring.position.set(x,0,3.36);v5Airframe.add(ring);const p=new THREE.Mesh(new THREE.ConeGeometry(outer?.22:.30,3.4,8),new THREE.MeshBasicMaterial({color:0xff8a3b,transparent:true,opacity:outer?.46:.67,blending:THREE.AdditiveBlending,depthWrite:false}));p.rotation.x=-Math.PI/2;p.position.set(x,0,4.9);v5Airframe.add(p);ship.userData.plumes.push(p)}
 ship.add(v5Airframe);v5ShadowTree(v5Airframe,true,true);
+
+// Landscape forms: reshape existing meshes only. Collision metadata and terrainHeight remain untouched.
+function v5LandscapeMassPass(){
+ let mountainIndex=0;
+ for(const m of scenery){
+  if(!m.userData.mountain)continue;
+  const crags=m.children.filter(c=>c.isMesh);
+  if(crags.length<4)continue;
+  const first=crags[0].position,last=crags[crags.length-1].position;
+  let dx=last.x-first.x,dz=last.z-first.z,len=Math.hypot(dx,dz);
+  if(len<.001){dx=1;dz=0;len=1}
+  dx/=len;dz/=len;
+  const px=-dz,pz=dx,R=m.userData.collisionR||120,step=R*.105,hand=mountainIndex++%2?1:-1;
+  const along=[-2.35,-1.35,-.25,.65,1.45,2.05],cross=[.03,-.045,0,.055,-.025,.04],height=[.84,.94,1,.9,.76,.62],width=[.92,.98,1,.94,.86,.78];
+  const baseH=crags[2]?.scale.y||Math.max(...crags.map(c=>c.scale.y));
+  for(let j=0;j<crags.length&&j<6;j++){
+   const c=crags[j],newH=c.scale.y*height[j];
+   c.position.x=dx*along[j]*step+px*cross[j]*R*hand;
+   c.position.z=dz*along[j]*step+pz*cross[j]*R*hand;
+   c.scale.x*=width[j];c.scale.z*=width[j];c.scale.y=newH;
+   c.position.y=(newH-baseH)/2;
+   c.rotation.y+=hand*(j-2.5)*.025;
+  }
+ }
+ for(let r=0;r<distantRidges.length;r++){
+  const ridge=distantRidges[r],peaks=ridge.children.filter(c=>c.isMesh);
+  if(!peaks.length)continue;
+  const baseH=(ridge.userData.raise||120)*2,hand=r%2?1:-1;
+  const crest=[.72,.88,1,.9,.74];
+  for(let j=0;j<peaks.length;j++){
+   const p=peaks[j],factor=crest[j]||.8,newH=p.scale.y*factor;
+   p.scale.x*=1.16;p.scale.z*=1.1;p.scale.y=newH;
+   p.position.x=(j-(peaks.length-1)/2)*78+hand*(j%2?9:-6);
+   p.position.z=hand*Math.sin((j+1)*1.35)*24;
+   p.position.y=(newH-baseH)/2;
+   p.rotation.y+=hand*(j-2)*.055;
+  }
+ }
+}
+v5LandscapeMassPass();
+
 cityGlassMat.roughness=.16;cityGlassMat.metalness=.35;cityGlassMat.emissive.setHex(0x07151c);cityGlassMat.emissiveIntensity=.24;
 rockMat.roughness=.96;sandMat.roughness=.9;peakDarkMat.roughness=.92;peakMat.roughness=.9;peakLightMat.roughness=.84;
-const v5Snow=new THREE.Color(0xe8eef0),v5Shade=new THREE.Color();
-function v5GradeTerrain(){const col=ggeo.attributes.color,nrm=ggeo.attributes.normal;if(!col||!nrm)return;for(let i=0;i<gp.count;i++){const y=gp.getY(i),ny=THREE.MathUtils.clamp(nrm.getY(i),0,1),slope=1-ny,x=gp.getX(i)+ground.position.x,z=gp.getZ(i)+ground.position.z,grain=(Math.sin(x*.013)+Math.cos(z*.011)+Math.sin((x-z)*.006))*0.011;v5Shade.setRGB(col.getX(i),col.getY(i),col.getZ(i));if(worldIndex){const snow=THREE.MathUtils.clamp((y+22)/118,0,1)*THREE.MathUtils.clamp((ny-.38)/.62,0,1);v5Shade.multiplyScalar(1-slope*.22+grain).lerp(v5Snow,snow*.48)}else{const cut=THREE.MathUtils.clamp(slope*.52,0,.28);v5Shade.multiplyScalar(1-cut+grain)}col.setXYZ(i,v5Shade.r,v5Shade.g,v5Shade.b)}col.needsUpdate=true}
+const v5Snow=new THREE.Color(0xe8eef0),v5Shade=new THREE.Color(),v5DesertCut=new THREE.Color(0x55343a),v5DesertHigh=new THREE.Color(0xd18a58),v5AlpineCut=new THREE.Color(0x344955);
+function v5GradeTerrain(){const col=ggeo.attributes.color,nrm=ggeo.attributes.normal;if(!col||!nrm)return;for(let i=0;i<gp.count;i++){const y=gp.getY(i),ny=THREE.MathUtils.clamp(nrm.getY(i),0,1),slope=1-ny,x=gp.getX(i)+ground.position.x,z=gp.getZ(i)+ground.position.z,grain=(Math.sin(x*.011)+Math.cos(z*.009)+Math.sin((x-z)*.005))*0.006;v5Shade.setRGB(col.getX(i),col.getY(i),col.getZ(i));if(worldIndex){const cliff=THREE.MathUtils.smoothstep(slope,.18,.72),snowHeight=THREE.MathUtils.smoothstep(y,12,122),shelf=THREE.MathUtils.smoothstep(ny,.48,.9),snow=snowHeight*shelf;v5Shade.multiplyScalar(1-cliff*.24+grain).lerp(v5AlpineCut,cliff*.16).lerp(v5Snow,snow*.58)}else{const cut=THREE.MathUtils.smoothstep(slope,.16,.68),high=THREE.MathUtils.smoothstep(y,-8,96)*(1-cut);v5Shade.multiplyScalar(1-cut*.28+grain).lerp(v5DesertCut,cut*.14).lerp(v5DesertHigh,high*.08)}col.setXYZ(i,v5Shade.r,v5Shade.g,v5Shade.b)}col.needsUpdate=true}
 const v5RebuildTerrainBase=rebuildTerrain;rebuildTerrain=function(cx,cz){v5RebuildTerrainBase(cx,cz);v5GradeTerrain()};v5GradeTerrain();
+const v5SetWorldThemeBase=setWorldTheme;setWorldTheme=function(alpine){v5SetWorldThemeBase(alpine);farRidgeMat.color.setHex(alpine?0x6f8796:0x6e4b49)};
 const v5UpdateCameraBase=updateCamera;updateCamera=function(dt){v5UpdateCameraBase(dt);sun.position.set(ship.position.x-520,ship.position.y+390,ship.position.z-650);sun.target.position.copy(ship.position);sun.target.updateMatrixWorld();v5Rim.position.set(ship.position.x+310,ship.position.y+240,ship.position.z+420);v5Rim.target.position.copy(ship.position);v5Rim.target.updateMatrixWorld();v5Rim.color.setHex(worldIndex?0xb9dcf2:0x8eb7d1);v5Rim.intensity=worldIndex?.76:.5};
 `;
-html=html.replace(anchor,v5+anchor).replace('<title>Emberwing V3</title>','<title>Emberwing V5</title>').replace('<!-- EMBERWING V3 // standalone snapshot // generated from accepted pinned flight core -->','<!-- EMBERWING V5 // real fighter silhouette over accepted V3 flight core -->');document.open();document.write(html);document.close()})().catch(e=>{document.getElementById('boot').textContent='V5 AIRFRAME // '+e.message})</script></body></html>
+html=html.replace(anchor,v5+anchor).replace('<title>Emberwing V3</title>','<title>Emberwing V5</title>').replace('<!-- EMBERWING V3 // standalone snapshot // generated from accepted pinned flight core -->','<!-- EMBERWING V5 // fighter silhouette + landscape beauty over accepted V3 flight core -->');document.open();document.write(html);document.close()})().catch(e=>{document.getElementById('boot').textContent='V5 AIRFRAME // '+e.message})</script></body></html>
