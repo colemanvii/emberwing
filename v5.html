@@ -100,6 +100,27 @@ const v5Snow=new THREE.Color(0xe8eef0),v5Shade=new THREE.Color(),v5DesertCut=new
 function v5GradeTerrain(){const col=ggeo.attributes.color,nrm=ggeo.attributes.normal;if(!col||!nrm)return;for(let i=0;i<gp.count;i++){const y=gp.getY(i),ny=THREE.MathUtils.clamp(nrm.getY(i),0,1),slope=1-ny,x=gp.getX(i)+ground.position.x,z=gp.getZ(i)+ground.position.z,grain=(Math.sin(x*.011)+Math.cos(z*.009)+Math.sin((x-z)*.005))*0.006;v5Shade.setRGB(col.getX(i),col.getY(i),col.getZ(i));if(worldIndex){const cliff=THREE.MathUtils.smoothstep(slope,.18,.72),snowHeight=THREE.MathUtils.smoothstep(y,12,122),shelf=THREE.MathUtils.smoothstep(ny,.48,.9),snow=snowHeight*shelf;v5Shade.multiplyScalar(1-cliff*.24+grain).lerp(v5AlpineCut,cliff*.16).lerp(v5Snow,snow*.58)}else{const cut=THREE.MathUtils.smoothstep(slope,.16,.68),high=THREE.MathUtils.smoothstep(y,-8,96)*(1-cut);v5Shade.multiplyScalar(1-cut*.28+grain).lerp(v5DesertCut,cut*.14).lerp(v5DesertHigh,high*.08)}col.setXYZ(i,v5Shade.r,v5Shade.g,v5Shade.b)}col.needsUpdate=true}
 const v5RebuildTerrainBase=rebuildTerrain;rebuildTerrain=function(cx,cz){v5RebuildTerrainBase(cx,cz);v5GradeTerrain()};v5GradeTerrain();
 const v5SetWorldThemeBase=setWorldTheme;setWorldTheme=function(alpine){v5SetWorldThemeBase(alpine);farRidgeMat.color.setHex(alpine?0x6f8796:0x6e4b49)};
+
+// Collision fairness: impact must match what the player can actually see.
+checkObstacleCollision=function(){
+ for(const m of scenery){
+  if(!m.visible)continue;
+  if(m.userData.mountain){
+   const crags=m.children.filter(c=>c.isMesh);
+   let hit=false;
+   for(const c of crags){
+    const cx=m.position.x+c.position.x,cy=m.position.y+c.position.y,cz=m.position.z+c.position.z,halfH=Math.max(1,c.scale.y*.49),dy=ship.position.y-cy;
+    if(dy<=-halfH||dy>=halfH)continue;
+    const rise=THREE.MathUtils.clamp((dy+halfH)/(halfH*2),0,1),taper=.2+(1-rise)*.72,baseR=Math.max(c.scale.x,c.scale.z),r=baseR*taper+1.15,dx=ship.position.x-cx,dz=ship.position.z-cz;
+    if(dx*dx+dz*dz<r*r){hit=true;break}
+   }
+   if(hit){crashNow();return}
+   continue;
+  }
+  const dx=ship.position.x-m.position.x,dz=ship.position.z-m.position.z,rawR=m.userData.collisionR||0,r=rawR*.62,h=(m.userData.collisionH||8)*.68;
+  if(dx*dx+dz*dz<r*r&&Math.abs(ship.position.y-m.position.y)<h){crashNow();return}
+ }
+};
 const v5UpdateCameraBase=updateCamera;updateCamera=function(dt){v5UpdateCameraBase(dt);sun.position.set(ship.position.x-520,ship.position.y+390,ship.position.z-650);sun.target.position.copy(ship.position);sun.target.updateMatrixWorld();v5Rim.position.set(ship.position.x+310,ship.position.y+240,ship.position.z+420);v5Rim.target.position.copy(ship.position);v5Rim.target.updateMatrixWorld();v5Rim.color.setHex(worldIndex?0xb9dcf2:0x8eb7d1);v5Rim.intensity=worldIndex?.76:.5};
 `;
-html=html.replace(anchor,v5+anchor).replace('<title>Emberwing V3</title>','<title>Emberwing V5</title>').replace('<!-- EMBERWING V3 // standalone snapshot // generated from accepted pinned flight core -->','<!-- EMBERWING V5 // fighter silhouette + landscape beauty over accepted V3 flight core -->');document.open();document.write(html);document.close()})().catch(e=>{document.getElementById('boot').textContent='V5 AIRFRAME // '+e.message})</script></body></html>
+html=html.replace('const floor=terrainHeight(ship.position.x,ship.position.z)+3;','const floor=terrainHeight(ship.position.x,ship.position.z)+.9;').replace(anchor,v5+anchor).replace('<title>Emberwing V3</title>','<title>Emberwing V5</title>').replace('<!-- EMBERWING V3 // standalone snapshot // generated from accepted pinned flight core -->','<!-- EMBERWING V5 // fighter silhouette + landscape beauty over accepted V3 flight core -->');document.open();document.write(html);document.close()})().catch(e=>{document.getElementById('boot').textContent='V5 AIRFRAME // '+e.message})</script></body></html>
