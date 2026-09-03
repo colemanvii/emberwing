@@ -1,4 +1,4 @@
-name: Emberwing Agility Patch V3
+name: Emberwing Pursuit Control Pass
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply stronger high-G agility
+      - name: Apply pursuit control pass
         run: python .github/monk/agility-patch-v3.py
       - name: Commit game patch
         run: |
@@ -22,5 +22,5 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add index.html
           git diff --cached --quiet && exit 1
-          git commit -m "Give player stronger high-G agility"
+          git commit -m "Tune pursuit control and Bandit 3 readability"
           git push
