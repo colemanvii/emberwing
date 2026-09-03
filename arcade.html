@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Emberwing — Arcade Run</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0f0707;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#fff}
+#game{position:fixed;inset:0;width:100%;height:100%;border:0;transform-origin:50% 50%;transition:filter .12s}
+#arcade{position:fixed;inset:0;pointer-events:none;z-index:20;text-shadow:0 2px 12px #100}
+#run{position:absolute;top:48px;left:22px;display:flex;gap:12px;align-items:center;font-size:9px;letter-spacing:.16em;color:#ffe8bd}
+.pill{padding:7px 9px;border:1px solid #fff1c738;background:#1c0c0a88;backdrop-filter:blur(7px)}
+#points{font-size:12px;font-weight:900;color:#fff6df}
+#mult{color:#ffbf55;font-weight:900}
+#role{position:absolute;top:48px;right:22px;padding:7px 9px;border:1px solid #fff1c72f;background:#1c0c0a77;font-size:9px;letter-spacing:.16em;color:#ffdca0;opacity:.7}
+#streak{position:absolute;left:50%;top:22%;transform:translateX(-50%) scale(.94);font-size:13px;font-weight:900;letter-spacing:.2em;color:#fff4d5;opacity:0;transition:.18s;text-shadow:0 0 18px #ff9a42}
+#streak.on{opacity:1;transform:translateX(-50%) scale(1)}
+#best{position:absolute;left:22px;bottom:20px;font-size:8px;letter-spacing:.14em;color:#ffdca0;opacity:.48}
+#vignette{position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 50% 43%,transparent 0 44%,rgba(255,78,28,.16) 75%,rgba(255,40,18,.3) 100%);transition:opacity .16s}
+</style>
+</head>
+<body>
+<iframe id="game" src="index.html" allow="autoplay; fullscreen"></iframe>
+<div id="arcade">
+  <div id="run"><span class="pill"><span id="points">000000</span> PTS</span><span class="pill" id="mult">x1.0</span><span class="pill" id="chain">CHAIN 0</span></div>
+  <div id="role">CONTACT</div><div id="streak"></div><div id="best"></div><div id="vignette"></div>
+</div>
+<script>
+const frame=document.getElementById('game'),pointsEl=document.getElementById('points'),multEl=document.getElementById('mult'),chainEl=document.getElementById('chain'),roleEl=document.getElementById('role'),streakEl=document.getElementById('streak'),bestEl=document.getElementById('best'),vig=document.getElementById('vignette');
+let points=0,chain=0,mult=1,lastAction=performance.now(),lastObjective='',best=+(localStorage.getItem('emberwingArcadeBest')||0),shakeT=0;
+function hud(){pointsEl.textContent=String(Math.round(points)).padStart(6,'0');multEl.textContent='x'+mult.toFixed(1);chainEl.textContent='CHAIN '+chain;bestEl.textContent='ARCADE BEST '+String(best).padStart(6,'0')}
+function pop(text){streakEl.textContent=text;streakEl.classList.add('on');clearTimeout(pop.t);pop.t=setTimeout(()=>streakEl.classList.remove('on'),650)}
+function punch(strength=.5){shakeT=170;const px=2+strength*5;frame.animate([{transform:'translate(0,0) scale(1)'},{transform:`translate(${px}px,${-px*.55}px) scale(1.003)`},{transform:`translate(${-px*.65}px,${px*.4}px) scale(1.002)`},{transform:'translate(0,0) scale(1)'}],{duration:150,easing:'ease-out'});vig.style.opacity=String(.16+strength*.4);setTimeout(()=>vig.style.opacity='0',100)}
+function add(base,label,strong=.45){chain++;mult=Math.min(5,1+Math.floor(chain/3)*.5);points+=base*mult;lastAction=performance.now();punch(strong);pop(label+'  +'+Math.round(base*mult));if(points>best){best=Math.round(points);localStorage.setItem('emberwingArcadeBest',best)}hud()}
+function resetRun(){points=0;chain=0;mult=1;lastAction=performance.now();hud()}
+function roleFrom(text){for(const r of ['ROOKIE','SKIMMER','CLIMBER','ACE'])if(text.includes(r))return r;return null}
+frame.addEventListener('load',()=>{
+  const d=frame.contentDocument;if(!d)return;
+  const objective=d.getElementById('objective'),crash=d.getElementById('crash'),complete=d.getElementById('complete');
+  const react=()=>{const text=(objective?.textContent||'').trim().toUpperCase();if(!text||text===lastObjective)return;lastObjective=text;const role=roleFrom(text);if(role){roleEl.textContent=role==='ROOKIE'?'HUNTER':role==='SKIMMER'?'SKIMMER':role==='CLIMBER'?'GUNNER':'ACE';roleEl.style.opacity='1'}
+    if(text==='HIT')add(80,'HIT',.25);
+    else if(text.includes('MISSILE HIT'))add(150,'MISSILE HIT',.4);
+    else if(text==='SPLASH'||text.includes('GUN KILL'))add(500,'GUN KILL',.72);
+    else if(text.includes('MISSILE KILL'))add(700,'MISSILE KILL',.9);
+    else if(text.includes('LOCK BROKEN'))add(120,'LOCK BREAK',.35);
+    else if(text.includes('MISSILE EVADED')||text.includes('MISSILE DEFEATED'))add(250,'MISSILE EVADE',.6);
+    else if(text.includes('CITY CLEAR')){points+=1000*mult;pop('CITY CLEAR');hud()}
+    else if(text.includes('AREA CLEAR')){points+=1600*mult;pop('AREA CLEAR');hud()}
+  };
+  if(objective)new MutationObserver(react).observe(objective,{childList:true,subtree:true,characterData:true});
+  if(crash)new MutationObserver(()=>{if(getComputedStyle(crash).display!=='none'){chain=0;mult=1;hud();punch(1)}}).observe(crash,{attributes:true,attributeFilter:['style']});
+  if(complete)new MutationObserver(()=>{if(getComputedStyle(complete).display!=='none'){points+=Math.max(0,3000);if(points>best){best=Math.round(points);localStorage.setItem('emberwingArcadeBest',best)}pop('RUN COMPLETE  '+Math.round(points)+' PTS');hud()}}).observe(complete,{attributes:true,attributeFilter:['style']});
+  react();
+});
+setInterval(()=>{if(chain>0&&performance.now()-lastAction>4200){chain=Math.max(0,chain-1);mult=Math.max(1,1+Math.floor(chain/3)*.5);lastAction=performance.now()-3200;hud()}},500);
+hud();
+</script>
+</body>
+</html>
