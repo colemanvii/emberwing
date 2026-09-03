@@ -36,3 +36,5 @@ jobs:
           path: emberwing-gemini-audit.zip
           if-no-files-found: error
           retention-days: 1
+
+# trigger one-shot bundle build
