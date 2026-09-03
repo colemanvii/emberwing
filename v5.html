@@ -137,6 +137,29 @@ checkObstacleCollision=function(){
   if(m.isMesh&&v5MeshContainsPoint(m,ship.position,.7)){crashNow();return}
  }
 };
-const v5UpdateCameraBase=updateCamera;updateCamera=function(dt){v5UpdateCameraBase(dt);sun.position.set(ship.position.x-520,ship.position.y+390,ship.position.z-650);sun.target.position.copy(ship.position);sun.target.updateMatrixWorld();v5Rim.position.set(ship.position.x+310,ship.position.y+240,ship.position.z+420);v5Rim.target.position.copy(ship.position);v5Rim.target.updateMatrixWorld();v5Rim.color.setHex(worldIndex?0xb9dcf2:0x8eb7d1);v5Rim.intensity=worldIndex?.76:.5};
+// Close-pass punctuation: one short whoosh and a tiny camera buffet when a bandit genuinely screams past.
+let v5PassNoise=null,v5PassPrevD=Infinity,v5PassMinD=Infinity,v5PassArmed=false,v5PassCooldown=0,v5PassBuffet=0,v5PassSide=0;
+const v5PassRelPos=new THREE.Vector3(),v5PassRelVel=new THREE.Vector3(),v5PassShipVel=new THREE.Vector3();
+function v5ClosePassSound(strength,pan){
+ if(!audioCtx||audioCtx.state!=='running')return;
+ if(!v5PassNoise){const frames=Math.floor(audioCtx.sampleRate*.42),b=audioCtx.createBuffer(1,frames,audioCtx.sampleRate),d=b.getChannelData(0);let last=0;for(let i=0;i<frames;i++){last=last*.72+(Math.random()*2-1)*.28;d[i]=last}v5PassNoise=b}
+ const src=audioCtx.createBufferSource(),filter=audioCtx.createBiquadFilter(),gain=audioCtx.createGain(),stereo=audioCtx.createStereoPanner?audioCtx.createStereoPanner():null,t=audioCtx.currentTime;
+ src.buffer=v5PassNoise;filter.type='bandpass';filter.Q.value=.65;filter.frequency.setValueAtTime(1450,t);filter.frequency.exponentialRampToValueAtTime(360,t+.34);gain.gain.setValueAtTime(.0001,t);gain.gain.linearRampToValueAtTime(.038+strength*.025,t+.04);gain.gain.exponentialRampToValueAtTime(.0001,t+.36);
+ if(stereo){stereo.pan.value=THREE.MathUtils.clamp(pan,-.85,.85);src.connect(filter).connect(gain).connect(stereo).connect(audioCtx.destination)}else src.connect(filter).connect(gain).connect(audioCtx.destination);
+ src.start(t);src.stop(t+.39)
+}
+function v5UpdateClosePass(dt){
+ v5PassCooldown=Math.max(0,v5PassCooldown-dt);v5PassBuffet*=Math.exp(-dt/.18);
+ if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0){v5PassPrevD=v5PassMinD=Infinity;v5PassArmed=false;return}
+ const d=enemy.position.distanceTo(ship.position);v5PassRelPos.copy(enemy.position).sub(ship.position);v5PassShipVel.copy(camF).multiplyScalar(speed);v5PassRelVel.copy(enemyVel).sub(v5PassShipVel);const relSpeed=v5PassRelVel.length();
+ if(d<28&&d<v5PassPrevD){v5PassArmed=true;v5PassMinD=Math.min(v5PassMinD,d)}
+ if(v5PassArmed&&d>v5PassPrevD+.15){
+  if(v5PassMinD<22&&relSpeed>70&&v5PassCooldown<=0){const strength=THREE.MathUtils.clamp((22-v5PassMinD)/13+(relSpeed-70)/720,0,1),pan=v5PassRelPos.dot(camRight)/Math.max(d,1);v5ClosePassSound(strength,pan);v5PassBuffet=.55+strength*.45;v5PassSide=Math.sign(pan)||1;v5PassCooldown=1.35}
+  if(d>v5PassMinD+3){v5PassArmed=false;v5PassMinD=Infinity}
+ }
+ if(d>38){v5PassArmed=false;v5PassMinD=Infinity}v5PassPrevD=d;
+ if(v5PassBuffet>.01){const t=performance.now();camera.translateX((Math.sin(t*.052)*.055+v5PassSide*.012)*v5PassBuffet);camera.translateY(Math.sin(t*.071)*.038*v5PassBuffet)}
+}
+const v5UpdateCameraBase=updateCamera;updateCamera=function(dt){v5UpdateCameraBase(dt);v5UpdateClosePass(dt);sun.position.set(ship.position.x-520,ship.position.y+390,ship.position.z-650);sun.target.position.copy(ship.position);sun.target.updateMatrixWorld();v5Rim.position.set(ship.position.x+310,ship.position.y+240,ship.position.z+420);v5Rim.target.position.copy(ship.position);v5Rim.target.updateMatrixWorld();v5Rim.color.setHex(worldIndex?0xb9dcf2:0x8eb7d1);v5Rim.intensity=worldIndex?.76:.5};
 `;
 html=html.replace('const floor=terrainHeight(ship.position.x,ship.position.z)+3;','const floor=v5VisibleTerrainHeight(ship.position.x,ship.position.z)+.55;').replace(anchor,v5+anchor).replace('<title>Emberwing V3</title>','<title>Emberwing V5</title>').replace('<!-- EMBERWING V3 // standalone snapshot // generated from accepted pinned flight core -->','<!-- EMBERWING V5 // fighter silhouette + landscape beauty over accepted V3 flight core -->');document.open();document.write(html);document.close()})().catch(e=>{document.getElementById('boot').textContent='V5 AIRFRAME // '+e.message})</script></body></html>
