@@ -4,11 +4,11 @@ A tiny third-person arcade flight game built around one idea: **easy to fly, dif
 
 ## PLAY NOW
 
-**Current recommended build:** https://colemanvii.github.io/emberwing/beta.html
+**Current recommended build:** https://colemanvii.github.io/emberwing/v3.html
 
 Core build: https://colemanvii.github.io/emberwing/
 
-The current recommended build combines the live flight/combat game with the accepted HUD-3333 presentation and combat refinements. Experimental ideas that do not improve the game are discarded rather than accumulated.
+V3 is the stable standalone play build: the accepted flight/combat loop, HUD 3333, monk-mode visual treatment, Haven pulse, and current audio refinements are baked directly into one file rather than assembled through runtime source patches.
 
 ## Controls
 
