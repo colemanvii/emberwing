@@ -8,9 +8,10 @@ Open `index.html` in a modern desktop browser.
 
 - **Arrow keys** — pitch and bank
 - **Space** — cannon
-- **E** — cage / uncage missile seeker
-- **Q** — release missile when locked
-- **Shift** — turbo / afterburner
+- **Hold X** — uncage and track with the missile seeker
+- **Release X** — fire when locked
+- **Double-tap ↑** — turbo burst
+- **Shift** — sustained afterburner
 - **R** — restart
 
 No accounts. No progression. No lore. Build first.
