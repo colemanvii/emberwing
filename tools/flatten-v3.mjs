@@ -89,8 +89,6 @@ for(const token of forbidden)if(html.includes(token))throw new Error(`Standalone
 const required=['acePhase=\'ATTACK\'','windGain','havenPulse','0x161522','HOLD Z BURNER','SKIMMER','CLIMBER','ACE'];
 for(const token of required)if(!html.includes(token))throw new Error(`Standalone validation missing: ${token}`);
 
-await Bun.write('v3.html',html).catch(async()=>{
-  const {writeFile}=await import('node:fs/promises');
-  await writeFile('v3.html',html,'utf8');
-});
+const {writeFile}=await import('node:fs/promises');
+await writeFile('v3.html',html,'utf8');
 console.log(`Flattened V3: ${html.length} bytes, ${patches.length} accepted gameplay/HUD patches + ${beauty.length} beauty patches`);
