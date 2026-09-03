@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Emberwing V5</title><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05080a}#boot{position:fixed;inset:0;display:grid;place-items:center;color:#eef4f7;font:600 8px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.34em;background:#05080a}</style></head><body><div id="boot">EMBERWING // V5 AIRFRAME</div><script>(async()=>{const res=await fetch('https://cdn.jsdelivr.net/gh/colemanvii/emberwing@fa7f28e7e1987f151250fba078d9f10ad808d38d/v3.html',{cache:'no-store'});if(!res.ok)throw new Error('Could not load V3 flight core');let html=await res.text();const anchor='const clock=new THREE.Clock();';if(!html.includes(anchor))throw new Error('V5 anchor missing');const v5=`
+// EMBERWING V5 // V4 atmosphere + unified hero airframe
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate=true;
+renderer.toneMappingExposure=1.0;
+sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024);
+sun.shadow.camera.left=-560;sun.shadow.camera.right=560;sun.shadow.camera.top=560;sun.shadow.camera.bottom=-560;sun.shadow.camera.near=30;sun.shadow.camera.far=1350;sun.shadow.bias=-.00018;sun.shadow.normalBias=.035;
+scene.add(sun.target);ground.receiveShadow=true;
+const v5Rim=new THREE.DirectionalLight(0x91b9d4,.62);scene.add(v5Rim);scene.add(v5Rim.target);
+function v5ShadowTree(root,cast=true,receive=true){root.traverse(o=>{if(o.isMesh){o.castShadow=cast;o.receiveShadow=receive}})}
+for(const m of scenery){const cast=!!(m.userData.city||m.userData.mountain);v5ShadowTree(m,cast,true)}for(const m of distantRidges)v5ShadowTree(m,false,true);
+
+// Enemy keeps the restrained V4 treatment. Player is rebuilt from scratch below.
+function v5VerticalPlate(points,t=.18){const n=points.length,v=[],idx=[];for(const x of[-t/2,t/2])for(const p of points)v.push(x,p[0],p[1]);for(let i=1;i<n-1;i++)idx.push(n,n+i,n+i+1,0,i+1,i);for(let i=0;i<n;i++){const j=(i+1)%n;idx.push(i,j,n+j,i,n+j,n+i)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(idx);g.computeVertexNormals();return g}
+function v5DressEnemy(){const wingOld=enemy.children[0]?.material,hullOld=enemy.children[1]?.material,canopyOld=enemy.children[3]?.material,wingNew=new THREE.MeshPhysicalMaterial({color:0x1a232b,roughness:.42,metalness:.38,clearcoat:.25,clearcoatRoughness:.16}),hullNew=new THREE.MeshPhysicalMaterial({color:0x10161c,roughness:.38,metalness:.45,clearcoat:.22,clearcoatRoughness:.13}),canopyNew=new THREE.MeshPhysicalMaterial({color:0x07131a,roughness:.07,metalness:.08,clearcoat:1,clearcoatRoughness:.025,transparent:true,opacity:.94,transmission:.04,thickness:.18,ior:1.44});enemy.traverse(o=>{if(!o.isMesh)return;if(o.material===wingOld)o.material=wingNew;else if(o.material===hullOld)o.material=hullNew;else if(o.material===canopyOld)o.material=canopyNew;o.castShadow=true;o.receiveShadow=true});const tailMat=new THREE.MeshPhysicalMaterial({color:0x202a31,roughness:.4,metalness:.4,clearcoat:.2,clearcoatRoughness:.18});const tail=new THREE.Mesh(plate([[-.25,1.05],[-2.9,1.9],[-2.25,2.7],[0,2.12],[2.25,2.7],[2.9,1.9],[.25,1.05]],.12),tailMat);tail.position.y=.03;enemy.add(tail);const fin=new THREE.Mesh(v5VerticalPlate([[0,.75],[0,2.8],[1.45,2.15],[.72,.85]],.17),tailMat);enemy.add(fin);v5ShadowTree(enemy,true,true)}
+v5DressEnemy();
+
+// Hide the legacy player primitives but leave the Group itself as the mechanical truth.
+for(const c of ship.children)c.visible=false;
+ship.userData.engines=[];ship.userData.plumes=[];
+
+function v5Loft(stations){const ring=8,v=[],idx=[];function ringPoint(s,j){const a=j/ring*Math.PI*2,c=Math.cos(a),sn=Math.sin(a),x=c*s.w*(Math.abs(c)>.68?1:.93),y=sn*(sn>=0?s.top:s.bot);return[x,y,s.z]}for(const s of stations)for(let j=0;j<ring;j++){const p=ringPoint(s,j);v.push(p[0],p[1],p[2])}for(let i=0;i<stations.length-1;i++)for(let j=0;j<ring;j++){const n=(j+1)%ring,a=i*ring+j,b=i*ring+n,c=(i+1)*ring+j,d=(i+1)*ring+n;idx.push(a,c,b,b,c,d)}const start=v.length/3;v.push(0,0,stations[0].z);const end=v.length/3;v.push(0,0,stations[stations.length-1].z);for(let j=0;j<ring;j++){const n=(j+1)%ring;idx.push(start,n,j);const a=(stations.length-1)*ring+j,b=(stations.length-1)*ring+n;idx.push(end,a,b)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(idx);g.computeVertexNormals();return g}
+function v5Wedge(side){const s=side,x0=2.55*s,x1=4.55*s,x2=4.95*s,x3=3.05*s,y=.02,t=.12,z0=-3.05,z1=-.15;const verts=[x0,y,z0,x1,y-.05,z0,x2,y-.08,z1,x3,y,z1,x0,y-t,z0,x1,y-t-.05,z0,x2,y-t-.08,z1,x3,y-t,z1],faces=[0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,1,5,6,1,6,2,2,6,7,2,7,3,3,7,4,3,4,0],g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setIndex(faces);g.computeVertexNormals();return g}
+const v5HullMat=new THREE.MeshPhysicalMaterial({color:0x151c22,roughness:.25,metalness:.66,clearcoat:.82,clearcoatRoughness:.12});
+const v5ShoulderMat=new THREE.MeshPhysicalMaterial({color:0x28343c,roughness:.31,metalness:.54,clearcoat:.58,clearcoatRoughness:.16});
+const v5DarkMat=new THREE.MeshStandardMaterial({color:0x070b0e,roughness:.42,metalness:.48});
+const v5GlassMat=new THREE.MeshPhysicalMaterial({color:0x06171f,roughness:.055,metalness:.06,clearcoat:1,clearcoatRoughness:.02,transparent:true,opacity:.95,transmission:.12,thickness:.16,ior:1.44});
+const v5Airframe=new THREE.Group();
+const hullStations=[
+ {z:-8.45,w:.18,top:.10,bot:.08},
+ {z:-7.35,w:4.85,top:.17,bot:.13},
+ {z:-5.7,w:5.45,top:.31,bot:.22},
+ {z:-4.0,w:3.45,top:.66,bot:.34},
+ {z:-2.35,w:4.45,top:.88,bot:.48},
+ {z:-.55,w:8.75,top:.66,bot:.46},
+ {z:1.05,w:10.15,top:.44,bot:.34},
+ {z:2.35,w:8.55,top:.40,bot:.34},
+ {z:3.08,w:6.25,top:.61,bot:.48},
+ {z:3.62,w:5.35,top:.66,bot:.56}
+];
+const v5Hull=new THREE.Mesh(v5Loft(hullStations),v5HullMat);v5Airframe.add(v5Hull);
+// Inset canopy is itself a tiny faceted loft rather than a sphere stuck on top.
+const canopyStations=[{z:-4.55,w:.18,top:.08,bot:.03},{z:-3.55,w:.62,top:.27,bot:.06},{z:-2.45,w:.82,top:.38,bot:.08},{z:-1.35,w:.66,top:.29,bot:.06},{z:-.75,w:.28,top:.12,bot:.03}];
+const v5Canopy=new THREE.Mesh(v5Loft(canopyStations),v5GlassMat);v5Canopy.position.y=.78;v5Airframe.add(v5Canopy);
+// Shoulder intakes are recessed dark wedges inside the blended centerbody.
+for(const s of[-1,1]){const intake=new THREE.Mesh(v5Wedge(s),v5DarkMat);v5Airframe.add(intake)}
+// Canted fins emerge from the aft shoulders.
+for(const s of[-1,1]){const fin=new THREE.Mesh(v5VerticalPlate([[0,-1.05],[1.85,-.55],[1.55,1.28],[.12,1.48]],.18),v5ShoulderMat);fin.position.set(s*3.25,.38,2.18);fin.rotation.z=s*-.22;fin.rotation.y=s*.035;v5Airframe.add(fin)}
+// Four mechanical exhaust anchors remain exactly where the flight core expects them.
+for(const x of[-5,-1.7,1.7,5]){const shroud=new THREE.Mesh(new THREE.CylinderGeometry(.46,.55,.72,10),v5DarkMat);shroud.rotation.x=Math.PI/2;shroud.position.set(x,0,3.08);v5Airframe.add(shroud);const e=new THREE.Mesh(new THREE.SphereGeometry(.38,8,6),new THREE.MeshBasicMaterial({color:0xff9a43,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false}));e.position.set(x,0,3.35);v5Airframe.add(e);ship.userData.engines.push(e);const ring=new THREE.Mesh(new THREE.TorusGeometry(x===-5||x===5?.43:.5,.07,6,20),new THREE.MeshBasicMaterial({color:0xffb06a,transparent:true,opacity:.33,blending:THREE.AdditiveBlending,depthWrite:false}));ring.position.set(x,0,3.36);v5Airframe.add(ring);const p=new THREE.Mesh(new THREE.ConeGeometry(.34,3.4,8),new THREE.MeshBasicMaterial({color:0xff8a3b,transparent:true,opacity:.76,blending:THREE.AdditiveBlending,depthWrite:false}));p.rotation.x=-Math.PI/2;p.position.set(x,0,4.9);v5Airframe.add(p);ship.userData.plumes.push(p)}
+ship.add(v5Airframe);v5ShadowTree(v5Airframe,true,true);
+
+// Preserve the successful V4 world treatment.
+cityGlassMat.roughness=.16;cityGlassMat.metalness=.35;cityGlassMat.emissive.setHex(0x07151c);cityGlassMat.emissiveIntensity=.24;
+rockMat.roughness=.96;sandMat.roughness=.9;peakDarkMat.roughness=.92;peakMat.roughness=.9;peakLightMat.roughness=.84;
+const v5Snow=new THREE.Color(0xe8eef0),v5Shade=new THREE.Color();
+function v5GradeTerrain(){const col=ggeo.attributes.color,nrm=ggeo.attributes.normal;if(!col||!nrm)return;for(let i=0;i<gp.count;i++){const y=gp.getY(i),ny=THREE.MathUtils.clamp(nrm.getY(i),0,1),slope=1-ny,x=gp.getX(i)+ground.position.x,z=gp.getZ(i)+ground.position.z,grain=(Math.sin(x*.013)+Math.cos(z*.011)+Math.sin((x-z)*.006))*0.011;v5Shade.setRGB(col.getX(i),col.getY(i),col.getZ(i));if(worldIndex){const snow=THREE.MathUtils.clamp((y+22)/118,0,1)*THREE.MathUtils.clamp((ny-.38)/.62,0,1);v5Shade.multiplyScalar(1-slope*.22+grain).lerp(v5Snow,snow*.48)}else{const cut=THREE.MathUtils.clamp(slope*.52,0,.28);v5Shade.multiplyScalar(1-cut+grain)}col.setXYZ(i,v5Shade.r,v5Shade.g,v5Shade.b)}col.needsUpdate=true}
+const v5RebuildTerrainBase=rebuildTerrain;rebuildTerrain=function(cx,cz){v5RebuildTerrainBase(cx,cz);v5GradeTerrain()};v5GradeTerrain();
+const v5UpdateCameraBase=updateCamera;updateCamera=function(dt){v5UpdateCameraBase(dt);sun.position.set(ship.position.x-520,ship.position.y+390,ship.position.z-650);sun.target.position.copy(ship.position);sun.target.updateMatrixWorld();v5Rim.position.set(ship.position.x+310,ship.position.y+240,ship.position.z+420);v5Rim.target.position.copy(ship.position);v5Rim.target.updateMatrixWorld();v5Rim.color.setHex(worldIndex?0xb9dcf2:0x8eb7d1);v5Rim.intensity=worldIndex?.76:.5};
+`;
+html=html.replace(anchor,v5+anchor).replace('<title>Emberwing V3</title>','<title>Emberwing V5</title>').replace('<!-- EMBERWING V3 // standalone snapshot // generated from accepted pinned flight core -->','<!-- EMBERWING V5 // unified hero airframe over accepted V3 flight core -->');document.open();document.write(html);document.close()})().catch(e=>{document.getElementById('boot').textContent='V5 AIRFRAME // '+e.message})</script></body></html>
