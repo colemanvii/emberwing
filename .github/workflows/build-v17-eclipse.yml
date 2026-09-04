@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'scripts/build-v17-eclipse.mjs'
+      - 'scripts/fix-v17-eclipse-sun.mjs'
       - 'scripts/smoke-v17.mjs'
       - '.github/workflows/build-v17-eclipse.yml'
   workflow_dispatch:
@@ -27,6 +28,9 @@ jobs:
 
       - name: Build V17 Eclipse
         run: node scripts/build-v17-eclipse.mjs
+
+      - name: Align eclipse with sky sun
+        run: node scripts/fix-v17-eclipse-sun.mjs
 
       - name: Install browser smoke-test runtime
         run: |
