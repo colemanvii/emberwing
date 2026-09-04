@@ -399,7 +399,13 @@
                 el.addEventListener('pointerup', release);
                 el.addEventListener('pointercancel', release);
             };
-            bindHold('cannon-button', active => mouse.down = active);
+            bindHold('cannon-button', active => {
+                mouse.down = active;
+                if(active) {
+                    fireCannon();
+                    cannonCooldown = CANNON_INTERVAL;
+                }
+            });
             bindHold('throttle-up', active => keys.w = active);
             bindHold('throttle-down', active => keys.s = active);
         }
