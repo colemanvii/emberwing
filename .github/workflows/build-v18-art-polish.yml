@@ -1,0 +1,51 @@
+name: Build V18 Art Polish
+
+on:
+  push:
+    paths:
+      - 'scripts/fix-v18-sun.mjs'
+      - '.github/workflows/build-v18-art-polish.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-smoke-stage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build V18
+        run: node scripts/build-v18-art-rebuild.mjs
+      - name: Remove legacy shader sun
+        run: node scripts/fix-v18-sun.mjs
+      - name: Install browser smoke-test runtime
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve V18 locally
+        run: |
+          python3 -m http.server 4173 >/tmp/emberwing-http.log 2>&1 &
+          sleep 2
+      - name: Smoke-test V18
+        run: node scripts/smoke-v18.mjs
+      - name: Upload visual proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: emberwing-v18-polished-proof
+          path: /tmp/emberwing-v18-desert.png
+          retention-days: 1
+      - name: Commit polished V18 candidate
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add v18.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Polish verified V18 art rebuild candidate'
+          git push origin HEAD:main
