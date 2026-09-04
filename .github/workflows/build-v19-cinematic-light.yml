@@ -6,6 +6,7 @@ on:
       - 'scripts/build-v19-cinematic-light.mjs'
       - 'scripts/polish-v19-composition.mjs'
       - 'scripts/finalize-v19-light.mjs'
+      - 'scripts/grade-v19-bluehour.mjs'
       - 'scripts/smoke-v19.mjs'
       - '.github/workflows/build-v19-cinematic-light.yml'
   workflow_dispatch:
@@ -27,6 +28,8 @@ jobs:
         run: node scripts/polish-v19-composition.mjs
       - name: Finalize V19 lighting
         run: node scripts/finalize-v19-light.mjs
+      - name: Apply final V19 grade
+        run: node scripts/grade-v19-bluehour.mjs
       - name: Install browser smoke-test runtime
         run: |
           npm init -y >/dev/null 2>&1
