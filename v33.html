@@ -7,8 +7,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>EMBERWING V33</title>
     <style>
-        body {
+        html, body {
             margin: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
             background-color: #040914; /* Deep cold atmosphere */
             font-family: 'Courier New', Courier, monospace;
@@ -16,11 +18,14 @@
             -webkit-user-select: none;
             touch-action: none;
             overscroll-behavior: none;
+            -webkit-touch-callout: none;
         }
-        #gameCanvas {
+        canvas {
+            position: fixed;
+            inset: 0;
             display: block;
             width: 100vw;
-            height: 100vh;
+            height: 100dvh;
         }
         
         /* HUD - Elegant, Minimal, Restrained */
@@ -161,6 +166,14 @@
             #cannon-button { width: 86px; height: 86px; }
             #throttle-up { bottom: max(212px, calc(env(safe-area-inset-bottom) + 190px)); }
             #throttle-down { bottom: max(134px, calc(env(safe-area-inset-bottom) + 112px)); }
+        }
+        @media (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
+            #flight-pad { bottom: max(46px, calc(env(safe-area-inset-bottom) + 28px)); height: 62vh; }
+            #flight-stick { width: 68px; height: 68px; }
+            #cannon-button { width: 82px; height: 82px; }
+            #throttle-up, #throttle-down { width: 56px; height: 56px; right: max(31px, calc(env(safe-area-inset-right) + 13px)); }
+            #throttle-up { bottom: max(184px, calc(env(safe-area-inset-bottom) + 162px)); }
+            #throttle-down { bottom: max(116px, calc(env(safe-area-inset-bottom) + 94px)); }
         }
     </style>
     <!-- Lightweight Three.js Core -->
