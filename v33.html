@@ -96,6 +96,7 @@
         }
         #target-box.hit { border-color: #fff4cf !important; box-shadow: 0 0 22px #ff6a22; animation: hitConfirm .12s ease-out; }
         @keyframes hitConfirm { from { transform: translate(-50%, -50%) scale(1.45); } to { transform: translate(-50%, -50%) scale(.82); } }
+        #target-arrow { position: absolute; display: none; width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-left: 13px solid rgba(255,160,60,.8); filter: drop-shadow(0 0 6px #ff6400); transform-origin: center; }
 
         #cinematic-bars {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -187,6 +188,7 @@
     <div id="hud">
         <div id="crosshair" class="hud-element"></div>
         <div id="target-box"></div>
+        <div id="target-arrow"></div>
         
         <div id="speed-container" class="hud-element">
             <div id="speed-text">MACH 0.8</div>
@@ -565,6 +567,7 @@
             });
 
             const targetBox = document.getElementById('target-box');
+            const targetArrow = document.getElementById('target-arrow');
             const targetInfo = document.getElementById('target-info');
             
             if(closest && minDist < 6000) {
@@ -576,6 +579,7 @@
                     const x = (tempV.x *  .5 + .5) * window.innerWidth;
                     const y = (tempV.y * -.5 + .5) * window.innerHeight;
                     targetBox.style.display = 'block';
+                    targetArrow.style.display = 'none';
                     targetBox.style.left = x + 'px';
                     targetBox.style.top = y + 'px';
                     targetBox.style.borderColor = minDist < 2000 ? '#ff4400' : 'rgba(255,160,60,0.5)';
@@ -585,9 +589,17 @@
                 } else {
                     targetBox.style.display = 'none';
                     targetInfo.style.opacity = 0;
+                    const angle = Math.atan2(-tempV.y, tempV.x);
+                    const radiusX = window.innerWidth * .42;
+                    const radiusY = window.innerHeight * .38;
+                    targetArrow.style.display = 'block';
+                    targetArrow.style.left = (window.innerWidth * .5 + Math.cos(angle) * radiusX) + 'px';
+                    targetArrow.style.top = (window.innerHeight * .5 + Math.sin(angle) * radiusY) + 'px';
+                    targetArrow.style.transform = `translate(-50%,-50%) rotate(${angle}rad)`;
                 }
             } else {
                 targetBox.style.display = 'none';
+                targetArrow.style.display = 'none';
                 targetInfo.style.opacity = 0;
             }
         }
