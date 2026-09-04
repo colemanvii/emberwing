@@ -251,6 +251,7 @@
         const bandits = [];
         const wrecks = [];
         const particles = [];
+        let bulletGeo, bulletMat;
         
         // Settings
         const WORLD_SIZE = 20000;
@@ -271,6 +272,10 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Save performance
             document.body.appendChild(renderer.domElement);
+
+            bulletGeo = new THREE.CylinderGeometry(0.2, 0.2, 10, 4);
+            bulletGeo.rotateX(Math.PI / 2);
+            bulletMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
 
             // Lighting (Sunset cinematic)
             const ambient = new THREE.AmbientLight(0x2a3045, 1.2);
@@ -484,10 +489,6 @@
 
         function fireCannon() {
             cannonKick = 1;
-            const bulletGeo = new THREE.CylinderGeometry(0.2, 0.2, 10, 4);
-            bulletGeo.rotateX(Math.PI / 2);
-            const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-            
             // Dual cannons
             for(let i=-1; i<=1; i+=2) {
                 const bullet = new THREE.Mesh(bulletGeo, bulletMat);
