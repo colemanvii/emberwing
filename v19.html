@@ -242,7 +242,7 @@ v19ShadowTree(v18Spine,true,true);
 
 // Give the distant continental silhouettes real light instead of flat fill.
 const v19HorizonMats=[];
-v18Horizon.children.forEach((m,i)=>{if(!m.isMesh)return;const mat=new THREE.MeshStandardMaterial({color:i%3===0?0x2e3132:i%3===1?0x393735:0x24292c,roughness:1,metalness:0,flatShading:true,fog:true});m.material=mat;m.receiveShadow=true;v19HorizonMats.push(mat)});
+v18Horizon.children.forEach((m,i)=>{if(!m.isMesh)return;const mat=new THREE.MeshStandardMaterial({color:i%3===0?0x18232b:i%3===1?0x24313a:0x121b22,roughness:1,metalness:0,flatShading:true,fog:true});m.material=mat;m.receiveShadow=true;v19HorizonMats.push(mat)});
 
 // Gentle warm bounce from the desert and cold bounce in alpine.
 const v19Fill=new THREE.DirectionalLight(0xffc47f,.58);
@@ -264,9 +264,9 @@ for(const x of[-115,120]){const p=new THREE.Mesh(new THREE.PlaneGeometry(250,110
 v18Gate.add(v19Shafts);
 
 // More material separation without adding detail geometry.
-v18Basalt.color.setHex(0x070b10);
+v18Basalt.color.setHex(0x05080d);v18Basalt.fog=false;
 v18Basalt.roughness=.88;
-v18WarmFace.color.setHex(0x2d2722);
+v18WarmFace.color.setHex(0x17191c);v18WarmFace.fog=false;
 v18WarmFace.roughness=.82;
 v18SpineMat.roughness=.9;
 v18SnowMat.roughness=.78;
@@ -305,10 +305,10 @@ v18ApplyTheme=function(alpine){
     v19Mist.forEach(s=>s.visible=false);
     for(const p of v19Shafts.children)p.material.opacity=.015;
   }else{
-    haze.setHex(0x9b785f);scene.background=haze;scene.fog.color.setHex(0xb98d68);scene.fog.density=.00038;
-    sky.material.uniforms.top.value.setHex(0x06111f);
-    sky.material.uniforms.hor.value.setHex(0x7d4b49);
-    sky.material.uniforms.low.value.setHex(0xf0bd77);c1.setHex(0x56432f);c2.setHex(0xa17c50);c3.setHex(0xd2ad72);c4.setHex(0xf4dfb3);
+    haze.setHex(0x8f8478);scene.background=haze;scene.fog.color.setHex(0xbca486);scene.fog.density=.00034;
+    sky.material.uniforms.top.value.setHex(0x061827);
+    sky.material.uniforms.hor.value.setHex(0x526676);
+    sky.material.uniforms.low.value.setHex(0xe9b16c);c1.setHex(0x66523a);c2.setHex(0xaa895c);c3.setHex(0xd6b97f);c4.setHex(0xf3dfb2);
     hemi.color.setHex(0xffe6c1);hemi.groundColor.setHex(0x25170f);hemi.intensity=1.34;
     sun.intensity=5.45;sun.color.setHex(0xffc879);
     renderer.toneMappingExposure=1.03;
