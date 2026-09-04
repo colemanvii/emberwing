@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>EMBERWING V33</title>
     <style>
         body {
@@ -10,6 +13,9 @@
             background-color: #040914; /* Deep cold atmosphere */
             font-family: 'Courier New', Courier, monospace;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            overscroll-behavior: none;
         }
         #gameCanvas {
             display: block;
@@ -118,6 +124,39 @@
         #start-screen h1 { font-size: 48px; letter-spacing: 10px; color: #ff8c42; text-shadow: 0 0 30px rgba(255, 140, 66, 0.5); margin-bottom: 10px; }
         #start-screen p { font-size: 14px; color: #888; letter-spacing: 2px; line-height: 1.8; text-align: center; }
         .key { display: inline-block; padding: 2px 8px; background: rgba(255,255,255,0.1); border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); color: #fff; }
+
+        #mobile-controls { display: none; }
+        @media (pointer: coarse), (max-width: 900px) {
+            #start-screen { padding: max(20px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); }
+            #start-screen h1 { font-size: clamp(28px, 8vw, 46px); letter-spacing: .18em; margin: 0 0 12px; }
+            #start-screen p { font-size: 12px; line-height: 1.65; }
+            .desktop-instructions { display: none; }
+            .mobile-instructions { display: block !important; }
+            #crosshair { top: 45%; width: 38px; height: 38px; }
+            #speed-container { left: max(18px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom)); }
+            #speed-text, #alt-text { font-size: 16px; }
+            #throttle-bar { width: 108px; }
+            #alt-container { right: max(18px, env(safe-area-inset-right)); top: max(14px, env(safe-area-inset-top)); bottom: auto; }
+            #alt-label { font-size: 9px; }
+            #target-info { top: max(14px, env(safe-area-inset-top)); left: max(18px, env(safe-area-inset-left)); font-size: 11px; }
+            #overlay-message { top: 25%; width: 90%; text-align: center; font-size: 15px; letter-spacing: .25em; }
+            #mobile-controls { position: fixed; inset: 0; z-index: 30; display: block; pointer-events: none; }
+            #flight-pad { position: absolute; left: max(14px, env(safe-area-inset-left)); bottom: max(54px, calc(env(safe-area-inset-bottom) + 40px)); width: 42vw; height: 56vh; pointer-events: auto; }
+            #flight-stick { position: absolute; left: 50%; top: 55%; width: 76px; height: 76px; transform: translate(-50%,-50%); border: 1px solid rgba(255,160,60,.32); border-radius: 50%; background: rgba(4,9,20,.18); box-shadow: inset 0 0 24px rgba(255,100,0,.08); }
+            #flight-stick::after { content: ''; position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%,-50%); border-radius: 50%; border: 1px solid rgba(255,184,100,.65); background: rgba(255,110,30,.16); box-shadow: 0 0 18px rgba(255,100,0,.25); }
+            .touch-button { position: absolute; pointer-events: auto; display: grid; place-items: center; border-radius: 50%; color: rgba(255,225,190,.92); border: 1px solid rgba(255,160,60,.48); background: rgba(4,9,20,.42); box-shadow: inset 0 0 22px rgba(255,100,0,.08), 0 5px 20px rgba(0,0,0,.26); font: bold 11px 'Courier New', monospace; letter-spacing: .12em; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+            .touch-button.active { transform: scale(.92); background: rgba(255,92,20,.28); border-color: rgba(255,190,100,.9); box-shadow: 0 0 28px rgba(255,90,20,.28); }
+            #cannon-button { right: max(18px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); width: 92px; height: 92px; }
+            #throttle-up, #throttle-down { right: max(31px, calc(env(safe-area-inset-right) + 13px)); width: 64px; height: 64px; }
+            #throttle-up { bottom: max(218px, calc(env(safe-area-inset-bottom) + 196px)); }
+            #throttle-down { bottom: max(140px, calc(env(safe-area-inset-bottom) + 118px)); }
+        }
+        @media (pointer: coarse) and (orientation: portrait) {
+            #flight-pad { width: 48vw; height: 42vh; bottom: max(62px, calc(env(safe-area-inset-bottom) + 46px)); }
+            #cannon-button { width: 86px; height: 86px; }
+            #throttle-up { bottom: max(212px, calc(env(safe-area-inset-bottom) + 190px)); }
+            #throttle-down { bottom: max(134px, calc(env(safe-area-inset-bottom) + 112px)); }
+        }
     </style>
     <!-- Lightweight Three.js Core -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -126,13 +165,20 @@
 
     <div id="start-screen">
         <h1>EMBERWING</h1>
-        <p>
+        <p class="desktop-instructions">
             MOUSE - Pitch & Yaw<br>
             <span class="key">A</span> / <span class="key">D</span> - Roll<br>
             <span class="key">W</span> / <span class="key">S</span> - Throttle Management (Speed Control)<br>
             <span class="key">LCLICK</span> - Cannon<br><br>
             Manage your speed. The terrain is lethal.<br><br>
             <i>Click anywhere to ignite engines.</i>
+        </p>
+        <p class="mobile-instructions" style="display:none">
+            LEFT THUMB — Fly<br>
+            THROTTLE + / − — Control distance<br>
+            CANNON — Fire<br><br>
+            The terrain is lethal.<br><br>
+            <i>Tap to ignite engines.</i>
         </p>
     </div>
 
@@ -165,6 +211,13 @@
         <div class="bar" id="bar-bot"></div>
     </div>
 
+    <div id="mobile-controls" aria-hidden="true">
+        <div id="flight-pad"><div id="flight-stick"></div></div>
+        <div id="throttle-up" class="touch-button">SPD +</div>
+        <div id="throttle-down" class="touch-button">SPD −</div>
+        <div id="cannon-button" class="touch-button">CANNON</div>
+    </div>
+
     <script>
         // ==========================================
         // EMBERWING V33 - CORE ENGINE
@@ -174,6 +227,8 @@
         let player, playerVelocity = 0, targetVelocity = 400; // Cruising speed
         const MIN_SPEED = 200; // Allow opening distance / tight turns
         const MAX_SPEED = 1200; // Afterburner
+        const CANNON_INTERVAL = 0.085; // Consistent fire rate, independent of frame rate
+        let cannonCooldown = 0;
         let lastTime = performance.now();
         
         // Input state
@@ -270,6 +325,8 @@
             document.addEventListener('mousedown', e => { if(e.button === 0) mouse.down = true; });
             document.addEventListener('mouseup', e => { if(e.button === 0) mouse.down = false; });
 
+            setupTouchControls();
+
             document.getElementById('start-screen').addEventListener('click', () => {
                 document.getElementById('start-screen').style.opacity = '0';
                 setTimeout(() => {
@@ -278,6 +335,63 @@
                     showOverlayMessage("ENGAGE", 2000);
                 }, 1000);
             });
+        }
+
+        function setupTouchControls() {
+            const pad = document.getElementById('flight-pad');
+            const stick = document.getElementById('flight-stick');
+            let flightPointer = null;
+
+            const steer = e => {
+                const rect = pad.getBoundingClientRect();
+                const x = THREE.MathUtils.clamp((e.clientX - rect.left) / rect.width, 0, 1);
+                const y = THREE.MathUtils.clamp((e.clientY - rect.top) / rect.height, 0, 1);
+                mouse.x = (x - .5) * 2;
+                mouse.y = (.5 - y) * 2;
+                stick.style.left = (x * 100) + '%';
+                stick.style.top = (y * 100) + '%';
+            };
+            const releaseFlight = e => {
+                if(e.pointerId !== flightPointer) return;
+                flightPointer = null;
+                mouse.x = mouse.y = 0;
+                stick.style.left = '50%';
+                stick.style.top = '55%';
+            };
+            pad.addEventListener('pointerdown', e => {
+                if(!isStarted || flightPointer !== null) return;
+                e.preventDefault();
+                flightPointer = e.pointerId;
+                pad.setPointerCapture(e.pointerId);
+                steer(e);
+            });
+            pad.addEventListener('pointermove', e => { if(e.pointerId === flightPointer) steer(e); });
+            pad.addEventListener('pointerup', releaseFlight);
+            pad.addEventListener('pointercancel', releaseFlight);
+
+            const bindHold = (id, onChange) => {
+                const el = document.getElementById(id);
+                const activePointers = new Set();
+                el.addEventListener('pointerdown', e => {
+                    if(!isStarted) return;
+                    e.preventDefault();
+                    activePointers.add(e.pointerId);
+                    el.setPointerCapture(e.pointerId);
+                    el.classList.add('active');
+                    onChange(true);
+                });
+                const release = e => {
+                    activePointers.delete(e.pointerId);
+                    if(activePointers.size) return;
+                    el.classList.remove('active');
+                    onChange(false);
+                };
+                el.addEventListener('pointerup', release);
+                el.addEventListener('pointercancel', release);
+            };
+            bindHold('cannon-button', active => mouse.down = active);
+            bindHold('throttle-up', active => keys.w = active);
+            bindHold('throttle-down', active => keys.s = active);
         }
 
         // --- WORLD GENERATION ---
@@ -531,7 +645,11 @@
 
 
             // --- 2. WEAPONS ---
-            if(mouse.down) fireCannon();
+            cannonCooldown = Math.max(0, cannonCooldown - dt);
+            if(mouse.down && cannonCooldown <= 0) {
+                fireCannon();
+                cannonCooldown = CANNON_INTERVAL;
+            }
             
             // Update Bullets
             for(let i=bullets.length-1; i>=0; i--) {
