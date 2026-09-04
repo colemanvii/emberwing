@@ -4,15 +4,17 @@ A tiny third-person arcade flight game built around one idea: **easy to fly, dif
 
 ## PLAY NOW
 
-**Current recommended build:** https://colemanvii.github.io/emberwing/v3.html
+**Current recommended playtest:** https://colemanvii.github.io/emberwing/v10.html
 
-**Experimental combat-polish build:** https://colemanvii.github.io/emberwing/v6.html
+**Experimental V11 — Identity + Spectacle:** https://colemanvii.github.io/emberwing/v11.html
 
-Core build: https://colemanvii.github.io/emberwing/
+**Stable flight core:** https://colemanvii.github.io/emberwing/v3.html
 
-V3 is the stable standalone play build: the accepted flight/combat loop, HUD 3333, monk-mode visual treatment, Haven pulse, and current audio refinements are baked directly into one file rather than assembled through runtime source patches.
+V3 is the protected standalone flight/combat core: the accepted flight loop, HUD 3333, monk-mode visual treatment, Haven pulse, two-biome mission, enemy roles, and current combat systems are baked into one file.
 
-V6 is the current play-test layer over that pinned V3 core: persistent airframe health, live threat state, stronger kill punctuation, and a next-grade replay target. V3 remains the stable fallback while V6 is being tuned.
+V10 is the current feel baseline over that pinned V3 core: calmer turbo, a more hittable Rookie, stronger gun readability, and restrained impact/kill punctuation. Its handling and difficulty tuning are protected.
+
+V11 is an additive identity-and-spectacle pass over the V10 feel baseline: distinct bandit visual signatures, a contact-arrival cue between kills, and lightweight hero landscape compositions. It does not alter the protected V10 flight model or role progression.
 
 ## Controls
 
