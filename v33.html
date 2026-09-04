@@ -615,6 +615,22 @@
             setTimeout(() => el.style.opacity = 0, duration);
         }
 
+        function recoverFromTerrain() {
+            player.position.set(0, 4000, 0);
+            player.quaternion.identity();
+            playerVelocity = 200;
+            targetVelocity = 400;
+            mouse.x = mouse.y = 0;
+            mouse.down = false;
+            touchRoll = 0;
+            keys.w = keys.s = keys.a = keys.d = false;
+            cannonCooldown = 0;
+            camera.rotation.set(0, 0, 0);
+            document.getElementById('flight-stick').style.left = '50%';
+            document.getElementById('flight-stick').style.top = '55%';
+            document.querySelectorAll('.touch-button').forEach(button => button.classList.remove('active'));
+        }
+
         // --- MAIN LOOP ---
         function animate() {
             requestAnimationFrame(animate);
@@ -665,8 +681,7 @@
             const groundH = getTerrainHeight(player.position.x, player.position.z);
             if(player.position.y < groundH + 5) {
                 createExplosion(player.position);
-                player.position.set(0, 4000, 0); // Arcade Respawn
-                targetVelocity = 400;
+                recoverFromTerrain();
                 showOverlayMessage("CRITICAL TERRAIN IMPACT", 2000);
             }
 
