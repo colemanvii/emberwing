@@ -6,8 +6,7 @@ const swaps=[
   ['sun.intensity=7.1;sun.color.setHex(0xffc879);','sun.intensity=5.45;sun.color.setHex(0xffc879);'],
   ['v19Fill.color.setHex(0xffbd77);v19Fill.intensity=.58;','v19Fill.color.setHex(0xffbd77);v19Fill.intensity=.36;'],
   ['v18Basalt.color.setHex(0x11171d);','v18Basalt.color.setHex(0x070b10);'],
-  ['v18WarmFace.color.setHex(0x715943);','v18WarmFace.color.setHex(0x2d2722);'],
-  ['v18SunGlow.scale.set(760,760,1);v18SunCore.scale.set(190,190,1);','v18SunGlow.scale.set(690,690,1);v18SunCore.scale.set(160,160,1);']
+  ['v18WarmFace.color.setHex(0x715943);','v18WarmFace.color.setHex(0x2d2722);']
 ];
 for(const [a,b] of swaps){if(!html.includes(a))throw new Error('missing final V19 anchor: '+a);html=html.replace(a,b)}
 const hook='window.__emberwingV19={snapshot:';
