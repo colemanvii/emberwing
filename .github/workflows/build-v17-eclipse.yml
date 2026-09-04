@@ -1,0 +1,62 @@
+name: Build V17 Eclipse
+
+on:
+  push:
+    paths:
+      - 'scripts/build-v17-eclipse.mjs'
+      - 'scripts/smoke-v17.mjs'
+      - '.github/workflows/build-v17-eclipse.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-smoke-stage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build V17 Eclipse
+        run: node scripts/build-v17-eclipse.mjs
+
+      - name: Install browser smoke-test runtime
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Serve V17 locally
+        run: |
+          python3 -m http.server 4173 >/tmp/emberwing-http.log 2>&1 &
+          sleep 2
+
+      - name: Smoke-test V17 in Chromium
+        run: node scripts/smoke-v17.mjs
+
+      - name: Upload visual proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: emberwing-v17-eclipse-proof
+          path: /tmp/emberwing-v17-desert.png
+          retention-days: 1
+
+      - name: Commit verified V17 candidate
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add v17.html
+          if git diff --cached --quiet; then
+            echo 'No generated changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Stage verified V17 Eclipse candidate'
+          git push origin HEAD:main
