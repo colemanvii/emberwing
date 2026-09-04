@@ -194,6 +194,7 @@ function v17UpdateTrails(dt){for(let i=v17Trails.length-1;i>=0;i--){const s=v17T
 
 let v17Mode=-1,v17Anchored=false;
 function v17SetPalette(alpine){
+  sky.material.uniforms.sunDir.value.copy(v17SunDir);
   if(alpine){
     haze.setHex(0x94b5c8);scene.background=haze;scene.fog.color.copy(haze);scene.fog.density=.00056;
     sky.material.uniforms.top.value.setHex(0x02091a);sky.material.uniforms.hor.value.setHex(0x6f9ab7);sky.material.uniforms.low.value.setHex(0xf2f7fa);sky.material.uniforms.sunCol.value.setHex(0xeef8ff);
