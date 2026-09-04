@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Emberwing V6</title><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05080a}#boot{position:fixed;inset:0;display:grid;place-items:center;color:#eef4f7;font:600 8px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.34em;background:#05080a}</style></head><body><div id="boot">EMBERWING // V6 COMBAT POLISH</div><script>(async()=>{const res=await fetch('https://cdn.jsdelivr.net/gh/colemanvii/emberwing@fa7f28e7e1987f151250fba078d9f10ad808d38d/v3.html',{cache:'no-store'});if(!res.ok)throw new Error('Could not load V3 flight core');let html=await res.text();const anchor='const clock=new THREE.Clock();';if(!html.includes(anchor))throw new Error('V6 anchor missing');const v6=`
+// EMBERWING V6 // combat readability + kill/replay polish
+const v6Style=document.createElement('style');
+v6Style.textContent='#v6status{position:absolute;right:27px;top:59px;width:132px;display:flex;flex-direction:column;gap:5px;font:600 7px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.13em;pointer-events:none}#v6status .r{display:grid;grid-template-columns:58px 1fr;align-items:center;padding-left:9px;position:relative}#v6status .r:before{content:"";position:absolute;left:0;top:50%;width:3px;height:1px;background:rgba(247,251,253,.15)}#v6status .k{font-size:6px;font-weight:500;letter-spacing:.18em;color:rgba(247,251,253,.13)}#v6status .v{color:rgba(247,251,253,.43);white-space:nowrap}#v6status .hot:before{background:#ffc66f}#v6status .hot .v{color:#ffc66f}#v6status .danger:before{background:#ff735f}#v6status .danger .v{color:#ff735f;text-shadow:0 0 8px rgba(255,115,95,.28)}#v6status .danger{animation:v6Threat .42s ease-in-out infinite alternate}@keyframes v6Threat{to{opacity:.66}}#v6status .critical .v{color:#ff735f}.v6next{color:#ffc66f;letter-spacing:.18em}@media(max-width:900px){#v6status{right:20px;top:56px;width:122px;font-size:6px}}';
+document.head.appendChild(v6Style);
+const v6Status=document.createElement('div');v6Status.id='v6status';v6Status.innerHTML='<div class="r" id="v6Air"><span class="k">AIRFRAME</span><span class="v" id="v6AirV">● ● ●</span></div><div class="r" id="v6Threat"><span class="k">THREAT</span><span class="v" id="v6ThreatV">CLEAR</span></div>';document.getElementById('hud').appendChild(v6Status);
+const v6Air=document.getElementById('v6Air'),v6AirV=document.getElementById('v6AirV'),v6Threat=document.getElementById('v6Threat'),v6ThreatV=document.getElementById('v6ThreatV');
+let v6LastHP=3,v6LastThreat='';
+function v6UpdateStatus(){
+ const hp=Math.max(0,Math.min(3,playerHP));
+ if(hp!==v6LastHP){v6LastHP=hp;v6Air.animate([{opacity:1},{opacity:.22},{opacity:1}],{duration:260,easing:'ease-out'})}
+ v6AirV.textContent=(hp>0?'●':'○')+' '+(hp>1?'●':'○')+' '+(hp>2?'●':'○');
+ v6Air.className='r '+(hp<=1?'critical':hp===2?'hot':'');
+ let threat='CLEAR',cls='r';
+ if(hostileMissile){threat='MISSILE';cls='r danger'}else if(hostileLockStage===2){threat='LOCK';cls='r danger'}else if(hostileLockStage===1||hostileLock>.12){threat='TRACK';cls='r hot'}else if(enemyAttackState===2){threat='GUNS';cls='r danger'}else if(enemyAttackState===1){threat='FIRING';cls='r hot'}
+ if(threat!==v6LastThreat){v6LastThreat=threat;if(threat!=='CLEAR')v6Threat.animate([{transform:'translateX(0)'},{transform:'translateX(-2px)'},{transform:'translateX(0)'}],{duration:160})}
+ v6ThreatV.textContent=threat;v6Threat.className=cls;
+}
+const v6AttackBase=updateEnemyAttack;updateEnemyAttack=function(dt){v6AttackBase(dt);v6UpdateStatus()};
+const v6ExplodeBase=explode;explode=function(){const before=kills;v6ExplodeBase();if(kills>before){killSlow=Math.max(killSlow,kills>=MISSION_KILLS?.44:.23);hitKick=Math.max(hitKick,1.04);chirp(1500,.025,.022);chirp(760,.07,.026,.035)}};
+const v6MissionBase=updateMission;let v6CompletePainted=false;updateMission=function(dt){if(!missionComplete)v6CompletePainted=false;const was=missionComplete;v6MissionBase(dt);if(!was&&missionComplete&&!v6CompletePainted){v6CompletePainted=true;const t=finalTime||missionElapsed,next=t>=165?'B < 02:45.0':t>=125?'A < 02:05.0':t>=95?'S < 01:35.0':'PERSONAL BEST',small=completeUI.querySelector('small');if(small)small.innerHTML+='<br><span class="v6next">NEXT // '+next+'</span>'}};
+v6UpdateStatus();
+`;
+html=html.replace(anchor,v6+anchor).replace('<title>Emberwing V3</title>','<title>Emberwing V6</title>').replace('<!-- EMBERWING V3 // standalone snapshot // generated from accepted pinned flight core -->','<!-- EMBERWING V6 // combat polish over accepted V3 flight core -->');document.open();document.write(html);document.close()})().catch(e=>{document.getElementById('boot').textContent='V6 COMBAT POLISH // '+e.message})</script></body></html>
