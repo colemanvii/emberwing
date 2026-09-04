@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EMBERWING V33</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #040914; /* Deep cold atmosphere */
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+        }
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        /* HUD - Elegant, Minimal, Restrained */
+        #hud {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            color: rgba(255, 160, 60, 0.8);
+            text-shadow: 0 0 4px rgba(255, 100, 0, 0.5);
+        }
+        
+        .hud-element { position: absolute; }
+        
+        /* Center World Focus */
+        #crosshair {
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px; height: 50px;
+            border: 1px solid rgba(255, 160, 60, 0.3);
+            border-radius: 50%;
+            transition: width 0.2s, height 0.2s;
+        }
+        #crosshair::before, #crosshair::after {
+            content: ''; position: absolute;
+            background: rgba(255, 160, 60, 0.8);
+        }
+        #crosshair::before { top: 50%; left: -10px; right: -10px; height: 1px; transform: translateY(-50%); }
+        #crosshair::after { left: 50%; top: -10px; bottom: -10px; width: 1px; transform: translateX(-50%); }
+        
+        /* Flight Instruments */
+        #speed-container {
+            bottom: 60px; left: 60px;
+        }
+        #speed-text { font-size: 28px; font-weight: bold; margin-bottom: 5px; }
+        #throttle-bar {
+            width: 200px; height: 4px;
+            background: rgba(255, 160, 60, 0.2);
+            position: relative;
+        }
+        #throttle-fill {
+            height: 100%; width: 50%;
+            background: rgba(255, 160, 60, 0.9);
+            box-shadow: 0 0 8px rgba(255, 100, 0, 0.8);
+            transition: width 0.1s linear;
+        }
+        #throttle-marker {
+            position: absolute;
+            width: 2px; height: 12px;
+            background: white; top: -4px; left: 50%;
+        }
+        
+        #alt-container {
+            bottom: 60px; right: 60px;
+            text-align: right;
+        }
+        #alt-text { font-size: 28px; font-weight: bold; }
+        #alt-label { font-size: 14px; opacity: 0.7; letter-spacing: 2px; }
+
+        /* Target & World Memory */
+        #target-info {
+            top: 60px; left: 60px;
+            font-size: 16px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #target-box {
+            position: absolute;
+            width: 40px; height: 40px;
+            border: 1px solid red;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        #cinematic-bars {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .bar { height: 0%; background: black; transition: height 2s ease-in-out; }
+
+        #overlay-message {
+            position: absolute;
+            top: 30%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            letter-spacing: 8px;
+            color: white;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            opacity: 0;
+            transition: opacity 1s;
+        }
+        
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #040914; color: white;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; font-family: sans-serif;
+            transition: opacity 1s;
+        }
+        #start-screen h1 { font-size: 48px; letter-spacing: 10px; color: #ff8c42; text-shadow: 0 0 30px rgba(255, 140, 66, 0.5); margin-bottom: 10px; }
+        #start-screen p { font-size: 14px; color: #888; letter-spacing: 2px; line-height: 1.8; text-align: center; }
+        .key { display: inline-block; padding: 2px 8px; background: rgba(255,255,255,0.1); border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); color: #fff; }
+    </style>
+    <!-- Lightweight Three.js Core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1>EMBERWING</h1>
+        <p>
+            MOUSE - Pitch & Yaw<br>
+            <span class="key">A</span> / <span class="key">D</span> - Roll<br>
+            <span class="key">W</span> / <span class="key">S</span> - Throttle Management (Speed Control)<br>
+            <span class="key">LCLICK</span> - Cannon<br><br>
+            Manage your speed. The terrain is lethal.<br><br>
+            <i>Click anywhere to ignite engines.</i>
+        </p>
+    </div>
+
+    <div id="hud">
+        <div id="crosshair" class="hud-element"></div>
+        <div id="target-box"></div>
+        
+        <div id="speed-container" class="hud-element">
+            <div id="speed-text">MACH 0.8</div>
+            <div id="throttle-bar">
+                <div id="throttle-fill"></div>
+                <div id="throttle-marker"></div>
+            </div>
+        </div>
+        
+        <div id="alt-container" class="hud-element">
+            <div id="alt-text">4,500</div>
+            <div id="alt-label">ALTITUDE</div>
+        </div>
+
+        <div id="target-info" class="hud-element">
+            BANDIT // <span id="tgt-dist">0</span>M
+        </div>
+        
+        <div id="overlay-message">ENGAGE</div>
+    </div>
+
+    <div id="cinematic-bars">
+        <div class="bar" id="bar-top"></div>
+        <div class="bar" id="bar-bot"></div>
+    </div>
+
+    <script>
+        // ==========================================
+        // EMBERWING V33 - CORE ENGINE
+        // ==========================================
+        
+        let scene, camera, renderer;
+        let player, playerVelocity = 0, targetVelocity = 400; // Cruising speed
+        const MIN_SPEED = 200; // Allow opening distance / tight turns
+        const MAX_SPEED = 1200; // Afterburner
+        let lastTime = performance.now();
+        
+        // Input state
+        const keys = { w: false, s: false, a: false, d: false };
+        const mouse = { x: 0, y: 0, down: false };
+        
+        // World Objects
+        const terrainChunks = [];
+        const bullets = [];
+        const bandits = [];
+        const wrecks = [];
+        const particles = [];
+        
+        // Settings
+        const WORLD_SIZE = 20000;
+        let isStarted = false;
+
+        init();
+        animate();
+
+        function init() {
+            // 1. Setup Scene & Atmosphere (Cold vs Warmth)
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x040914);
+            scene.fog = new THREE.FogExp2(0x040914, 0.00015); // Deep atmospheric perspective
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 10, WORLD_SIZE);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Save performance
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting (Sunset cinematic)
+            const ambient = new THREE.AmbientLight(0x2a3045, 1.2);
+            scene.add(ambient);
+            const directionalLight = new THREE.DirectionalLight(0xff7733, 2.5);
+            directionalLight.position.set(1, 0.5, -1).normalize();
+            scene.add(directionalLight);
+
+            // 2. Build the Player Aircraft (Silhouette over detail)
+            player = new THREE.Group();
+            
+            // Fuselage
+            const bodyGeo = new THREE.ConeGeometry(2, 12, 4);
+            bodyGeo.rotateX(Math.PI / 2);
+            const darkMat = new THREE.MeshLambertMaterial({ color: 0x111111, flatShading: true });
+            const body = new THREE.Mesh(bodyGeo, darkMat);
+            player.add(body);
+            
+            // Wings
+            const wingGeo = new THREE.BufferGeometry();
+            const vertices = new Float32Array([
+                0, 0, 2,    // nose
+                -8, 0, -4,  // left tip
+                8, 0, -4,   // right tip
+                0, 0, -4    // tail center
+            ]);
+            wingGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            wingGeo.computeVertexNormals();
+            const wings = new THREE.Mesh(wingGeo, darkMat);
+            player.add(wings);
+
+            // Engine Glow (The "Ember")
+            const engineGeo = new THREE.CylinderGeometry(0.8, 1.2, 1, 8);
+            engineGeo.rotateX(Math.PI / 2);
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0xff4400 });
+            const engine = new THREE.Mesh(engineGeo, glowMat);
+            engine.position.z = -5;
+            player.add(engine);
+
+            player.position.set(0, 3000, 0);
+            scene.add(player);
+            camera.position.set(0, 4, 15);
+            player.add(camera); // Lock camera to player initially for smooth follow logic later
+
+            // 3. Generate Dangerous Terrain
+            createTerrain();
+
+            // 4. Spawn initial bandits
+            for(let i=0; i<3; i++) spawnBandit();
+
+            // 5. Input Listeners
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
+            document.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
+            
+            document.addEventListener('mousemove', e => {
+                if(!isStarted) return;
+                // Normalize mouse for pitch/yaw
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+            document.addEventListener('mousedown', e => { if(e.button === 0) mouse.down = true; });
+            document.addEventListener('mouseup', e => { if(e.button === 0) mouse.down = false; });
+
+            document.getElementById('start-screen').addEventListener('click', () => {
+                document.getElementById('start-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('start-screen').style.display = 'none';
+                    isStarted = true;
+                    showOverlayMessage("ENGAGE", 2000);
+                }, 1000);
+            });
+        }
+
+        // --- WORLD GENERATION ---
+        function createTerrain() {
+            // Pseudo-random high-frequency terrain for alpine grandeur
+            const geo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, 128, 128);
+            geo.rotateX(-Math.PI / 2);
+            
+            const pos = geo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                let x = pos.getX(i);
+                let z = pos.getZ(i);
+                // Mix sine waves for organic but jagged mountains
+                let height = Math.sin(x*0.0005) * Math.cos(z*0.0005) * 1500;
+                height += Math.sin(x*0.002) * Math.sin(z*0.001) * 500;
+                height += Math.sin(x*0.01) * Math.cos(z*0.01) * 100;
+                // Add a floor floor
+                if (height < 200) height = 200 + Math.random()*20;
+                pos.setY(i, height);
+            }
+            geo.computeVertexNormals();
+
+            // Material matching the cold atmosphere
+            const mat = new THREE.MeshLambertMaterial({ 
+                color: 0x182436, 
+                flatShading: true,
+                wireframe: false
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            scene.add(mesh);
+            terrainChunks.push(mesh);
+        }
+
+        function getTerrainHeight(x, z) {
+            // Rough approximation matching the generation formula
+            let h = Math.sin(x*0.0005) * Math.cos(z*0.0005) * 1500;
+            h += Math.sin(x*0.002) * Math.sin(z*0.001) * 500;
+            h += Math.sin(x*0.01) * Math.cos(z*0.01) * 100;
+            return h < 200 ? 200 : h;
+        }
+
+        // --- COMBAT & FX ---
+        function spawnBandit() {
+            const geo = new THREE.ConeGeometry(3, 15, 3);
+            geo.rotateX(Math.PI / 2);
+            const mat = new THREE.MeshLambertMaterial({ color: 0xaa0000, flatShading: true }); // Red threat
+            const bandit = new THREE.Mesh(geo, mat);
+            
+            bandit.position.set(
+                player.position.x + (Math.random() - 0.5) * 8000,
+                3000 + Math.random() * 2000,
+                player.position.z - 5000 - Math.random() * 5000
+            );
+            
+            bandit.userData = {
+                health: 100,
+                speed: 350 + Math.random()*200,
+                targetRotation: new THREE.Vector3(),
+                dead: false
+            };
+            
+            scene.add(bandit);
+            bandits.push(bandit);
+        }
+
+        function fireCannon() {
+            const bulletGeo = new THREE.CylinderGeometry(0.2, 0.2, 10, 4);
+            bulletGeo.rotateX(Math.PI / 2);
+            const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+            
+            // Dual cannons
+            for(let i=-1; i<=1; i+=2) {
+                const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+                bullet.position.copy(player.position);
+                // Offset left/right
+                const offset = new THREE.Vector3(i * 3, 0, 0);
+                offset.applyQuaternion(player.quaternion);
+                bullet.position.add(offset);
+                
+                bullet.quaternion.copy(player.quaternion);
+                // Add slight spread
+                bullet.rotateX((Math.random()-0.5)*0.01);
+                bullet.rotateY((Math.random()-0.5)*0.01);
+                
+                bullet.userData = { life: 2.0, speed: playerVelocity + 2000 };
+                scene.add(bullet);
+                bullets.push(bullet);
+            }
+        }
+
+        function createExplosion(pos) {
+            // Flash
+            const light = new THREE.PointLight(0xff5500, 5, 2000);
+            light.position.copy(pos);
+            scene.add(light);
+            
+            // Particles
+            for(let i=0; i<30; i++) {
+                const p = new THREE.Mesh(
+                    new THREE.BoxGeometry(2,2,2),
+                    new THREE.MeshBasicMaterial({ color: i%2===0 ? 0xff4400 : 0x555555 })
+                );
+                p.position.copy(pos);
+                p.userData = {
+                    vel: new THREE.Vector3((Math.random()-0.5)*200, (Math.random()-0.5)*200, (Math.random()-0.5)*200),
+                    life: 1.0 + Math.random()
+                };
+                scene.add(p);
+                particles.push(p);
+            }
+            
+            // Fade out light
+            setTimeout(() => scene.remove(light), 150);
+        }
+
+        function createWreck(pos, rot) {
+            // Environmental memory: leave a burning wreck on the ground
+            const geo = new THREE.BoxGeometry(4,4,12);
+            const mat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+            const wreck = new THREE.Mesh(geo, mat);
+            wreck.position.copy(pos);
+            wreck.rotation.copy(rot);
+            wreck.userData = { velocity: new THREE.Vector3(0, -200, 0) };
+            scene.add(wreck);
+            wrecks.push(wreck);
+        }
+
+        // --- HUD UPDATE ---
+        function updateHUD(dt) {
+            // Speed UI
+            document.getElementById('speed-text').innerText = "MACH " + (playerVelocity / 1000).toFixed(2);
+            let throttlePercent = (targetVelocity - MIN_SPEED) / (MAX_SPEED - MIN_SPEED);
+            document.getElementById('throttle-fill').style.width = (throttlePercent * 100) + '%';
+            
+            // Alt UI
+            document.getElementById('alt-text').innerText = Math.floor(player.position.y).toLocaleString();
+            if(player.position.y - getTerrainHeight(player.position.x, player.position.z) < 500) {
+                document.getElementById('alt-text').style.color = "red";
+            } else {
+                document.getElementById('alt-text').style.color = "inherit";
+            }
+
+            // Target lock logic
+            let closest = null;
+            let minDist = Infinity;
+            
+            bandits.forEach(b => {
+                if(b.userData.dead) return;
+                const dist = player.position.distanceTo(b.position);
+                if(dist < minDist) { minDist = dist; closest = b; }
+            });
+
+            const targetBox = document.getElementById('target-box');
+            const targetInfo = document.getElementById('target-info');
+            
+            if(closest && minDist < 6000) {
+                // Project 3D to 2D
+                const tempV = closest.position.clone();
+                tempV.project(camera);
+                
+                if(tempV.z < 1 && tempV.x > -1 && tempV.x < 1 && tempV.y > -1 && tempV.y < 1) {
+                    const x = (tempV.x *  .5 + .5) * window.innerWidth;
+                    const y = (tempV.y * -.5 + .5) * window.innerHeight;
+                    targetBox.style.display = 'block';
+                    targetBox.style.left = x + 'px';
+                    targetBox.style.top = y + 'px';
+                    targetBox.style.borderColor = minDist < 2000 ? '#ff4400' : 'rgba(255,160,60,0.5)';
+                    
+                    targetInfo.style.opacity = 1;
+                    document.getElementById('tgt-dist').innerText = Math.floor(minDist);
+                } else {
+                    targetBox.style.display = 'none';
+                    targetInfo.style.opacity = 0;
+                }
+            } else {
+                targetBox.style.display = 'none';
+                targetInfo.style.opacity = 0;
+            }
+        }
+
+        function showOverlayMessage(msg, duration) {
+            const el = document.getElementById('overlay-message');
+            el.innerText = msg;
+            el.style.opacity = 1;
+            setTimeout(() => el.style.opacity = 0, duration);
+        }
+
+        // --- MAIN LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const now = performance.now();
+            const dt = Math.min((now - lastTime) / 1000, 0.1);
+            lastTime = now;
+            
+            if(!isStarted) {
+                renderer.render(scene, camera);
+                return;
+            }
+
+            // --- 1. PLAYER FLIGHT MODEL & SPEED CONTROL ---
+            
+            // Throttle Management (The core fix for "closing distance too fast")
+            if(keys.w) targetVelocity = Math.min(MAX_SPEED, targetVelocity + 600 * dt);
+            if(keys.s) targetVelocity = Math.max(MIN_SPEED, targetVelocity - 800 * dt);
+            
+            // Smooth velocity interpolation (momentum)
+            playerVelocity += (targetVelocity - playerVelocity) * 2.0 * dt;
+            
+            // Dynamic FOV based on speed for cinematic feel
+            const targetFOV = 65 + (playerVelocity / MAX_SPEED) * 35;
+            camera.fov += (targetFOV - camera.fov) * 5 * dt;
+            camera.updateProjectionMatrix();
+
+            // Flight Mechanics (Arcade, responsive)
+            // Pitch/Yaw via mouse offset from center
+            player.rotateX(mouse.y * 1.5 * dt);
+            player.rotateY(-mouse.x * 1.5 * dt);
+            
+            // Roll via A/D
+            if(keys.a) player.rotateZ(3.0 * dt);
+            if(keys.d) player.rotateZ(-3.0 * dt);
+            
+            // Auto-leveling roll slightly for arcade feel if no input
+            if(!keys.a && !keys.d) {
+                const currentZ = player.rotation.z;
+                // Simple dampening back to nearest flat plane
+                player.rotation.z *= 0.95; 
+            }
+
+            player.translateZ(-playerVelocity * dt);
+
+            // Ground Collision
+            const groundH = getTerrainHeight(player.position.x, player.position.z);
+            if(player.position.y < groundH + 5) {
+                createExplosion(player.position);
+                player.position.set(0, 4000, 0); // Arcade Respawn
+                targetVelocity = 400;
+                showOverlayMessage("CRITICAL TERRAIN IMPACT", 2000);
+            }
+
+            // Camera follow smoothing (Shake at high speed)
+            const speedRatio = playerVelocity / MAX_SPEED;
+            let shakeX = (Math.random()-0.5) * speedRatio * 0.1;
+            let shakeY = (Math.random()-0.5) * speedRatio * 0.1;
+            camera.position.x = shakeX;
+            camera.position.y = 4 + shakeY;
+            // Push camera back under acceleration
+            const targetCamZ = 15 + (targetVelocity > playerVelocity ? 3 : 0);
+            camera.position.z += (targetCamZ - camera.position.z) * 5 * dt;
+
+
+            // --- 2. WEAPONS ---
+            if(mouse.down) fireCannon();
+            
+            // Update Bullets
+            for(let i=bullets.length-1; i>=0; i--) {
+                let b = bullets[i];
+                b.translateZ(-b.userData.speed * dt);
+                b.userData.life -= dt;
+                
+                // Collision with ground
+                if(b.position.y < getTerrainHeight(b.position.x, b.position.z)) {
+                    scene.remove(b); bullets.splice(i,1); continue;
+                }
+
+                // Collision with bandits
+                let hit = false;
+                for(let j=0; j<bandits.length; j++) {
+                    let bandit = bandits[j];
+                    if(bandit.userData.dead) continue;
+                    if(b.position.distanceTo(bandit.position) < 20) {
+                        bandit.userData.health -= 25;
+                        scene.remove(b); bullets.splice(i,1);
+                        hit = true;
+                        
+                        // Hit FX
+                        const hitFlash = new THREE.PointLight(0xffaa00, 2, 100);
+                        hitFlash.position.copy(b.position);
+                        scene.add(hitFlash);
+                        setTimeout(() => scene.remove(hitFlash), 50);
+
+                        if(bandit.userData.health <= 0) {
+                            bandit.userData.dead = true;
+                            createExplosion(bandit.position);
+                            createWreck(bandit.position, bandit.rotation);
+                            scene.remove(bandit);
+                            bandits.splice(j,1);
+                            spawnBandit(); // Keep the fight going
+                            showOverlayMessage("SPLASH ONE", 1000);
+                        }
+                        break;
+                    }
+                }
+                if(hit) continue;
+
+                if(b.userData.life <= 0) { scene.remove(b); bullets.splice(i,1); }
+            }
+
+            // --- 3. ENEMY AI & TERRAIN AVOIDANCE ---
+            bandits.forEach(bandit => {
+                if(bandit.userData.dead) return;
+                
+                bandit.translateZ(-bandit.userData.speed * dt);
+                
+                const bGroundH = getTerrainHeight(bandit.position.x, bandit.position.z);
+                
+                // Behavior: Pursue player but respect terrain
+                const distToPlayer = bandit.position.distanceTo(player.position);
+                
+                if(bandit.position.y < bGroundH + 800) {
+                    // EMERGENCY PULL UP
+                    const up = new THREE.Vector3(0,1,0);
+                    const targetQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,-1), up);
+                    bandit.quaternion.slerp(targetQ, 2.0 * dt);
+                } else {
+                    // Combat logic
+                    if(distToPlayer > 1000) {
+                        // Chase
+                        bandit.lookAt(player.position);
+                    } else {
+                        // Evade / Overshoot (prevents sitting on top of player)
+                        bandit.rotateX(0.5 * dt);
+                        bandit.rotateZ(1.0 * dt);
+                    }
+                }
+            });
+
+            // --- 4. WORLD MEMORY (Wrecks) ---
+            wrecks.forEach(w => {
+                const wGroundH = getTerrainHeight(w.position.x, w.position.z);
+                if(w.position.y > wGroundH + 5) {
+                    w.position.addScaledVector(w.userData.velocity, dt);
+                    w.rotation.x += dt;
+                    w.rotation.y += dt;
+                } else {
+                    w.position.y = wGroundH;
+                    // Emit smoke from wreck
+                    if(Math.random() < 0.2) {
+                        const s = new THREE.Mesh(new THREE.BoxGeometry(4,4,4), new THREE.MeshBasicMaterial({color: 0x333333, transparent:true, opacity:0.8}));
+                        s.position.copy(w.position);
+                        s.userData = { vel: new THREE.Vector3((Math.random()-0.5)*10, 50, (Math.random()-0.5)*10), life: 3.0 };
+                        scene.add(s);
+                        particles.push(s);
+                    }
+                }
+            });
+
+            // --- 5. PARTICLES ---
+            for(let i=particles.length-1; i>=0; i--) {
+                let p = particles[i];
+                p.position.addScaledVector(p.userData.vel, dt);
+                p.userData.life -= dt;
+                
+                if(p.material.opacity !== undefined) {
+                    p.material.opacity = p.userData.life / 3.0;
+                }
+                p.scale.multiplyScalar(1.0 + dt*2);
+
+                if(p.userData.life <= 0) { scene.remove(p); particles.splice(i,1); }
+            }
+
+            // Speed lines / Atmospheric dust (Sense of speed)
+            if(Math.random() < speedRatio) {
+                const lineGeo = new THREE.BufferGeometry();
+                const zOffset = -200 - Math.random() * 200;
+                const spread = 100;
+                lineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+                    (Math.random()-0.5)*spread, (Math.random()-0.5)*spread, zOffset,
+                    (Math.random()-0.5)*spread, (Math.random()-0.5)*spread, zOffset - 50
+                ]), 3));
+                const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({color: 0xffffff, transparent:true, opacity: 0.3}));
+                player.add(line); // Attached to player local space
+                setTimeout(() => player.remove(line), 50);
+            }
+
+            // --- 6. UPDATE UI ---
+            updateHUD(dt);
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>
