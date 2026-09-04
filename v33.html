@@ -343,12 +343,19 @@
             const stick = document.getElementById('flight-stick');
             let flightPointer = null;
 
+            const shapeAxis = value => {
+                const deadZone = 0.12;
+                const magnitude = Math.abs(value);
+                if(magnitude < deadZone) return 0;
+                return Math.sign(value) * Math.pow((magnitude - deadZone) / (1 - deadZone), 1.35);
+            };
+
             const steer = e => {
                 const rect = pad.getBoundingClientRect();
                 const x = THREE.MathUtils.clamp((e.clientX - rect.left) / rect.width, 0, 1);
                 const y = THREE.MathUtils.clamp((e.clientY - rect.top) / rect.height, 0, 1);
-                mouse.x = (x - .5) * 2;
-                mouse.y = (.5 - y) * 2;
+                mouse.x = shapeAxis((x - .5) * 2);
+                mouse.y = shapeAxis((.5 - y) * 2);
                 touchRoll = mouse.x;
                 stick.style.left = (x * 100) + '%';
                 stick.style.top = (y * 100) + '%';
