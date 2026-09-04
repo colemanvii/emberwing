@@ -2,19 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>EMBERWING V33</title>
     <style>
-        body {
+        html, body {
             margin: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
             background-color: #040914; /* Deep cold atmosphere */
             font-family: 'Courier New', Courier, monospace;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            overscroll-behavior: none;
+            -webkit-touch-callout: none;
         }
-        #gameCanvas {
+        canvas {
+            position: fixed;
+            inset: 0;
             display: block;
             width: 100vw;
-            height: 100vh;
+            height: 100dvh;
         }
         
         /* HUD - Elegant, Minimal, Restrained */
@@ -88,6 +99,10 @@
             transform: translate(-50%, -50%);
             display: none;
         }
+        #target-box.hit { border-color: #fff4cf !important; box-shadow: 0 0 22px #ff6a22; animation: hitConfirm .12s ease-out; }
+        @keyframes hitConfirm { from { transform: translate(-50%, -50%) scale(1.45); } to { transform: translate(-50%, -50%) scale(.82); } }
+        #target-arrow { position: absolute; display: none; width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-left: 13px solid rgba(255,160,60,.8); filter: drop-shadow(0 0 6px #ff6400); transform-origin: center; }
+        #splash-count { top: 24px; left: 50%; transform: translateX(-50%); font-size: 12px; letter-spacing: .18em; opacity: .7; }
 
         #cinematic-bars {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -118,6 +133,48 @@
         #start-screen h1 { font-size: 48px; letter-spacing: 10px; color: #ff8c42; text-shadow: 0 0 30px rgba(255, 140, 66, 0.5); margin-bottom: 10px; }
         #start-screen p { font-size: 14px; color: #888; letter-spacing: 2px; line-height: 1.8; text-align: center; }
         .key { display: inline-block; padding: 2px 8px; background: rgba(255,255,255,0.1); border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); color: #fff; }
+
+        #mobile-controls { display: none; }
+        @media (pointer: coarse), (max-width: 900px) {
+            #start-screen { padding: max(20px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); }
+            #start-screen h1 { font-size: clamp(28px, 8vw, 46px); letter-spacing: .18em; margin: 0 0 12px; }
+            #start-screen p { font-size: 12px; line-height: 1.65; }
+            .desktop-instructions { display: none; }
+            .mobile-instructions { display: block !important; }
+            #crosshair { top: 45%; width: 38px; height: 38px; }
+            #speed-container { left: max(18px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom)); }
+            #speed-text, #alt-text { font-size: 16px; }
+            #throttle-bar { width: 108px; }
+            #alt-container { right: max(18px, env(safe-area-inset-right)); top: max(14px, env(safe-area-inset-top)); bottom: auto; }
+            #alt-label { font-size: 9px; }
+            #target-info { top: max(14px, env(safe-area-inset-top)); left: max(18px, env(safe-area-inset-left)); font-size: 11px; }
+            #splash-count { top: max(14px, env(safe-area-inset-top)); font-size: 10px; }
+            #overlay-message { top: 25%; width: 90%; text-align: center; font-size: 15px; letter-spacing: .25em; }
+            #mobile-controls { position: fixed; inset: 0; z-index: 30; display: block; pointer-events: none; }
+            #flight-pad { position: absolute; left: max(14px, env(safe-area-inset-left)); bottom: max(54px, calc(env(safe-area-inset-bottom) + 40px)); width: 42vw; height: 56vh; pointer-events: auto; }
+            #flight-stick { position: absolute; left: 50%; top: 55%; width: 76px; height: 76px; transform: translate(-50%,-50%); border: 1px solid rgba(255,160,60,.32); border-radius: 50%; background: rgba(4,9,20,.18); box-shadow: inset 0 0 24px rgba(255,100,0,.08); }
+            #flight-stick::after { content: ''; position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%,-50%); border-radius: 50%; border: 1px solid rgba(255,184,100,.65); background: rgba(255,110,30,.16); box-shadow: 0 0 18px rgba(255,100,0,.25); }
+            .touch-button { position: absolute; pointer-events: auto; display: grid; place-items: center; border-radius: 50%; color: rgba(255,225,190,.92); border: 1px solid rgba(255,160,60,.48); background: rgba(4,9,20,.42); box-shadow: inset 0 0 22px rgba(255,100,0,.08), 0 5px 20px rgba(0,0,0,.26); font: bold 11px 'Courier New', monospace; letter-spacing: .12em; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+            .touch-button.active { transform: scale(.92); background: rgba(255,92,20,.28); border-color: rgba(255,190,100,.9); box-shadow: 0 0 28px rgba(255,90,20,.28); }
+            #cannon-button { right: max(18px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); width: 92px; height: 92px; }
+            #throttle-up, #throttle-down { right: max(31px, calc(env(safe-area-inset-right) + 13px)); width: 64px; height: 64px; }
+            #throttle-up { bottom: max(218px, calc(env(safe-area-inset-bottom) + 196px)); }
+            #throttle-down { bottom: max(140px, calc(env(safe-area-inset-bottom) + 118px)); }
+        }
+        @media (pointer: coarse) and (orientation: portrait) {
+            #flight-pad { width: 48vw; height: 42vh; bottom: max(62px, calc(env(safe-area-inset-bottom) + 46px)); }
+            #cannon-button { width: 86px; height: 86px; }
+            #throttle-up { bottom: max(212px, calc(env(safe-area-inset-bottom) + 190px)); }
+            #throttle-down { bottom: max(134px, calc(env(safe-area-inset-bottom) + 112px)); }
+        }
+        @media (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
+            #flight-pad { bottom: max(46px, calc(env(safe-area-inset-bottom) + 28px)); height: 62vh; }
+            #flight-stick { width: 68px; height: 68px; }
+            #cannon-button { width: 82px; height: 82px; }
+            #throttle-up, #throttle-down { width: 56px; height: 56px; right: max(31px, calc(env(safe-area-inset-right) + 13px)); }
+            #throttle-up { bottom: max(184px, calc(env(safe-area-inset-bottom) + 162px)); }
+            #throttle-down { bottom: max(116px, calc(env(safe-area-inset-bottom) + 94px)); }
+        }
     </style>
     <!-- Lightweight Three.js Core -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -126,7 +183,7 @@
 
     <div id="start-screen">
         <h1>EMBERWING</h1>
-        <p>
+        <p class="desktop-instructions">
             MOUSE - Pitch & Yaw<br>
             <span class="key">A</span> / <span class="key">D</span> - Roll<br>
             <span class="key">W</span> / <span class="key">S</span> - Throttle Management (Speed Control)<br>
@@ -134,11 +191,20 @@
             Manage your speed. The terrain is lethal.<br><br>
             <i>Click anywhere to ignite engines.</i>
         </p>
+        <p class="mobile-instructions" style="display:none">
+            LEFT THUMB — Fly<br>
+            THROTTLE + / − — Control distance<br>
+            CANNON — Fire<br><br>
+            The terrain is lethal.<br><br>
+            <i>Tap to ignite engines.</i>
+        </p>
     </div>
 
     <div id="hud">
         <div id="crosshair" class="hud-element"></div>
         <div id="target-box"></div>
+        <div id="target-arrow"></div>
+        <div id="splash-count" class="hud-element">SPLASH 00</div>
         
         <div id="speed-container" class="hud-element">
             <div id="speed-text">MACH 0.8</div>
@@ -165,6 +231,13 @@
         <div class="bar" id="bar-bot"></div>
     </div>
 
+    <div id="mobile-controls" aria-hidden="true">
+        <div id="flight-pad"><div id="flight-stick"></div></div>
+        <div id="throttle-up" class="touch-button">SPD +</div>
+        <div id="throttle-down" class="touch-button">SPD −</div>
+        <div id="cannon-button" class="touch-button">CANNON</div>
+    </div>
+
     <script>
         // ==========================================
         // EMBERWING V33 - CORE ENGINE
@@ -174,11 +247,16 @@
         let player, playerVelocity = 0, targetVelocity = 400; // Cruising speed
         const MIN_SPEED = 200; // Allow opening distance / tight turns
         const MAX_SPEED = 1200; // Afterburner
+        const CANNON_INTERVAL = 0.085; // Consistent fire rate, independent of frame rate
+        let cannonCooldown = 0;
+        let cannonKick = 0;
+        let kills = 0;
         let lastTime = performance.now();
         
         // Input state
         const keys = { w: false, s: false, a: false, d: false };
         const mouse = { x: 0, y: 0, down: false };
+        let touchRoll = 0;
         
         // World Objects
         const terrainChunks = [];
@@ -186,6 +264,7 @@
         const bandits = [];
         const wrecks = [];
         const particles = [];
+        let bulletGeo, bulletMat;
         
         // Settings
         const WORLD_SIZE = 20000;
@@ -206,6 +285,10 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Save performance
             document.body.appendChild(renderer.domElement);
+
+            bulletGeo = new THREE.CylinderGeometry(0.2, 0.2, 10, 4);
+            bulletGeo.rotateX(Math.PI / 2);
+            bulletMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
 
             // Lighting (Sunset cinematic)
             const ambient = new THREE.AmbientLight(0x2a3045, 1.2);
@@ -270,6 +353,8 @@
             document.addEventListener('mousedown', e => { if(e.button === 0) mouse.down = true; });
             document.addEventListener('mouseup', e => { if(e.button === 0) mouse.down = false; });
 
+            setupTouchControls();
+
             document.getElementById('start-screen').addEventListener('click', () => {
                 document.getElementById('start-screen').style.opacity = '0';
                 setTimeout(() => {
@@ -278,6 +363,78 @@
                     showOverlayMessage("ENGAGE", 2000);
                 }, 1000);
             });
+        }
+
+        function setupTouchControls() {
+            const pad = document.getElementById('flight-pad');
+            const stick = document.getElementById('flight-stick');
+            let flightPointer = null;
+
+            const shapeAxis = value => {
+                const deadZone = 0.12;
+                const magnitude = Math.abs(value);
+                if(magnitude < deadZone) return 0;
+                return Math.sign(value) * Math.pow((magnitude - deadZone) / (1 - deadZone), 1.35);
+            };
+
+            const steer = e => {
+                const rect = pad.getBoundingClientRect();
+                const x = THREE.MathUtils.clamp((e.clientX - rect.left) / rect.width, 0, 1);
+                const y = THREE.MathUtils.clamp((e.clientY - rect.top) / rect.height, 0, 1);
+                mouse.x = shapeAxis((x - .5) * 2);
+                mouse.y = shapeAxis((.5 - y) * 2);
+                touchRoll = mouse.x;
+                stick.style.left = (x * 100) + '%';
+                stick.style.top = (y * 100) + '%';
+            };
+            const releaseFlight = e => {
+                if(e.pointerId !== flightPointer) return;
+                flightPointer = null;
+                mouse.x = mouse.y = 0;
+                touchRoll = 0;
+                stick.style.left = '50%';
+                stick.style.top = '55%';
+            };
+            pad.addEventListener('pointerdown', e => {
+                if(!isStarted || flightPointer !== null) return;
+                e.preventDefault();
+                flightPointer = e.pointerId;
+                pad.setPointerCapture(e.pointerId);
+                steer(e);
+            });
+            pad.addEventListener('pointermove', e => { if(e.pointerId === flightPointer) steer(e); });
+            pad.addEventListener('pointerup', releaseFlight);
+            pad.addEventListener('pointercancel', releaseFlight);
+
+            const bindHold = (id, onChange) => {
+                const el = document.getElementById(id);
+                const activePointers = new Set();
+                el.addEventListener('pointerdown', e => {
+                    if(!isStarted) return;
+                    e.preventDefault();
+                    activePointers.add(e.pointerId);
+                    el.setPointerCapture(e.pointerId);
+                    el.classList.add('active');
+                    onChange(true);
+                });
+                const release = e => {
+                    activePointers.delete(e.pointerId);
+                    if(activePointers.size) return;
+                    el.classList.remove('active');
+                    onChange(false);
+                };
+                el.addEventListener('pointerup', release);
+                el.addEventListener('pointercancel', release);
+            };
+            bindHold('cannon-button', active => {
+                mouse.down = active;
+                if(active) {
+                    fireCannon();
+                    cannonCooldown = CANNON_INTERVAL;
+                }
+            });
+            bindHold('throttle-up', active => keys.w = active);
+            bindHold('throttle-down', active => keys.s = active);
         }
 
         // --- WORLD GENERATION ---
@@ -344,10 +501,7 @@
         }
 
         function fireCannon() {
-            const bulletGeo = new THREE.CylinderGeometry(0.2, 0.2, 10, 4);
-            bulletGeo.rotateX(Math.PI / 2);
-            const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-            
+            cannonKick = 1;
             // Dual cannons
             for(let i=-1; i<=1; i+=2) {
                 const bullet = new THREE.Mesh(bulletGeo, bulletMat);
@@ -431,6 +585,7 @@
             });
 
             const targetBox = document.getElementById('target-box');
+            const targetArrow = document.getElementById('target-arrow');
             const targetInfo = document.getElementById('target-info');
             
             if(closest && minDist < 6000) {
@@ -442,6 +597,7 @@
                     const x = (tempV.x *  .5 + .5) * window.innerWidth;
                     const y = (tempV.y * -.5 + .5) * window.innerHeight;
                     targetBox.style.display = 'block';
+                    targetArrow.style.display = 'none';
                     targetBox.style.left = x + 'px';
                     targetBox.style.top = y + 'px';
                     targetBox.style.borderColor = minDist < 2000 ? '#ff4400' : 'rgba(255,160,60,0.5)';
@@ -451,9 +607,17 @@
                 } else {
                     targetBox.style.display = 'none';
                     targetInfo.style.opacity = 0;
+                    const angle = Math.atan2(-tempV.y, tempV.x);
+                    const radiusX = window.innerWidth * .42;
+                    const radiusY = window.innerHeight * .38;
+                    targetArrow.style.display = 'block';
+                    targetArrow.style.left = (window.innerWidth * .5 + Math.cos(angle) * radiusX) + 'px';
+                    targetArrow.style.top = (window.innerHeight * .5 + Math.sin(angle) * radiusY) + 'px';
+                    targetArrow.style.transform = `translate(-50%,-50%) rotate(${angle}rad)`;
                 }
             } else {
                 targetBox.style.display = 'none';
+                targetArrow.style.display = 'none';
                 targetInfo.style.opacity = 0;
             }
         }
@@ -463,6 +627,22 @@
             el.innerText = msg;
             el.style.opacity = 1;
             setTimeout(() => el.style.opacity = 0, duration);
+        }
+
+        function recoverFromTerrain() {
+            player.position.set(0, 4000, 0);
+            player.quaternion.identity();
+            playerVelocity = 200;
+            targetVelocity = 400;
+            mouse.x = mouse.y = 0;
+            mouse.down = false;
+            touchRoll = 0;
+            keys.w = keys.s = keys.a = keys.d = false;
+            cannonCooldown = 0;
+            camera.rotation.set(0, 0, 0);
+            document.getElementById('flight-stick').style.left = '50%';
+            document.getElementById('flight-stick').style.top = '55%';
+            document.querySelectorAll('.touch-button').forEach(button => button.classList.remove('active'));
         }
 
         // --- MAIN LOOP ---
@@ -500,9 +680,10 @@
             // Roll via A/D
             if(keys.a) player.rotateZ(3.0 * dt);
             if(keys.d) player.rotateZ(-3.0 * dt);
+            if(touchRoll) player.rotateZ(-touchRoll * 2.4 * dt);
             
             // Auto-leveling roll slightly for arcade feel if no input
-            if(!keys.a && !keys.d) {
+            if(!keys.a && !keys.d && !touchRoll) {
                 const currentZ = player.rotation.z;
                 // Simple dampening back to nearest flat plane
                 player.rotation.z *= 0.95; 
@@ -514,8 +695,7 @@
             const groundH = getTerrainHeight(player.position.x, player.position.z);
             if(player.position.y < groundH + 5) {
                 createExplosion(player.position);
-                player.position.set(0, 4000, 0); // Arcade Respawn
-                targetVelocity = 400;
+                recoverFromTerrain();
                 showOverlayMessage("CRITICAL TERRAIN IMPACT", 2000);
             }
 
@@ -525,13 +705,20 @@
             let shakeY = (Math.random()-0.5) * speedRatio * 0.1;
             camera.position.x = shakeX;
             camera.position.y = 4 + shakeY;
+            camera.rotation.z = (Math.random() - .5) * cannonKick * .006;
+            cannonKick *= Math.exp(-dt * 22);
             // Push camera back under acceleration
             const targetCamZ = 15 + (targetVelocity > playerVelocity ? 3 : 0);
             camera.position.z += (targetCamZ - camera.position.z) * 5 * dt;
+            camera.position.z += cannonKick * .16;
 
 
             // --- 2. WEAPONS ---
-            if(mouse.down) fireCannon();
+            cannonCooldown = Math.max(0, cannonCooldown - dt);
+            if(mouse.down && cannonCooldown <= 0) {
+                fireCannon();
+                cannonCooldown = CANNON_INTERVAL;
+            }
             
             // Update Bullets
             for(let i=bullets.length-1; i>=0; i--) {
@@ -553,6 +740,11 @@
                         bandit.userData.health -= 25;
                         scene.remove(b); bullets.splice(i,1);
                         hit = true;
+                        const targetBox = document.getElementById('target-box');
+                        targetBox.classList.remove('hit');
+                        void targetBox.offsetWidth;
+                        targetBox.classList.add('hit');
+                        setTimeout(() => targetBox.classList.remove('hit'), 130);
                         
                         // Hit FX
                         const hitFlash = new THREE.PointLight(0xffaa00, 2, 100);
@@ -566,6 +758,8 @@
                             createWreck(bandit.position, bandit.rotation);
                             scene.remove(bandit);
                             bandits.splice(j,1);
+                            kills++;
+                            document.getElementById('splash-count').innerText = 'SPLASH ' + String(kills).padStart(2, '0');
                             spawnBandit(); // Keep the fight going
                             showOverlayMessage("SPLASH ONE", 1000);
                         }
