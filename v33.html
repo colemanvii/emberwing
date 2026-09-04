@@ -94,6 +94,8 @@
             transform: translate(-50%, -50%);
             display: none;
         }
+        #target-box.hit { border-color: #fff4cf !important; box-shadow: 0 0 22px #ff6a22; animation: hitConfirm .12s ease-out; }
+        @keyframes hitConfirm { from { transform: translate(-50%, -50%) scale(1.45); } to { transform: translate(-50%, -50%) scale(.82); } }
 
         #cinematic-bars {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -693,6 +695,11 @@
                         bandit.userData.health -= 25;
                         scene.remove(b); bullets.splice(i,1);
                         hit = true;
+                        const targetBox = document.getElementById('target-box');
+                        targetBox.classList.remove('hit');
+                        void targetBox.offsetWidth;
+                        targetBox.classList.add('hit');
+                        setTimeout(() => targetBox.classList.remove('hit'), 130);
                         
                         // Hit FX
                         const hitFlash = new THREE.PointLight(0xffaa00, 2, 100);
