@@ -1,0 +1,62 @@
+name: Flatten V12 to standalone V14
+
+on:
+  push:
+    paths:
+      - 'scripts/flatten-v12.mjs'
+      - 'scripts/smoke-v14.mjs'
+      - '.github/workflows/flatten-v14.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  flatten-smoke-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Flatten effective V12
+        run: node scripts/flatten-v12.mjs
+
+      - name: Install browser smoke-test runtime
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Serve V14 locally
+        run: |
+          python3 -m http.server 4173 >/tmp/emberwing-http.log 2>&1 &
+          echo $! >/tmp/emberwing-http.pid
+          sleep 2
+
+      - name: Smoke-test V14 in Chromium
+        run: node scripts/smoke-v14.mjs
+
+      - name: Point play entry at verified standalone V14
+        run: |
+          cat > play.html <<'EOF'
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Emberwing</title><meta http-equiv="refresh" content="0;url=v14.html"><style>html,body{margin:0;width:100%;height:100%;background:#05080a}</style></head><body><script>location.replace('v14.html')</script></body></html>
+          EOF
+
+      - name: Commit verified standalone build
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add v14.html play.html
+          if git diff --cached --quiet; then
+            echo 'No generated changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Flatten V12 into verified standalone V14'
+          git push origin HEAD:main
