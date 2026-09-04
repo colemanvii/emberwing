@@ -264,9 +264,9 @@ for(const x of[-115,120]){const p=new THREE.Mesh(new THREE.PlaneGeometry(250,110
 v18Gate.add(v19Shafts);
 
 // More material separation without adding detail geometry.
-v18Basalt.color.setHex(0x11171d);
+v18Basalt.color.setHex(0x070b10);
 v18Basalt.roughness=.88;
-v18WarmFace.color.setHex(0x715943);
+v18WarmFace.color.setHex(0x2d2722);
 v18WarmFace.roughness=.82;
 v18SpineMat.roughness=.9;
 v18SnowMat.roughness=.78;
@@ -305,14 +305,14 @@ v18ApplyTheme=function(alpine){
     v19Mist.forEach(s=>s.visible=false);
     for(const p of v19Shafts.children)p.material.opacity=.015;
   }else{
-    haze.setHex(0x9b785f);scene.background=haze;scene.fog.color.setHex(0xc29a74);scene.fog.density=.0005;
+    haze.setHex(0x9b785f);scene.background=haze;scene.fog.color.setHex(0xb98d68);scene.fog.density=.00038;
     sky.material.uniforms.top.value.setHex(0x06111f);
     sky.material.uniforms.hor.value.setHex(0x7d4b49);
     sky.material.uniforms.low.value.setHex(0xf0bd77);c1.setHex(0x56432f);c2.setHex(0xa17c50);c3.setHex(0xd2ad72);c4.setHex(0xf4dfb3);
     hemi.color.setHex(0xffe6c1);hemi.groundColor.setHex(0x25170f);hemi.intensity=1.34;
-    sun.intensity=7.1;sun.color.setHex(0xffc879);
+    sun.intensity=5.45;sun.color.setHex(0xffc879);
     renderer.toneMappingExposure=1.03;
-    v19Fill.color.setHex(0xffbd77);v19Fill.intensity=.58;
+    v19Fill.color.setHex(0xffbd77);v19Fill.intensity=.36;
     v19Rim.color.setHex(0x86afd0);v19Rim.intensity=.17;
     v19Mist.forEach(s=>s.visible=true);
     for(const p of v19Shafts.children)p.material.opacity=.035;
@@ -343,6 +343,7 @@ updateWorld=function(){
 v18SunGlow.scale.set(760,760,1);
 v18SunCore.scale.set(190,190,1);
 
+const v19CameraKey=new THREE.DirectionalLight(0xffdfb8,.38);scene.add(v19CameraKey);scene.add(v19CameraKey.target);ship.traverse(o=>{if(o.isMesh&&o.material?.isMeshStandardMaterial){o.material.roughness=Math.min(o.material.roughness??.4,.3);o.material.metalness=Math.max(o.material.metalness??0,.55)}});const v19LitWorld=updateWorld;updateWorld=function(){v19LitWorld();v19CameraKey.position.copy(camera.position).add(new THREE.Vector3(0,80,40));v19CameraKey.target.position.copy(ship.position)};
 window.__emberwingV19={snapshot:()=>({title:document.title,shadows:renderer.shadowMap.enabled,gate:v18Gate.visible,spine:v18Spine.visible,horizon:v18Horizon.visible,mist:v19Mist.filter(s=>s.visible).length,sceneryCount:scenery.length,world:worldIndex?'alpine':'desert'})};
 
 const clock=new THREE.Clock();function loop(){requestAnimationFrame(loop);const rawDt=Math.min(clock.getDelta(),.033),dt=rawDt*(killSlow>0?.42:1);killSlow=Math.max(0,killSlow-rawDt);if(!crashed&&!missionComplete&&missionCompleteTimer<=0)missionElapsed+=rawDt;updateFlight(dt);updateDanger(dt);updateWorld();updateEnemy(dt);updateEnemyAttack(dt);updateMission(dt);updateRange(dt);updateCamera(dt);updateSpeedFX(dt);updateCombatFX(dt);renderer.render(scene,camera);updateTargeting(dt);updateGuidance();updateWeapons(dt);const shownTime=finalTime||missionElapsed;scoreUI.textContent=`HOSTILES ${String(Math.max(0,MISSION_KILLS-kills)).padStart(2,'0')} · ${formatTime(shownTime)}${bestTime<Infinity?' · BEST '+formatTime(bestTime):''}`;readout.textContent=`${Math.round(speed)} SPD / ${Math.round(Math.max(0,ship.position.y-terrainHeight(ship.position.x,ship.position.z)))} ALT / ${enemyAlive?Math.round(displayRangeFeet)+' FT RNG':'— RNG'}`}reset();requestAnimationFrame(loop);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
