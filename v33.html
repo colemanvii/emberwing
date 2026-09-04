@@ -229,6 +229,7 @@
         const MAX_SPEED = 1200; // Afterburner
         const CANNON_INTERVAL = 0.085; // Consistent fire rate, independent of frame rate
         let cannonCooldown = 0;
+        let cannonKick = 0;
         let lastTime = performance.now();
         
         // Input state
@@ -474,6 +475,7 @@
         }
 
         function fireCannon() {
+            cannonKick = 1;
             const bulletGeo = new THREE.CylinderGeometry(0.2, 0.2, 10, 4);
             bulletGeo.rotateX(Math.PI / 2);
             const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
@@ -656,9 +658,12 @@
             let shakeY = (Math.random()-0.5) * speedRatio * 0.1;
             camera.position.x = shakeX;
             camera.position.y = 4 + shakeY;
+            camera.rotation.z = (Math.random() - .5) * cannonKick * .006;
+            cannonKick *= Math.exp(-dt * 22);
             // Push camera back under acceleration
             const targetCamZ = 15 + (targetVelocity > playerVelocity ? 3 : 0);
             camera.position.z += (targetCamZ - camera.position.z) * 5 * dt;
+            camera.position.z += cannonKick * .16;
 
 
             // --- 2. WEAPONS ---
