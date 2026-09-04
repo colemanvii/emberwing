@@ -234,6 +234,7 @@
         // Input state
         const keys = { w: false, s: false, a: false, d: false };
         const mouse = { x: 0, y: 0, down: false };
+        let touchRoll = 0;
         
         // World Objects
         const terrainChunks = [];
@@ -348,6 +349,7 @@
                 const y = THREE.MathUtils.clamp((e.clientY - rect.top) / rect.height, 0, 1);
                 mouse.x = (x - .5) * 2;
                 mouse.y = (.5 - y) * 2;
+                touchRoll = mouse.x;
                 stick.style.left = (x * 100) + '%';
                 stick.style.top = (y * 100) + '%';
             };
@@ -355,6 +357,7 @@
                 if(e.pointerId !== flightPointer) return;
                 flightPointer = null;
                 mouse.x = mouse.y = 0;
+                touchRoll = 0;
                 stick.style.left = '50%';
                 stick.style.top = '55%';
             };
@@ -614,9 +617,10 @@
             // Roll via A/D
             if(keys.a) player.rotateZ(3.0 * dt);
             if(keys.d) player.rotateZ(-3.0 * dt);
+            if(touchRoll) player.rotateZ(-touchRoll * 2.4 * dt);
             
             // Auto-leveling roll slightly for arcade feel if no input
-            if(!keys.a && !keys.d) {
+            if(!keys.a && !keys.d && !touchRoll) {
                 const currentZ = player.rotation.z;
                 // Simple dampening back to nearest flat plane
                 player.rotation.z *= 0.95; 
