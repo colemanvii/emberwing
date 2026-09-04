@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'scripts/build-v16-visual-shock.mjs'
+      - 'scripts/finalize-v16-composition.mjs'
       - 'scripts/smoke-v16.mjs'
       - '.github/workflows/build-v16-visual-shock.yml'
   workflow_dispatch:
@@ -27,6 +28,9 @@ jobs:
 
       - name: Build V16 Visual Shock
         run: node scripts/build-v16-visual-shock.mjs
+
+      - name: Enforce sparse monumental composition
+        run: node scripts/finalize-v16-composition.mjs
 
       - name: Install browser smoke-test runtime
         run: |
