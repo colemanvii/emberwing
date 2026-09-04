@@ -1,0 +1,62 @@
+name: Build V15 World Memory
+
+on:
+  push:
+    paths:
+      - 'scripts/build-v15-world-memory.mjs'
+      - 'scripts/smoke-v15.mjs'
+      - '.github/workflows/build-v15-world-memory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-smoke-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build V15 World Memory
+        run: node scripts/build-v15-world-memory.mjs
+
+      - name: Install browser smoke-test runtime
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Serve V15 locally
+        run: |
+          python3 -m http.server 4173 >/tmp/emberwing-http.log 2>&1 &
+          echo $! >/tmp/emberwing-http.pid
+          sleep 2
+
+      - name: Smoke-test V15 in Chromium
+        run: node scripts/smoke-v15.mjs
+
+      - name: Point play entry at verified V15
+        run: |
+          cat > play.html <<'EOF'
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Emberwing</title><meta http-equiv="refresh" content="0;url=v15.html"><style>html,body{margin:0;width:100%;height:100%;background:#05080a}</style></head><body><script>location.replace('v15.html')</script></body></html>
+          EOF
+
+      - name: Commit verified V15 build
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add v15.html play.html
+          if git diff --cached --quiet; then
+            echo 'No generated changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Ship V15 World Memory visual pass'
+          git push origin HEAD:main
