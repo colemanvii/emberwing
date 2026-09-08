@@ -4,6 +4,8 @@ A tiny third-person arcade flight game built around one idea: **easy to fly, dif
 
 ## PLAY NOW
 
+**V34 — Black Program spectacle build:** https://colemanvii.github.io/emberwing/v34.html
+
 **Current recommended playtest:** https://colemanvii.github.io/emberwing/v10.html
 
 **Experimental V11 — Identity + Spectacle + Flight Briefing:** https://colemanvii.github.io/emberwing/play.html
