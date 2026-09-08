@@ -4,9 +4,15 @@ A tiny third-person arcade flight game built around one idea: **easy to fly, dif
 
 ## PLAY NOW
 
+**V38 — Distant Thunder (desktop and touch):** https://colemanvii.github.io/emberwing/play.html
+
+Continuous mountain landscapes, a rebuilt storm sea and atmosphere, stable full-bank camera, and unified touch controls. See [release notes and verification](RELEASE-V38.md).
+
+## Earlier builds
+
 **V34 — Black Program spectacle build:** https://colemanvii.github.io/emberwing/v34.html
 
-**Current recommended playtest:** https://colemanvii.github.io/emberwing/v10.html
+**Historical V10 playtest:** https://colemanvii.github.io/emberwing/v10.html
 
 **Experimental V11 — Identity + Spectacle + Flight Briefing:** https://colemanvii.github.io/emberwing/play.html
 
@@ -20,7 +26,7 @@ V10 is the current feel baseline over that pinned V3 core: calmer turbo, a more 
 
 V11 is an additive identity-and-spectacle pass over the V10 feel baseline: distinct bandit visual signatures, a contact-arrival cue between kills, and lightweight hero landscape compositions. It does not alter the protected V10 flight model or role progression.
 
-New players should enter through `play.html`, which presents the flight controls before launching V11. The missile interaction is intentionally explicit: hold X to uncage and track the seeker, then release X once locked to fire.
+`play.html` now launches V38; the direct V11 link above remains available. The missile interaction is intentionally explicit: hold X to uncage and track the seeker, then release X once locked to fire.
 
 ## Controls
 
