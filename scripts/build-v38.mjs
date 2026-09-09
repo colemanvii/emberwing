@@ -5,14 +5,16 @@ const artEnd=html.indexOf('const scene=new THREE.Scene()',artStart);
 if(artStart<0||artEnd<0)throw Error('V37 source changed');
 html=html.slice(0,artStart)+html.slice(artEnd);
 html=html.replace('Emberwing V37 — No Country Above','Emberwing V38 — Distant Thunder');
+html=html.replaceAll('!worldIndex&&worldTravel<2000','!worldIndex');
 html=html.replace('const size=3800,seg=150','const size=6400,seg=200');
 html=html.replace('new THREE.Vector3(side*4.8,-.05,-7.4)','new THREE.Vector3(side*4.8,-.13,-2.5)');
 html=html.replace('function updateCamera(dt){','function legacyCamera(dt){');
 // The core remains pinned to V37; only the presentation and collision fixes below override it.
 const world=readFileSync(new URL('../src/v38/world.js',import.meta.url),'utf8');
+const cinematic=readFileSync(new URL('../src/v38/cinematic.js',import.meta.url),'utf8');
 const camera=readFileSync(new URL('../src/v38/camera.js',import.meta.url),'utf8');
 const controls=readFileSync(new URL('../src/v38/controls.js',import.meta.url),'utf8');
-html=html.replace('const clock=new THREE.Clock();',world+'\n'+camera+'\n'+controls+'\nconst clock=new THREE.Clock();');
+html=html.replace('const clock=new THREE.Clock();',world+'\n'+cinematic+'\n'+camera+'\n'+controls+'\nconst clock=new THREE.Clock();');
 html=html.replace("reset();if(new URLSearchParams(location.search).get('realm')==='tempest')deployTempest();", "reset();const realm=new URLSearchParams(location.search).get('realm');if(realm==='tempest')deployTempest();if(realm==='alpine')deployAlpine();");
 html=html.replace('turnAssist=(bank*.72+ri*.18)', 'turnAssist=(Math.asin(Math.sin(bank))*.72+ri*.18)');
 // Never ease an aircraft up from below solid terrain.
@@ -24,5 +26,10 @@ html=html.replace('renderer.render(scene,camera);updateTargeting(dt);', 'rendere
 html=html.replace('ab=keys.ShiftLeft||keys.ShiftRight||turboBurst>0', 'ab=keys.KeyZ||keys.ShiftLeft||keys.ShiftRight||turboBurst>0');
 html=html.replace('updateWeapons(dt);const shownTime','updateWeapons(dt);updateTouchLabels();const shownTime');
 html=html.replace('</head>', '<link rel="stylesheet" href="src/v38/flight.css"></head>');
+html=html.replace('bolt.scale.set(.62,.62,3.8)', 'bolt.scale.set(.24,.24,5.2)');
+html=html.replace('flare.scale.set(1,1,2.8)', 'flare.scale.set(.32,.32,1.2)');
+html=html.replace('color:0xffb44d', 'color:0xffe6bd');
+html=html.replace('color:i%3?0xffb33f:0xffffff', 'color:i%3?0xffd4a0:0xffffff');
+html=html.replace('350+Math.random()*400', '100+Math.random()*140');
 writeFileSync(new URL('../v38.html',import.meta.url),html);
 console.log('Built V38 from the preserved V37 core.');

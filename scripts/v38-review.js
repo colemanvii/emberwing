@@ -48,4 +48,10 @@ qaButton('Render stats',()=>{qaResult.textContent=JSON.stringify({drawCalls:rend
 qaPanel.appendChild(qaResult);document.body.appendChild(qaPanel);
 
 qaButton('Cannon proof',()=>{qaScene(0);qaPaused=true;fireGun();renderer.render(scene,camera);});
-qaButton('Benchmark scene',()=>{qaScene(worldIndex);qaPaused=false;const start=performance.now();let count=0,maxCalls=0;function frame(){count++;maxCalls=Math.max(maxCalls,renderer.info.render.calls);if(performance.now()-start<8000){requestAnimationFrame(frame);return;}qaPaused=true;qaResult.textContent=`Scene ${worldIndex}: ${(count*1000/(performance.now()-start)).toFixed(1)} actual FPS, max ${maxCalls} draw calls; crashed ${crashed}`;}requestAnimationFrame(frame);});
+// Sample the game's own frame callback; a second rAF chain distorts this host's scheduling.
+let qaBench=null;
+const profileMetricsBase=updateFlightMetrics;
+updateFlightMetrics=function(dt){profileMetricsBase(dt);if(!qaBench)return;const now=performance.now();qaBench.times.push(now-qaBench.previous);qaBench.previous=now;qaBench.calls=Math.max(qaBench.calls,renderer.info.render.calls);if(now-qaBench.start<10000)return;const times=qaBench.times.sort((a,b)=>a-b);qaPaused=true;qaResult.textContent=`Scene ${worldIndex}: ${(times.length*1000/(now-qaBench.start)).toFixed(1)} FPS; p95 ${times[Math.floor(times.length*.95)].toFixed(1)}ms; max ${Math.max(...times).toFixed(1)}ms; ${qaBench.calls} calls; rebuild ${qaBench.rebuild.toFixed(1)}ms; crashed ${crashed}`;qaBench=null;};
+const profileRebuildBase=rebuildTerrain;
+rebuildTerrain=function(...args){const t=performance.now();profileRebuildBase(...args);if(qaBench)qaBench.rebuild=Math.max(qaBench.rebuild,performance.now()-t);};
+qaButton('Benchmark scene',()=>{qaScene(worldIndex);qaPaused=false;const now=performance.now();qaBench={start:now,previous:now,times:[],calls:0,rebuild:0};});
