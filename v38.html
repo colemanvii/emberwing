@@ -17,7 +17,71 @@ let snowStamp=performance.now();function updateAlpineSnow(){const now=performanc
 const precipitationBase=updateAlpineSnow;updateAlpineSnow=function(){precipitationBase();if(worldIndex===2){snow.material.size=.42+burner*.1;snow.material.opacity=.82}};
 const speedCount=72,speedGeo=new THREE.BufferGeometry(),speedPos=new Float32Array(speedCount*6);function resetSpeedStreak(i,deep=false){const o=i*6,a=Math.random()*Math.PI*2,r=18+Math.sqrt(Math.random())*58,x=Math.cos(a)*r,y=Math.sin(a)*r,z=-(deep?20+Math.random()*195:190+Math.random()*35),len=3+Math.random()*8;speedPos[o]=speedPos[o+3]=x;speedPos[o+1]=speedPos[o+4]=y;speedPos[o+2]=z;speedPos[o+5]=z-len}for(let i=0;i<speedCount;i++)resetSpeedStreak(i,true);speedGeo.setAttribute('position',new THREE.BufferAttribute(speedPos,3));const speedMat=new THREE.LineBasicMaterial({color:0xffe6b8,transparent:true,opacity:.05,depthWrite:false,fog:false,blending:THREE.AdditiveBlending}),speedField=new THREE.LineSegments(speedGeo,speedMat);speedField.frustumCulled=false;scene.add(speedField);function updateSpeedFX(dt){const thrust=THREE.MathUtils.clamp((speed-124)/56,0,1),travel=(70+speed*.58+thrust*145)*dt;for(let i=0;i<speedCount;i++){const o=i*6;speedPos[o+2]+=travel;speedPos[o+5]+=travel;if(speedPos[o+5]>-6)resetSpeedStreak(i)}speedGeo.attributes.position.needsUpdate=true;speedMat.opacity=.045+thrust*.26+burner*.045;speedField.position.copy(camera.position);speedField.quaternion.copy(camera.quaternion)}
 function plate(points,t=.28){const n=points.length,v=[],idx=[];for(const y of[-t/2,t/2])for(const p of points)v.push(p[0],y,p[1]);for(let i=1;i<n-1;i++)idx.push(n,n+i,n+i+1,0,i+1,i);for(let i=0;i<n;i++){const j=(i+1)%n;idx.push(i,j,n+j,i,n+j,n+i)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(idx);g.computeVertexNormals();return g}
-function makeShip(enemy=false){const g=new THREE.Group(),hull=new THREE.MeshStandardMaterial({color:enemy?0x11161c:0x242a2f,roughness:enemy?.32:.24,metalness:enemy?.55:.78}),wing=new THREE.MeshStandardMaterial({color:enemy?0x1d252d:0x4c555a,roughness:enemy?.43:.3,metalness:enemy?.4:.65}),pts=enemy?[[-.5,-3],[-4,.6],[-3,2],[0,1.1],[3,2],[4,.6],[.5,-3]]:[[-.8,-3.5],[-3,-1.6],[-8.5,.5],[-7.5,3],[-3.2,2.2],[0,1.2],[3.2,2.2],[7.5,3],[8.5,.5],[3,-1.6],[.8,-3.5]];g.add(new THREE.Mesh(plate(pts),wing));const body=new THREE.Mesh(new THREE.CylinderGeometry(enemy?.7:1.05,enemy?1:1.4,enemy?6.5:9,8),hull);body.rotation.x=Math.PI/2;g.add(body);const nose=new THREE.Mesh(new THREE.ConeGeometry(enemy?.75:1.1,enemy?3:4,8),hull);nose.rotation.x=-Math.PI/2;nose.position.z=enemy?-4.6:-6.2;g.add(nose);const canopy=new THREE.Mesh(new THREE.SphereGeometry(enemy?.6:.9,12,8),new THREE.MeshStandardMaterial({color:enemy?0x071117:0x03131d,metalness:enemy?.8:.92,roughness:enemy?.1:.06}));canopy.scale.set(.8,.42,1.6);canopy.position.set(0,.72,enemy?-1.7:-2.1);g.add(canopy);g.userData.plumes=[];g.userData.engines=[];if(!enemy){for(const x of[-2.6,2.6]){const fin=new THREE.Mesh(new THREE.BoxGeometry(.22,1.55,2.45),wing);fin.position.set(x,.72,2);fin.rotation.z=x<0?.12:-.12;g.add(fin)}const spine=new THREE.Mesh(new THREE.BoxGeometry(.72,.22,4.6),hull);spine.position.set(0,.36,.35);g.add(spine)}const xs=enemy?[-1.35,1.35]:[-5,-1.7,1.7,5];if(enemy)g.userData.hitMats=[hull,wing];for(const x of xs){const e=new THREE.Mesh(new THREE.SphereGeometry(enemy?.25:.38,8,6),new THREE.MeshBasicMaterial({color:enemy?0x6dd8ff:0xff9a43,transparent:!enemy,opacity:enemy?1:.9,blending:enemy?THREE.NormalBlending:THREE.AdditiveBlending,depthWrite:enemy}));e.position.set(x,0,3.35);g.add(e);if(!enemy){g.userData.engines.push(e);const p=new THREE.Mesh(new THREE.ConeGeometry(.34,3.4,8),new THREE.MeshBasicMaterial({color:0xff8a3b,transparent:true,opacity:.76,blending:THREE.AdditiveBlending,depthWrite:false}));p.rotation.x=-Math.PI/2;p.position.set(x,0,4.9);g.add(p);g.userData.plumes.push(p)}}return g}
+function makeShip(enemy=false){
+  const g=new THREE.Group(),
+    hull=new THREE.MeshStandardMaterial({color:enemy?0x11161c:0x2b3135,roughness:enemy?.32:.31,metalness:enemy?.55:.72}),
+    wing=new THREE.MeshStandardMaterial({color:enemy?0x1d252d:0x434b4f,roughness:enemy?.43:.36,metalness:enemy?.4:.61}),
+    dark=new THREE.MeshStandardMaterial({color:enemy?0x0d1217:0x161c20,roughness:.4,metalness:.7}),
+    glass=new THREE.MeshStandardMaterial({color:enemy?0x071117:0x06141b,metalness:.82,roughness:.09});
+
+  if(enemy){
+    const pts=[[-.5,-3],[-4,.6],[-3,2],[0,1.1],[3,2],[4,.6],[.5,-3]];
+    g.add(new THREE.Mesh(plate(pts),wing));
+    const body=new THREE.Mesh(new THREE.CylinderGeometry(.7,1,6.5,8),hull);body.rotation.x=Math.PI/2;g.add(body);
+    const nose=new THREE.Mesh(new THREE.ConeGeometry(.75,3,8),hull);nose.rotation.x=-Math.PI/2;nose.position.z=-4.6;g.add(nose);
+    const canopy=new THREE.Mesh(new THREE.SphereGeometry(.6,12,8),glass);canopy.scale.set(.8,.42,1.6);canopy.position.set(0,.72,-1.7);g.add(canopy);
+    g.userData.plumes=[];g.userData.engines=[];g.userData.hitMats=[hull,wing];
+    for(const x of[-1.35,1.35]){const e=new THREE.Mesh(new THREE.SphereGeometry(.25,8,6),new THREE.MeshBasicMaterial({color:0x6dd8ff}));e.position.set(x,0,3.35);g.add(e)}
+    return g;
+  }
+
+  // V39 hero silhouette: one continuous, predatory blended-wing airframe.
+  const mainWing=[[-.55,-7.4],[-2.15,-5.6],[-5.2,-3.2],[-9.4,.15],[-8.0,2.55],[-4.8,2.0],[-2.45,3.55],[0,2.25],[2.45,3.55],[4.8,2.0],[8.0,2.55],[9.4,.15],[5.2,-3.2],[2.15,-5.6],[.55,-7.4]];
+  const upperWing=[[-.45,-6.1],[-2.0,-4.7],[-6.9,-.25],[-4.45,.9],[-1.8,.4],[0,1.2],[1.8,.4],[4.45,.9],[6.9,-.25],[2.0,-4.7],[.45,-6.1]];
+  const wingBase=new THREE.Mesh(plate(mainWing,.34),wing);wingBase.position.y=-.06;g.add(wingBase);
+  const wingUpper=new THREE.Mesh(plate(upperWing,.18),hull);wingUpper.position.y=.16;g.add(wingUpper);
+
+  // Long faceted centerbody instead of the old tube.
+  const centerPts=[[-1.05,-7.9],[-1.75,-5.5],[-1.95,-1.0],[-1.45,3.1],[0,4.15],[1.45,3.1],[1.95,-1.0],[1.75,-5.5],[1.05,-7.9]];
+  const center=new THREE.Mesh(plate(centerPts,.82),hull);center.position.y=.34;g.add(center);
+
+  const keelPts=[[-.7,-6.9],[-1.1,-3.2],[-.9,2.6],[0,4.0],[.9,2.6],[1.1,-3.2],[.7,-6.9]];
+  const keel=new THREE.Mesh(plate(keelPts,.42),dark);keel.position.y=-.35;g.add(keel);
+
+  // Knife-like nose cap and dorsal spine create a continuous longitudinal line.
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(1.08,3.15,6),hull);
+  nose.rotation.x=-Math.PI/2;nose.scale.set(.72,.62,1);nose.position.set(0,.34,-8.55);g.add(nose);
+  const spine=new THREE.Mesh(new THREE.BoxGeometry(.62,.28,6.2),dark);spine.position.set(0,.71,.15);g.add(spine);
+
+  // Inset smoked canopy, stretched low into the fuselage.
+  const canopy=new THREE.Mesh(new THREE.SphereGeometry(1,20,12),glass);
+  canopy.scale.set(.84,.38,2.15);canopy.position.set(0,.9,-2.9);g.add(canopy);
+
+  // Engine shoulders visually fuse the propulsion into the wing root.
+  for(const x of[-2.15,2.15]){
+    const fair=new THREE.Mesh(new THREE.CylinderGeometry(.55,.78,4.8,12),hull);
+    fair.rotation.x=Math.PI/2;fair.scale.x=.9;fair.position.set(x,.05,1.15);g.add(fair);
+    const shoulder=new THREE.Mesh(new THREE.BoxGeometry(1.45,.34,4.6),wing);
+    shoulder.position.set(x,.18,.55);shoulder.rotation.y=x<0?-.05:.05;g.add(shoulder);
+  }
+
+  // Canted twin tails, mounted inboard so the rear view reads fast and expensive.
+  for(const x of[-2.55,2.55]){
+    const finShape=new THREE.Shape();finShape.moveTo(-.12,-1.25);finShape.lineTo(.12,1.55);finShape.lineTo(.78,1.05);finShape.lineTo(.55,-1.3);finShape.closePath();
+    const finGeo=new THREE.ExtrudeGeometry(finShape,{depth:.12,bevelEnabled:false});
+    const fin=new THREE.Mesh(finGeo,dark);fin.rotation.x=-Math.PI/2;fin.rotation.z=x<0?.23:-.23;fin.position.set(x,.55,2.0);g.add(fin);
+  }
+
+  // Four restrained hot sections preserve all existing propulsion FX hooks.
+  g.userData.plumes=[];g.userData.engines=[];
+  for(const x of[-4.9,-1.72,1.72,4.9]){
+    const e=new THREE.Mesh(new THREE.SphereGeometry(.34,10,7),new THREE.MeshBasicMaterial({color:0xff9a43,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false}));
+    e.position.set(x,0,3.35);g.add(e);g.userData.engines.push(e);
+    const p=new THREE.Mesh(new THREE.ConeGeometry(.31,3.4,10),new THREE.MeshBasicMaterial({color:0xff8a3b,transparent:true,opacity:.72,blending:THREE.AdditiveBlending,depthWrite:false}));
+    p.rotation.x=-Math.PI/2;p.position.set(x,0,4.9);g.add(p);g.userData.plumes.push(p);
+  }
+  return g;
+}
 const ship=makeShip(),enemy=makeShip(true);scene.add(ship,enemy);for(const m of scenery)place(m,true);
 function updateWorld(){if(worldIndex){snow.position.copy(ship.position);snow.rotation.x+=.00015;snow.rotation.y+=.0003}if(Math.abs(ship.position.x-tcx)>620||Math.abs(ship.position.z-tcz)>620){const nx=Math.round(ship.position.x/620)*620,nz=Math.round(ship.position.z/620)*620;rebuildTerrain(nx,nz);positionDistantRidges(nx,nz)}const cityActive=!worldIndex;for(const m of scenery){const dx=m.position.x-ship.position.x,dz=m.position.z-ship.position.z,d2=dx*dx+dz*dz;if(m.userData.city){if(!cityActive){m.visible=false;continue}m.visible=true;if(d2>1250*1250)place(m);continue}if(d2>1750*1750)place(m)}if(worldIndex===2){const now=performance.now();if(now>tempestFlashAt){tempestFlashAt=now+3200+Math.random()*6200;sun.intensity=13;flashScreen(.16);chirp(48,.22,.035);setTimeout(()=>{if(worldIndex===2)sun.intensity=3.1},95)}}}
 const hud=document.getElementById('hud'),markUI=document.getElementById('mark'),capture=document.getElementById('capture'),reticle=document.getElementById('reticle'),targetUI=document.getElementById('target'),coach=document.getElementById('coach'),coachText=document.getElementById('coachText'),coachSub=document.getElementById('coachSub'),lockfill=document.getElementById('lockfill'),objective=document.getElementById('objective'),readout=document.getElementById('readout'),scoreUI=document.getElementById('score'),burnerUI=document.getElementById('burner'),flash=document.getElementById('flash'),focusUI=document.getElementById('focus'),crashUI=document.getElementById('crash'),completeUI=document.getElementById('complete'),realmCard=document.getElementById('realmCard'),realmKicker=document.getElementById('realmKicker'),realmTitle=document.getElementById('realmTitle'),realmStatus=document.getElementById('realmStatus');
