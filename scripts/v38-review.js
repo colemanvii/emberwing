@@ -55,3 +55,75 @@ updateFlightMetrics=function(dt){profileMetricsBase(dt);if(!qaBench)return;const
 const profileRebuildBase=rebuildTerrain;
 rebuildTerrain=function(...args){const t=performance.now();profileRebuildBase(...args);if(qaBench)qaBench.rebuild=Math.max(qaBench.rebuild,performance.now()-t);};
 qaButton('Benchmark scene',()=>{qaScene(worldIndex);qaPaused=false;const now=performance.now();qaBench={start:now,previous:now,times:[],calls:0,rebuild:0};});
+
+// Presentation checks use the actual chase camera and the unmodified flight loop.
+qaButton('Airframe bank',()=>{qaScene(1);ship.position.y+=180;ship.rotation.z=.65;for(let i=0;i<40;i++)updateCamera(1/60);qaPaused=true;updateWorld();renderer.render(scene,camera);qaResult.textContent='Banked chase view';});
+qaButton('Airframe boost',()=>{qaScene(2);ship.position.y=700;keys.KeyZ=true;for(let i=0;i<90;i++){updateFlight(1/60);updateCamera(1/60);updateSpeedFX(1/60);}keys.KeyZ=false;qaPaused=true;updateWorld();renderer.render(scene,camera);qaResult.textContent='Boost chase view';});
+qaButton('Control surface check',()=>{
+ qaScene(2);qaPaused=true;ship.position.y=2000;const checks=[];
+ const check=(label,ok)=>checks.push(`${ok?'PASS':'FAIL'} ${label}`);
+ const fixed=airframeControls.map(s=>s.pivot.position.clone());
+ keys.ArrowRight=true;for(let i=0;i<45;i++){updateFlight(1/60);updateSpeedFX(1/60);updateCamera(1/60);}keys.ArrowRight=false;
+ const elevons=airframeControls.filter(s=>s.kind==='elevon');
+ check('roll produces opposite elevon deflections',elevons[0].angle*elevons[1].angle<-.001);
+ check('all surfaces stay within 11 degrees',airframeControls.every(s=>Math.abs(s.angle)<.192));
+ check('hinges remain attached',airframeControls.every((s,i)=>s.pivot.position.distanceTo(fixed[i])<1e-9));
+ keys.ArrowUp=true;for(let i=0;i<90;i++){updateFlight(1/60);updateSpeedFX(1/60);}keys.ArrowUp=false;
+ check('pull raises both elevons',elevons.every(s=>s.angle<-.02));
+ for(let i=0;i<180;i++){updateFlight(1/60);updateSpeedFX(1/60);}
+ check('release settles to neutral',airframeControls.every(s=>Math.abs(s.angle)<.001));
+ const beforeReset=ship.position.clone();reset();
+ check('reset clears surface pose',airframeControls.every(s=>s.angle===0&&s.pivot.quaternion.angleTo(new THREE.Quaternion())<1e-8));
+ qaScene(1);ship.position.y+=180;keys.ArrowRight=true;
+ for(let i=0;i<20;i++){updateFlight(1/60);updateSpeedFX(1/60);updateCamera(1/60);}keys.ArrowRight=false;
+ updateWorld();renderer.render(scene,camera);qaResult.textContent=checks.join('\n');
+});
+
+qaButton('Dogfight geometry',()=>{
+ qaPaused=true;const rows=[],check=(name,ok,detail='')=>rows.push(`${ok?'PASS':'FAIL'} ${name} ${detail}`);
+ for(const role of ['ROOKIE','SKIMMER','CLIMBER','ACE']){
+  qaScene(2);enemyRole=role;ship.position.set(0,1800,0);ship.quaternion.identity();enemy.position.set(12,1808,-150);enemy.quaternion.identity();duel.forward.set(0,0,-1);duelState('extend');duel.course.copy(duel.forward);duel.cooldown=duel.pursuit=duel.pressure=0;enemyTime=0;
+  const states=new Set();let front=false,rear=false,minRange=Infinity,maxTurn=0,finite=true,prev=new THREE.Quaternion();
+  for(let i=0;i<3600;i++){ship.position.z-=124/60;prev.copy(enemy.quaternion);updateEnemy(1/60);states.add(duel.state);const relative=enemy.position.clone().sub(ship.position);front||=relative.z<0;rear||=relative.z>0;minRange=Math.min(minRange,relative.length());maxTurn=Math.max(maxTurn,prev.angleTo(enemy.quaternion));finite&&=enemy.position.toArray().every(Number.isFinite);}
+  check(role+' swaps front / rear',front&&rear,`min ${minRange.toFixed(0)}; ${[...states].join(' → ')}`);
+  check(role+' breaks sustained pursuit',states.has('break'));
+  check(role+' re-engages',states.has('engage'));
+  check(role+' gains pressure',states.has('press'));
+  check(role+' stable turning',finite&&maxTurn<.034,`${(maxTurn*180/Math.PI).toFixed(2)}deg/frame`);
+ }
+ qaScene(0);qaResult.textContent=rows.join('\n');
+});
+qaButton('Live dogfight',()=>{qaScene(2);ship.position.y=1100;enemy.position.copy(ship.position).add(new THREE.Vector3(12,8,-150));enemy.quaternion.copy(ship.quaternion);duel.forward.set(0,0,-1);duelState('extend');duel.course.copy(duel.forward);duel.cooldown=duel.pursuit=duel.pressure=0;enemyTime=0;camera.position.copy(ship.position).add(new THREE.Vector3(0,5.3,14));qaPaused=false;qaResult.textContent='Live encounter: coast or use arrows. Watch the merge and rear locator.';});
+let qaDuel=null;
+qaButton('Dogfight flight test',()=>{qaScene(2);ship.position.set(0,1200,330);enemy.position.copy(ship.position).add(new THREE.Vector3(12,8,-150));enemy.quaternion.identity();duel.forward.set(0,0,-1);duelState('extend');duel.course.copy(duel.forward);duel.cooldown=duel.pursuit=duel.pressure=0;enemyTime=0;camera.position.copy(ship.position).add(new THREE.Vector3(0,5.3,14));qaDuel={time:0,events:[],state:'',minRange:Infinity,rear:0,frames:0,start:performance.now()};qaPaused=false;});
+const qaDuelTickBase=qaTick;
+qaTick=function(dt){qaDuelTickBase(dt);if(!qaDuel)return;const d=qaDuel;d.time+=dt;d.frames++;for(const k in keys)keys[k]=false;
+ if(d.time>12&&d.time<16){keys.ArrowRight=true;keys.ArrowUp=true;}
+ if(d.time>22&&d.time<26){keys.ArrowLeft=true;keys.ArrowUp=true;}
+ const range=enemy.position.distanceTo(ship.position);d.minRange=Math.min(d.minRange,range);
+ if(duel.playerForward.dot(duel.toPlayer)>.55&&range<460)d.rear+=dt;
+ if(d.state!==duel.state){d.state=duel.state;d.events.push(`${d.time.toFixed(1)}s ${duel.state} (${range.toFixed(0)}m)`);}
+ qaResult.textContent=d.events.join('\n')+`\n${d.time.toFixed(1)}s · rear threat ${d.rear.toFixed(1)}s · hull ${playerHP}/3`;
+ if(d.time>40||crashed){qaPaused=true;qaResult.textContent+=`\nComplete: min range ${d.minRange.toFixed(0)}m, ${(d.frames/((performance.now()-d.start)/1000)).toFixed(1)} FPS, crashed ${crashed}`;qaDuel=null;}
+};
+qaButton('Merge and safety check',()=>{
+ qaPaused=true;qaScene(2);ship.position.set(0,1400,0);ship.quaternion.identity();enemy.position.set(65,1408,-680);enemy.quaternion.identity();duel.forward.set(0,0,-1);duelState('extend');duel.course.copy(duel.forward);duel.age=6;duel.pursuit=duel.pressure=duel.cooldown=0;
+ let opposing=false,min=Infinity,behind=false,previous=enemy.position.clone(),maxStep=0;
+ for(let i=0;i<900;i++){ship.position.z-=124/60;previous.copy(enemy.position);updateEnemy(1/60);opposing||=duel.forward.dot(new THREE.Vector3(0,0,-1))<-.65;min=Math.min(min,enemy.position.distanceTo(ship.position));behind||=enemy.position.z>ship.position.z;maxStep=Math.max(maxStep,enemy.position.distanceTo(previous));}
+ const rows=[`${opposing?'PASS':'FAIL'} turns back into opposing heading`,`${min<180&&behind?'PASS':'FAIL'} offset merge passes the player (closest ${min.toFixed(0)}m)`,`${maxStep<3?'PASS':'FAIL'} no position jumps (${maxStep.toFixed(2)}m/frame)`];
+ qaScene(2);ship.position.set(0,1000,0);enemy.position.set(0,1000,200);enemy.quaternion.identity();enemyRole='SKIMMER';enemyTime=5;duel.state='press';resetEnemyAttack(0);playerHP=3;
+ for(let i=0;i<42;i++)updateEnemyAttack(1/60);
+ rows.push(`${tracers.filter(t=>t.friendly===false).length===0?'PASS':'FAIL'} rear attack has a warning before firing`);
+ for(let i=0;i<60;i++)updateEnemyAttack(1/60);
+ rows.push(`${tracers.filter(t=>t.friendly===false).length>0?'PASS':'FAIL'} skimmer can use existing guns from the rear`);
+ duel.state='extend';rows.push(`${!enemyFireSolution()?'PASS':'FAIL'} separation suppresses attacks`);
+ qaScene(0);qaResult.textContent=rows.join('\n');
+});
+qaButton('Crossing weapons',()=>{
+ qaScene(2);qaPaused=true;ship.position.set(0,1200,0);ship.quaternion.identity();enemy.position.set(-22,1200,-140);enemy.quaternion.setFromAxisAngle(worldUp,Math.PI/2);enemyHP=enemyMaxHP=5;enemyVel.set(120,0,0);keys.Space=true;
+ for(let i=0;i<32;i++){enemy.position.x+=120/60;updateWeapons(1/60);}keys.Space=false;
+ const rows=[`${enemyHP<5?'PASS':'FAIL'} cannon hits a 90-degree crossing with lead`];
+ qaScene(0);enemy.position.copy(ship.position).add(new THREE.Vector3(40,0,-140));enemy.quaternion.setFromAxisAngle(worldUp,Math.PI/2);for(let i=0;i<40;i++)updateCamera(1/60);renderer.render(scene,camera);
+ rows.push(`${geometry().state?'PASS':'FAIL'} missile acquisition accepts an offset broadside target`);qaResult.textContent=rows.join('\n');
+});
+qaButton('Rear threat view',()=>{qaScene(2);qaPaused=true;ship.position.set(0,1000,0);enemy.position.set(15,1008,210);enemy.quaternion.identity();duel.forward.set(0,0,-1);duelState('press');duel.pursuit=duel.pressure=0;enemyTime=5;updateEnemy(1/60);for(let i=0;i<60;i++)updateCamera(1/60);updateWorld();updateRange(1/60);updateTargeting(1/60);updateGuidance();renderer.render(scene,camera);qaResult.textContent='Rear locator and break cue at normal chase distance';});

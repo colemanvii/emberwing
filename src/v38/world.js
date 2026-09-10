@@ -84,7 +84,29 @@ const atmosphereGLSL=`
 uniform float realm,time,density;uniform vec3 skyTop,skyHorizon,sunTint,sunDir,fogTint;
 ${noiseGLSL}
 float cloudField(vec2 p){float n=fbm(p);return smoothstep(realm>1.5?.36:realm>.5?.49:.56,realm>1.5?.69:.72,n);}
+// Broad angular cloud masses keep the horizon stable in every flight attitude.
+float tempestCloud(vec2 p){return noise2(p)*.6+noise2(p*2.07+13.2)*.27+noise2(p*4.13-8.1)*.13;}
+vec3 tempestSky(vec3 ray){
+  float h=max(ray.y,0.),sd=max(dot(ray,sunDir),0.);
+  vec2 p=ray.xz/(.28+h)*1.45+vec2(time*.0009,0.);
+  float n=tempestCloud(p),detail=fbm(p*4.8+7.);
+  float front=ray.x+.18+h*.6+(n-.5)*1.25+(detail-.5)*.32;
+  float cover=smoothstep(-.25,.10,front);
+  vec3 clear=mix(skyHorizon,skyTop,pow(h,.42));
+  clear+=sunTint*(pow(sd,18.)*.26+pow(sd,180.)*.42);
+  vec3 cloud=mix(vec3(.014,.022,.031),vec3(.105,.128,.15),n*.42+detail*.58);
+  float rim=exp(-pow((front+.15)*12.,2.));
+  cloud+=sunTint*rim*(.08+pow(sd,8.)*.26);
+  vec3 col=mix(clear,cloud,cover);
+  // A luminous, low opening under the front gives the ocean a distant vanishing plane.
+  float horizon=exp(-h*35.);
+  vec3 horizonColor=mix(fogTint,vec3(.39,.39,.34),pow(sd,10.)*.62);
+  col=mix(col,horizonColor,horizon*.86);
+  col+=sunTint*smoothstep(.99994,.99998,sd)*(1.-cover)*2.;
+  return col;
+}
 vec3 skyLight(vec3 ray){
+  if(realm>1.5)return tempestSky(ray);
   float h=ray.y,sd=max(dot(ray,sunDir),0.);
   vec3 col=mix(skyHorizon,skyTop,pow(max(h,0.),.32));
   col+=sunTint*(pow(sd,12.)*.085+pow(sd,150.)*.18+smoothstep(.99993,.99997,sd)*5.);
@@ -148,21 +170,26 @@ void main(){
   float phaseA=wp.x*.0017+wp.z*.0031,phaseB=wp.x*.0023-wp.z*.0019;
   float a=wp.x*.021+wp.z*.013+.9*sin(phaseA)+time*.92,b=wp.x*-.012+wp.z*.032+.7*cos(phaseB)-time*1.17,c=wp.x*.045+wp.z*.023+time*1.6;
   vec3 V=normalize(cameraPosition-wp);float dist=length(cameraPosition-wp);
-  float small=exp(-dist*.0015);vec2 rp=wp.xz*.06+time*.03;float ripple=(noise2(rp+vec2(.1,0.))-noise2(rp-vec2(.1,0.)))*small;
+  float small=exp(-dist*.0012);
+  vec2 wind=vec2(wp.x*.17+wp.z*.037,wp.z*.25-wp.x*.028)+vec2(time*.13,-time*.19);
+  small*=1.-smoothstep(.3,1.4,max(length(dFdx(wind)),length(dFdy(wind))));
+  float grainX=noise2(wind)-noise2(wind+vec2(.7,0.));
+  float grainZ=noise2(wind+vec2(0.,.7))-noise2(wind+vec2(.7,.7));
   float slopeX=cos(a)*2.1*(.021+.00153*cos(phaseA))+cos(b)*1.2*(-.012-.00161*sin(phaseB))+cos(c)*.02025;
   float slopeZ=cos(a)*2.1*(.013+.00279*cos(phaseA))+cos(b)*1.2*(.032+.00133*sin(phaseB))+cos(c)*.01035;
-  // Filter unresolved wave detail before it becomes a repeated horizon stripe.
-  float resolve=exp(-dist*.00065);
-  vec3 N=normalize(vec3((-slopeX+ripple*.08)*resolve,1.,(-slopeZ+ripple*.045)*resolve));
+  float resolve=exp(-dist*.0009),seaPatch=noise2(wp.xz*.008+time*.007);
+  vec3 N=normalize(vec3(-slopeX*resolve*.6+grainX*.13*small,1.,-slopeZ*resolve*.6+grainZ*.11*small));
   vec3 reflection=reflect(-V,N);reflection.y=abs(reflection.y);
   float fresnel=.035+.965*pow(1.-max(dot(N,V),0.),5.);
-  vec3 reflected=mix(skyHorizon,skyTop,sqrt(max(reflection.y,0.)));
-  reflected*=.8+.2*noise2(wp.xz*.003+time*.004);
-  float rough=.16+.07*noise2(wp.xz*.003);vec3 H=normalize(V+sunDir);float ndh=max(dot(N,H),0.),alpha=rough*rough;
+  // The same storm front appears in the reflection; no screen-space reflection pass.
+  vec3 reflected=mix(tempestSky(reflection),mix(fogTint,skyTop,pow(reflection.y,.4)),.22);
+  float rough=.24+seaPatch*.12;vec3 H=normalize(V+sunDir);float ndh=max(dot(N,H),0.),alpha=rough*rough;
   float spec=alpha*alpha/(3.14159*pow(ndh*ndh*(alpha*alpha-1.)+1.,2.));
-  vec3 col=mix(vec3(.008,.032,.041),reflected,fresnel*.86+.1)+sunTint*min(spec*.003,.55);
-  float crest=smoothstep(-51.2,-50.5,wp.y)*smoothstep(.56,.75,noise2(wp.xz*.19+time*.14));
-  col=mix(col,vec3(.24,.33,.34),crest*small*.12);
+  vec3 deep=mix(vec3(.003,.012,.017),vec3(.013,.03,.035),seaPatch);
+  vec3 col=mix(deep,reflected,fresnel*.86+.12)+sunTint*min(spec*.0007,.18);
+  // Sparse broken crest flecks, filtered out before they alias in the distance.
+  float crest=smoothstep(-51.5,-50.7,wp.y)*smoothstep(.68,.82,noise2(wind*.47));
+  col=mix(col,vec3(.26,.31,.31),crest*small*.22);
   gl_FragColor=vec4(aerial(col,wp),1.);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -174,12 +201,13 @@ function applyDistantTheme(){
   const realm=worldIndex;weather.realm.value=realm;
   const palettes=[{top:0x243d50,horizon:0xc3b9a4,fog:0xaab0aa,sun:0xffe5c2,density:.00023},
     {top:0x243d52,horizon:0xc5cfd0,fog:0x9dabb3,sun:0xffedcf,density:.00018},
-    {top:0x152431,horizon:0x8b9da4,fog:0x718893,sun:0xdde5e4,density:.00027}];
+    {top:0x273845,horizon:0x9da5a2,fog:0x788b91,sun:0xf1dfbb,density:.00022}];
   const p=palettes[realm];weather.skyTop.value.setHex(p.top);weather.skyHorizon.value.setHex(p.horizon);weather.sunTint.value.setHex(p.sun);
   scene.fog.color.setHex(p.fog);scene.fog.density=p.density;weather.density.value=p.density;
-  weather.sunDir.value.set(-.48,realm===1?.36:realm===2?.16:.24,-.84).normalize();
-  hemi.color.setHex(realm===2?0xb4cad6:0xdce9ec);hemi.groundColor.setHex(realm===0?0x715441:0x435766);hemi.intensity=realm===2?1.45:realm===0?1.15:1.55;
-  sun.color.setHex(p.sun);sun.intensity=realm===2?2.4:3.5;
+  weather.sunDir.value.set(realm===2?-.32:-.48,realm===1?.36:realm===2?.085:.24,realm===2?-.94:-.84).normalize();
+  hemi.color.setHex(realm===2?0xb0c0cc:0xdce9ec);hemi.groundColor.setHex(realm===0?0x715441:0x435766);hemi.intensity=realm===2?1.25:realm===0?1.15:1.55;
+  sun.color.setHex(p.sun);sun.intensity=realm===2?3.1:3.5;
+  if(realm===2)snow.material.color.setHex(0xc7d2d6);
   sandMat.color.setHex(0x9b8d75);cityDarkMat.color.setHex(0x61625c);rockMat.color.setHex(0x655849);
   ground.visible=farLand.visible=realm!==2;farSea.visible=realm===2;
   launchSite.position.y=terrainHeight(-650,-760)+92;
@@ -209,14 +237,14 @@ for(const plane of [ship,enemy]){
   const tail=new THREE.Mesh(new THREE.ConeGeometry(plane===ship?1.4:1,2.4,24),nozzleMat);tail.geometry.rotateX(Math.PI/2);tail.position.z=plane===ship?5.5:4.3;tail.castShadow=true;plane.add(tail);
 }
 const squalls=[];
-for(const [x,z,w,h] of [[-1300,-2900,1800,750],[2300,-4900,2400,950]]){
+for(const [x,z,w,h] of [[1600,-4200,3400,1100],[4200,-6900,4200,1450]]){
   const curtain=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,uniforms:weather,
     vertexShader:'varying vec2 uvRain;varying vec3 rainWorld;void main(){uvRain=uv;vec4 w=modelMatrix*vec4(position,1.);rainWorld=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
-    fragmentShader:`varying vec2 uvRain;varying vec3 rainWorld;${noiseGLSL}uniform float time;void main(){float edge=sin(uvRain.x*3.14159);float veil=smoothstep(0.,.15,uvRain.y)*(1.-smoothstep(.72,1.,uvRain.y));float streak=noise2(vec2(uvRain.x*45.+uvRain.y*3.,uvRain.y*2.+time*.03));float alpha=edge*edge*veil*(.16+streak*.2);gl_FragColor=vec4(.18,.25,.29,alpha);\n#include <colorspace_fragment>}`
+    fragmentShader:`varying vec2 uvRain;varying vec3 rainWorld;${noiseGLSL}uniform float time;void main(){float edge=sin(uvRain.x*3.14159);float veil=smoothstep(0.,.15,uvRain.y)*(1.-smoothstep(.72,1.,uvRain.y));float streak=noise2(vec2(uvRain.x*45.+uvRain.y*3.,uvRain.y*2.+time*.03));float alpha=edge*edge*veil*(.07+streak*.11);gl_FragColor=vec4(.22,.27,.29,alpha);\n#include <colorspace_fragment>}`
   }));curtain.position.set(x,-54+h*.5,z);scene.add(curtain);squalls.push(curtain);
 }
 const updateWeatherBase=updateWorld;
-updateWorld=function(){updateWeatherBase();for(const curtain of squalls)curtain.visible=worldIndex===2;};
+updateWorld=function(){updateWeatherBase();for(const curtain of squalls)curtain.visible=worldIndex===2;if(worldIndex===2){snow.material.opacity=.32;snow.material.size=.28+burner*.04;}};
 
 for(const x of [-4.8,4.8]){const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.12,.17,2,12),nozzleMat);barrel.rotation.x=Math.PI/2;barrel.position.set(x,-.13,-1.5);barrel.castShadow=true;ship.add(barrel);}
 // Soft precipitation avoids the square point sprites visible in the old build.

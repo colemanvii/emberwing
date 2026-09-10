@@ -17,71 +17,7 @@ let snowStamp=performance.now();function updateAlpineSnow(){const now=performanc
 const precipitationBase=updateAlpineSnow;updateAlpineSnow=function(){precipitationBase();if(worldIndex===2){snow.material.size=.42+burner*.1;snow.material.opacity=.82}};
 const speedCount=72,speedGeo=new THREE.BufferGeometry(),speedPos=new Float32Array(speedCount*6);function resetSpeedStreak(i,deep=false){const o=i*6,a=Math.random()*Math.PI*2,r=18+Math.sqrt(Math.random())*58,x=Math.cos(a)*r,y=Math.sin(a)*r,z=-(deep?20+Math.random()*195:190+Math.random()*35),len=3+Math.random()*8;speedPos[o]=speedPos[o+3]=x;speedPos[o+1]=speedPos[o+4]=y;speedPos[o+2]=z;speedPos[o+5]=z-len}for(let i=0;i<speedCount;i++)resetSpeedStreak(i,true);speedGeo.setAttribute('position',new THREE.BufferAttribute(speedPos,3));const speedMat=new THREE.LineBasicMaterial({color:0xffe6b8,transparent:true,opacity:.05,depthWrite:false,fog:false,blending:THREE.AdditiveBlending}),speedField=new THREE.LineSegments(speedGeo,speedMat);speedField.frustumCulled=false;scene.add(speedField);function updateSpeedFX(dt){const thrust=THREE.MathUtils.clamp((speed-124)/56,0,1),travel=(70+speed*.58+thrust*145)*dt;for(let i=0;i<speedCount;i++){const o=i*6;speedPos[o+2]+=travel;speedPos[o+5]+=travel;if(speedPos[o+5]>-6)resetSpeedStreak(i)}speedGeo.attributes.position.needsUpdate=true;speedMat.opacity=.045+thrust*.26+burner*.045;speedField.position.copy(camera.position);speedField.quaternion.copy(camera.quaternion)}
 function plate(points,t=.28){const n=points.length,v=[],idx=[];for(const y of[-t/2,t/2])for(const p of points)v.push(p[0],y,p[1]);for(let i=1;i<n-1;i++)idx.push(n,n+i,n+i+1,0,i+1,i);for(let i=0;i<n;i++){const j=(i+1)%n;idx.push(i,j,n+j,i,n+j,n+i)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(idx);g.computeVertexNormals();return g}
-function makeShip(enemy=false){
-  const g=new THREE.Group(),
-    hull=new THREE.MeshStandardMaterial({color:enemy?0x11161c:0x2b3135,roughness:enemy?.32:.31,metalness:enemy?.55:.72}),
-    wing=new THREE.MeshStandardMaterial({color:enemy?0x1d252d:0x434b4f,roughness:enemy?.43:.36,metalness:enemy?.4:.61}),
-    dark=new THREE.MeshStandardMaterial({color:enemy?0x0d1217:0x161c20,roughness:.4,metalness:.7}),
-    glass=new THREE.MeshStandardMaterial({color:enemy?0x071117:0x06141b,metalness:.82,roughness:.09});
-
-  if(enemy){
-    const pts=[[-.5,-3],[-4,.6],[-3,2],[0,1.1],[3,2],[4,.6],[.5,-3]];
-    g.add(new THREE.Mesh(plate(pts),wing));
-    const body=new THREE.Mesh(new THREE.CylinderGeometry(.7,1,6.5,8),hull);body.rotation.x=Math.PI/2;g.add(body);
-    const nose=new THREE.Mesh(new THREE.ConeGeometry(.75,3,8),hull);nose.rotation.x=-Math.PI/2;nose.position.z=-4.6;g.add(nose);
-    const canopy=new THREE.Mesh(new THREE.SphereGeometry(.6,12,8),glass);canopy.scale.set(.8,.42,1.6);canopy.position.set(0,.72,-1.7);g.add(canopy);
-    g.userData.plumes=[];g.userData.engines=[];g.userData.hitMats=[hull,wing];
-    for(const x of[-1.35,1.35]){const e=new THREE.Mesh(new THREE.SphereGeometry(.25,8,6),new THREE.MeshBasicMaterial({color:0x6dd8ff}));e.position.set(x,0,3.35);g.add(e)}
-    return g;
-  }
-
-  // V39 hero silhouette: one continuous, predatory blended-wing airframe.
-  const mainWing=[[-.55,-7.4],[-2.15,-5.6],[-5.2,-3.2],[-9.4,.15],[-8.0,2.55],[-4.8,2.0],[-2.45,3.55],[0,2.25],[2.45,3.55],[4.8,2.0],[8.0,2.55],[9.4,.15],[5.2,-3.2],[2.15,-5.6],[.55,-7.4]];
-  const upperWing=[[-.45,-6.1],[-2.0,-4.7],[-6.9,-.25],[-4.45,.9],[-1.8,.4],[0,1.2],[1.8,.4],[4.45,.9],[6.9,-.25],[2.0,-4.7],[.45,-6.1]];
-  const wingBase=new THREE.Mesh(plate(mainWing,.34),wing);wingBase.position.y=-.06;g.add(wingBase);
-  const wingUpper=new THREE.Mesh(plate(upperWing,.18),hull);wingUpper.position.y=.16;g.add(wingUpper);
-
-  // Long faceted centerbody instead of the old tube.
-  const centerPts=[[-1.05,-7.9],[-1.75,-5.5],[-1.95,-1.0],[-1.45,3.1],[0,4.15],[1.45,3.1],[1.95,-1.0],[1.75,-5.5],[1.05,-7.9]];
-  const center=new THREE.Mesh(plate(centerPts,.82),hull);center.position.y=.34;g.add(center);
-
-  const keelPts=[[-.7,-6.9],[-1.1,-3.2],[-.9,2.6],[0,4.0],[.9,2.6],[1.1,-3.2],[.7,-6.9]];
-  const keel=new THREE.Mesh(plate(keelPts,.42),dark);keel.position.y=-.35;g.add(keel);
-
-  // Knife-like nose cap and dorsal spine create a continuous longitudinal line.
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(1.08,3.15,6),hull);
-  nose.rotation.x=-Math.PI/2;nose.scale.set(.72,.62,1);nose.position.set(0,.34,-8.55);g.add(nose);
-  const spine=new THREE.Mesh(new THREE.BoxGeometry(.62,.28,6.2),dark);spine.position.set(0,.71,.15);g.add(spine);
-
-  // Inset smoked canopy, stretched low into the fuselage.
-  const canopy=new THREE.Mesh(new THREE.SphereGeometry(1,20,12),glass);
-  canopy.scale.set(.84,.38,2.15);canopy.position.set(0,.9,-2.9);g.add(canopy);
-
-  // Engine shoulders visually fuse the propulsion into the wing root.
-  for(const x of[-2.15,2.15]){
-    const fair=new THREE.Mesh(new THREE.CylinderGeometry(.55,.78,4.8,12),hull);
-    fair.rotation.x=Math.PI/2;fair.scale.x=.9;fair.position.set(x,.05,1.15);g.add(fair);
-    const shoulder=new THREE.Mesh(new THREE.BoxGeometry(1.45,.34,4.6),wing);
-    shoulder.position.set(x,.18,.55);shoulder.rotation.y=x<0?-.05:.05;g.add(shoulder);
-  }
-
-  // Canted twin tails, mounted inboard so the rear view reads fast and expensive.
-  for(const x of[-2.55,2.55]){
-    const finShape=new THREE.Shape();finShape.moveTo(-.12,-1.25);finShape.lineTo(.12,1.55);finShape.lineTo(.78,1.05);finShape.lineTo(.55,-1.3);finShape.closePath();
-    const finGeo=new THREE.ExtrudeGeometry(finShape,{depth:.12,bevelEnabled:false});
-    const fin=new THREE.Mesh(finGeo,dark);fin.rotation.x=-Math.PI/2;fin.rotation.z=x<0?.23:-.23;fin.position.set(x,.55,2.0);g.add(fin);
-  }
-
-  // Four restrained hot sections preserve all existing propulsion FX hooks.
-  g.userData.plumes=[];g.userData.engines=[];
-  for(const x of[-4.9,-1.72,1.72,4.9]){
-    const e=new THREE.Mesh(new THREE.SphereGeometry(.34,10,7),new THREE.MeshBasicMaterial({color:0xff9a43,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false}));
-    e.position.set(x,0,3.35);g.add(e);g.userData.engines.push(e);
-    const p=new THREE.Mesh(new THREE.ConeGeometry(.31,3.4,10),new THREE.MeshBasicMaterial({color:0xff8a3b,transparent:true,opacity:.72,blending:THREE.AdditiveBlending,depthWrite:false}));
-    p.rotation.x=-Math.PI/2;p.position.set(x,0,4.9);g.add(p);g.userData.plumes.push(p);
-  }
-  return g;
-}
+function makeShip(enemy=false){const g=new THREE.Group(),hull=new THREE.MeshStandardMaterial({color:enemy?0x11161c:0x242a2f,roughness:enemy?.32:.24,metalness:enemy?.55:.78}),wing=new THREE.MeshStandardMaterial({color:enemy?0x1d252d:0x4c555a,roughness:enemy?.43:.3,metalness:enemy?.4:.65}),pts=enemy?[[-.5,-3],[-4,.6],[-3,2],[0,1.1],[3,2],[4,.6],[.5,-3]]:[[-.8,-3.5],[-3,-1.6],[-8.5,.5],[-7.5,3],[-3.2,2.2],[0,1.2],[3.2,2.2],[7.5,3],[8.5,.5],[3,-1.6],[.8,-3.5]];g.add(new THREE.Mesh(plate(pts),wing));const body=new THREE.Mesh(new THREE.CylinderGeometry(enemy?.7:1.05,enemy?1:1.4,enemy?6.5:9,8),hull);body.rotation.x=Math.PI/2;g.add(body);const nose=new THREE.Mesh(new THREE.ConeGeometry(enemy?.75:1.1,enemy?3:4,8),hull);nose.rotation.x=-Math.PI/2;nose.position.z=enemy?-4.6:-6.2;g.add(nose);const canopy=new THREE.Mesh(new THREE.SphereGeometry(enemy?.6:.9,12,8),new THREE.MeshStandardMaterial({color:enemy?0x071117:0x03131d,metalness:enemy?.8:.92,roughness:enemy?.1:.06}));canopy.scale.set(.8,.42,1.6);canopy.position.set(0,.72,enemy?-1.7:-2.1);g.add(canopy);g.userData.plumes=[];g.userData.engines=[];if(!enemy){for(const x of[-2.6,2.6]){const fin=new THREE.Mesh(new THREE.BoxGeometry(.22,1.55,2.45),wing);fin.position.set(x,.72,2);fin.rotation.z=x<0?.12:-.12;g.add(fin)}const spine=new THREE.Mesh(new THREE.BoxGeometry(.72,.22,4.6),hull);spine.position.set(0,.36,.35);g.add(spine)}const xs=enemy?[-1.35,1.35]:[-5,-1.7,1.7,5];if(enemy)g.userData.hitMats=[hull,wing];for(const x of xs){const e=new THREE.Mesh(new THREE.SphereGeometry(enemy?.25:.38,8,6),new THREE.MeshBasicMaterial({color:enemy?0x6dd8ff:0xff9a43,transparent:!enemy,opacity:enemy?1:.9,blending:enemy?THREE.NormalBlending:THREE.AdditiveBlending,depthWrite:enemy}));e.position.set(x,0,3.35);g.add(e);if(!enemy){g.userData.engines.push(e);const p=new THREE.Mesh(new THREE.ConeGeometry(.34,3.4,8),new THREE.MeshBasicMaterial({color:0xff8a3b,transparent:true,opacity:.76,blending:THREE.AdditiveBlending,depthWrite:false}));p.rotation.x=-Math.PI/2;p.position.set(x,0,4.9);g.add(p);g.userData.plumes.push(p)}}return g}
 const ship=makeShip(),enemy=makeShip(true);scene.add(ship,enemy);for(const m of scenery)place(m,true);
 function updateWorld(){if(worldIndex){snow.position.copy(ship.position);snow.rotation.x+=.00015;snow.rotation.y+=.0003}if(Math.abs(ship.position.x-tcx)>620||Math.abs(ship.position.z-tcz)>620){const nx=Math.round(ship.position.x/620)*620,nz=Math.round(ship.position.z/620)*620;rebuildTerrain(nx,nz);positionDistantRidges(nx,nz)}const cityActive=!worldIndex;for(const m of scenery){const dx=m.position.x-ship.position.x,dz=m.position.z-ship.position.z,d2=dx*dx+dz*dz;if(m.userData.city){if(!cityActive){m.visible=false;continue}m.visible=true;if(d2>1250*1250)place(m);continue}if(d2>1750*1750)place(m)}if(worldIndex===2){const now=performance.now();if(now>tempestFlashAt){tempestFlashAt=now+3200+Math.random()*6200;sun.intensity=13;flashScreen(.16);chirp(48,.22,.035);setTimeout(()=>{if(worldIndex===2)sun.intensity=3.1},95)}}}
 const hud=document.getElementById('hud'),markUI=document.getElementById('mark'),capture=document.getElementById('capture'),reticle=document.getElementById('reticle'),targetUI=document.getElementById('target'),coach=document.getElementById('coach'),coachText=document.getElementById('coachText'),coachSub=document.getElementById('coachSub'),lockfill=document.getElementById('lockfill'),objective=document.getElementById('objective'),readout=document.getElementById('readout'),scoreUI=document.getElementById('score'),burnerUI=document.getElementById('burner'),flash=document.getElementById('flash'),focusUI=document.getElementById('focus'),crashUI=document.getElementById('crash'),completeUI=document.getElementById('complete'),realmCard=document.getElementById('realmCard'),realmKicker=document.getElementById('realmKicker'),realmTitle=document.getElementById('realmTitle'),realmStatus=document.getElementById('realmStatus');
@@ -114,7 +50,7 @@ function resetEnemyAttack(delay=1.4){enemyAttackState=3;enemyAttackTimer=delay;e
 function cancelEnemyAttack(delay=.85){enemyAttackState=3;enemyAttackTimer=delay;enemyBurstClock=0;enemyBurstShots=0}
 function hostileNearMiss(){if(hostileNearCooldown>0||crashed)return;hostileNearCooldown=.22;hitKick=Math.max(hitKick,.3);flashScreen(.035);chirp(96,.045,.025);chirp(1180,.028,.018,.006)}
 function hitPlayer(){if(playerInvuln>0||crashed)return;playerHP--;playerInvuln=1.25;hitKick=Math.max(hitKick,.86);flashScreen(.27);chirp(68,.12,.055);chirp(230,.085,.034,.018);if(playerHP<=0){announce('AIRFRAME FAILURE');crashNow('SHOT DOWN')}else announce(playerHP===1?'AIRFRAME CRITICAL':'AIRFRAME HIT')}
-function updateEnemyAttack(dt){playerInvuln=Math.max(0,playerInvuln-dt);hostileNearCooldown=Math.max(0,hostileNearCooldown-dt);const eligible=enemyAlive&&!crashed&&!missionComplete&&missionCompleteTimer<=0&&(enemyRole==='CLIMBER'||enemyRole==='ACE');if(!eligible){if(enemyAttackState===1||enemyAttackState===2)cancelEnemyAttack(1);return}if(enemyAttackState===3){enemyAttackTimer-=dt;if(enemyAttackTimer<=0)enemyAttackState=0;return}const solution=enemyFireSolution();if(enemyAttackState===0){if(solution){enemyAttackState=1;enemyAttackTimer=enemyRole==='ACE'?.32:.42;hitKick=Math.max(hitKick,.08);chirp(310,.055,.026);chirp(860,.055,.024,.16)}return}if(!solution){cancelEnemyAttack(.75);return}if(enemyAttackState===1){enemyAttackTimer-=dt;if(enemyAttackTimer<=0){enemyAttackState=2;enemyBurstClock=0;enemyBurstShots=0;chirp(1320,.04,.027)}return}if(enemyAttackState===2){enemyBurstClock-=dt;const maxShots=enemyRole==='ACE'?4:3,spacing=enemyRole==='ACE'?.095:.115;if(enemyBurstShots<maxShots&&enemyBurstClock<=0){makeEnemyTracer();enemyBurstShots++;enemyBurstClock=spacing}if(enemyBurstShots>=maxShots&&enemyBurstClock<=0){enemyAttackState=3;enemyAttackTimer=enemyRole==='ACE'?2.65:3.35}}}
+function updateEnemyAttack(dt){playerInvuln=Math.max(0,playerInvuln-dt);hostileNearCooldown=Math.max(0,hostileNearCooldown-dt);const eligible=enemyAlive&&!crashed&&!missionComplete&&missionCompleteTimer<=0;if(!eligible){if(enemyAttackState===1||enemyAttackState===2)cancelEnemyAttack(1);return}if(enemyAttackState===3){enemyAttackTimer-=dt;if(enemyAttackTimer<=0)enemyAttackState=0;return}const solution=enemyFireSolution();if(enemyAttackState===0){if(solution){enemyAttackState=1;enemyAttackTimer=enemyRole==='ACE'?.65:.95;hitKick=Math.max(hitKick,.08);chirp(310,.055,.026);chirp(860,.055,.024,.16)}return}if(!solution){cancelEnemyAttack(.75);return}if(enemyAttackState===1){enemyAttackTimer-=dt;if(enemyAttackTimer<=0){enemyAttackState=2;enemyBurstClock=0;enemyBurstShots=0;chirp(1320,.04,.027)}return}if(enemyAttackState===2){enemyBurstClock-=dt;const maxShots=enemyRole==='ACE'?3:2,spacing=enemyRole==='ACE'?.095:.115;if(enemyBurstShots<maxShots&&enemyBurstClock<=0){makeEnemyTracer();enemyBurstShots++;enemyBurstClock=spacing}if(enemyBurstShots>=maxShots&&enemyBurstClock<=0){enemyAttackState=3;enemyAttackTimer=enemyRole==='ACE'?3.5:4.8}}}
 const updateEnemyAttackBase=updateEnemyAttack;updateEnemyAttack=function(dt){const previousState=enemyAttackState;updateEnemyAttackBase(dt);if(previousState===0&&enemyAttackState===1)announce('BREAK — HOSTILE GUNS')}
 function fireMissile(){if(crashed||missionComplete||missionCompleteTimer>0||!enemyAlive||missile||missileRearm>0||lockState!==2)return;const m=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.16,.2,2.4,8),new THREE.MeshStandardMaterial({color:0xe8ded0,metalness:.35,roughness:.45}));body.rotation.x=Math.PI/2;m.add(body);const flame=new THREE.Mesh(new THREE.ConeGeometry(.14,1.4,8),new THREE.MeshBasicMaterial({color:0xff7b31,transparent:true,opacity:.9}));flame.rotation.x=-Math.PI/2;flame.position.z=1.7;flame.visible=false;m.add(flame);m.position.copy(ship.position).add(new THREE.Vector3(5,-.2,-1.5).applyQuaternion(ship.quaternion));m.quaternion.copy(ship.quaternion);scene.add(m);const forward=new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion);missile={mesh:m,flame,v:forward.multiplyScalar(speed*.9).addScaledVector(worldUp,-18),life:4.7,guided:true,age:0,trailClock:0,ignited:false,igniteAt:.09};missileRearm=1.2;announce('WEAPON FREE');chirp(175,.075,.045);chirp(62,.11,.033,.012);setSeeker(false)}
 function removeHostileMissile(){if(!hostileMissile)return;hostileMissile.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))for(const m of o.material)m.dispose();else o.material.dispose()}});scene.remove(hostileMissile.mesh);hostileMissile=null}
@@ -141,7 +77,7 @@ function updateEnemy(dt){if(!enemyAlive){if(kills>=MISSION_KILLS)return;respawn-
 function updateMission(dt){if(missionComplete||missionCompleteTimer<=0)return;missionCompleteTimer-=dt;if(missionCompleteTimer<=0){if(worldIndex===0){deployAlpine();return}if(worldIndex===1){deployTempest();return}const t=finalTime||missionElapsed,isBest=t<bestTime;if(isBest){bestTime=t;saveBest(t)}const grade=gradeFor(t),tempestSplit=t-citySplit-alpineSplit;missionComplete=true;completeUI.style.display='grid';completeUI.innerHTML=`OPERATION COMPLETE<small>EW–01 · FLIGHT ARTICLE 003 · GRADE ${grade}<br>CITY&nbsp;&nbsp;&nbsp;&nbsp;${formatTime(citySplit)}<br>ALPINE&nbsp;&nbsp;${formatTime(alpineSplit)}<br>TEMPEST&nbsp;${formatTime(tempestSplit)}<br>TOTAL&nbsp;&nbsp;&nbsp;${formatTime(t)}${isBest?' · NEW FLIGHT RECORD':bestTime<Infinity?' · RECORD '+formatTime(bestTime):''}<br>────────────<br>AIRFRAME RECOVERED · FLIGHT DATA COMMITTED<br>PRESS ANY KEY TO REINITIALIZE</small>`;announce('OPERATION COMPLETE');chirp(330,.12,.03);chirp(660,.18,.035,.1);chirp(990,.24,.032,.22);silence()}}
 const deployAlpineBase=deployAlpine;deployAlpine=function(){crashed=false;crashUI.style.display='none';deployAlpineBase()};const updateMissionBase=updateMission;updateMission=function(dt){if(crashed)return;updateMissionBase(dt)}
 function updateRange(dt){if(!enemyAlive){rangeFeet=displayRangeFeet=closureFps=0;return}const d=enemy.position.distanceTo(ship.position),instantClosure=(lastRangeWorld-d)/Math.max(dt,.001)*FEET_PER_UNIT;lastRangeWorld=d;rangeFeet=d*FEET_PER_UNIT;displayRangeFeet=THREE.MathUtils.lerp(displayRangeFeet,rangeFeet,1-Math.exp(-dt/.055));closureFps=THREE.MathUtils.lerp(closureFps,instantClosure,1-Math.exp(-dt/.22))}
-function updateTargeting(dt){const t=geometry(),ring=(t.trackR||Math.min(innerWidth,innerHeight)*.34)*.78;capture.style.width=ring*2+'px';capture.style.height=ring*2+'px';if(!seeker){lockState=lockTimer=lastLock=0;capture.className='';capture.style.transform='translate(-50%,-50%)';reticle.className='';lockfill.style.width='0%';silence();coach.className='';coachText.textContent='SPACE — CANNON · HOLD X — MISSILE';coachSub.textContent=enemyAlive?`${Math.round(displayRangeFeet)} FT · ${closureFps>12?'CLOSING '+Math.round(closureFps)+' FT/S':'GET ON HIS SIX'}`:'GET READY';return}const sticky=t.onscreen&&lockState===2&&t.d<t.trackR*1.5,qualified=!keys.Space&&(t.state||sticky),need=firstTarget?.3:.55;if(qualified){lockTimer=Math.min(1,lockTimer+dt*(t.hard?1.8:1.0))}else lockTimer=Math.max(0,lockTimer-dt*(lockState===2?.15:.7));lockState=qualified?(lockTimer>=need?2:1):0;const tension=THREE.MathUtils.clamp(lockTimer/need,0,1);capture.style.transform=`translate(-50%,-50%) scale(${1-tension*.07})`;if(lockState===2&&lastLock!==2){announce('MISSILE LOCK');flashScreen(.12);chirp(980,.09,.05);chirp(1240,.13,.045,.075)}lastLock=lockState;if(audioCtx&&audioCtx.state==='running'){if(lockState===2){lockGain.gain.setTargetAtTime(.03,audioCtx.currentTime,.025);lockOsc.frequency.setTargetAtTime(980,audioCtx.currentTime,.03);pulseClock=0}else{lockGain.gain.setTargetAtTime(0,audioCtx.currentTime,.025);if(lockState===1){const prox=t.trackR?THREE.MathUtils.clamp(1-t.d/t.trackR,0,1):0;pulseClock-=dt;if(pulseClock<=0){chirp(610+prox*250+tension*90,.05,.024+prox*.012+tension*.006);pulseClock=Math.max(.08,.32-prox*.14-tension*.12)}}}}capture.className=lockState===2?'lock':lockState===1?'track':'armed';reticle.className=lockState===2?'lock':lockState===1?'track':'armed';lockfill.style.width=tension*100+'%';const rangeLine=`${Math.round(displayRangeFeet)} FT${closureFps>12?' · CLOSING '+Math.round(closureFps)+' FT/S':''}`;if(lockState===2){coach.className='lock';coachText.textContent='MISSILE LOCK';coachSub.textContent=`${rangeLine} · RELEASE X — FIRE`}else if(lockState===1){coach.className='track';coachText.textContent='SEEKER TRACKING';coachSub.textContent=`${rangeLine} · HOLD X · KEEP HIM IN RING`}else if(burner>.45){coach.className='boost';coachText.textContent='AFTERBURNER';coachSub.textContent=closureFps>12?`CLOSING FAST · ${Math.round(displayRangeFeet)} FT`:`CHASE HIM DOWN · ${Math.round(displayRangeFeet)} FT`}else{coach.className='';coachText.textContent='SEEKER UNCAGED';coachSub.textContent=`HOLD X · BRING BANDIT INTO THE RING · ${Math.round(displayRangeFeet)} FT`}}
+function updateTargeting(dt){const t=geometry(),ring=(t.trackR||Math.min(innerWidth,innerHeight)*.34)*.78;capture.style.width=ring*2+'px';capture.style.height=ring*2+'px';if(!seeker){lockState=lockTimer=lastLock=0;capture.className='';capture.style.transform='translate(-50%,-50%)';reticle.className='';lockfill.style.width='0%';silence();coach.className='';coachText.textContent='SPACE — CANNON · HOLD X — MISSILE';coachSub.textContent=enemyAlive?`${Math.round(displayRangeFeet)} FT · ${closureFps>12?'CLOSING '+Math.round(closureFps)+' FT/S':'LEAD THE CROSSING'}`:'GET READY';return}const sticky=t.onscreen&&lockState===2&&t.d<t.trackR*1.5,qualified=!keys.Space&&(t.state||sticky),need=firstTarget?.3:.55;if(qualified){lockTimer=Math.min(1,lockTimer+dt*(t.hard?1.8:1.0))}else lockTimer=Math.max(0,lockTimer-dt*(lockState===2?.15:.7));lockState=qualified?(lockTimer>=need?2:1):0;const tension=THREE.MathUtils.clamp(lockTimer/need,0,1);capture.style.transform=`translate(-50%,-50%) scale(${1-tension*.07})`;if(lockState===2&&lastLock!==2){announce('MISSILE LOCK');flashScreen(.12);chirp(980,.09,.05);chirp(1240,.13,.045,.075)}lastLock=lockState;if(audioCtx&&audioCtx.state==='running'){if(lockState===2){lockGain.gain.setTargetAtTime(.03,audioCtx.currentTime,.025);lockOsc.frequency.setTargetAtTime(980,audioCtx.currentTime,.03);pulseClock=0}else{lockGain.gain.setTargetAtTime(0,audioCtx.currentTime,.025);if(lockState===1){const prox=t.trackR?THREE.MathUtils.clamp(1-t.d/t.trackR,0,1):0;pulseClock-=dt;if(pulseClock<=0){chirp(610+prox*250+tension*90,.05,.024+prox*.012+tension*.006);pulseClock=Math.max(.08,.32-prox*.14-tension*.12)}}}}capture.className=lockState===2?'lock':lockState===1?'track':'armed';reticle.className=lockState===2?'lock':lockState===1?'track':'armed';lockfill.style.width=tension*100+'%';const rangeLine=`${Math.round(displayRangeFeet)} FT${closureFps>12?' · CLOSING '+Math.round(closureFps)+' FT/S':''}`;if(lockState===2){coach.className='lock';coachText.textContent='MISSILE LOCK';coachSub.textContent=`${rangeLine} · RELEASE X — FIRE`}else if(lockState===1){coach.className='track';coachText.textContent='SEEKER TRACKING';coachSub.textContent=`${rangeLine} · HOLD X · KEEP HIM IN RING`}else if(burner>.45){coach.className='boost';coachText.textContent='AFTERBURNER';coachSub.textContent=closureFps>12?`CLOSING FAST · ${Math.round(displayRangeFeet)} FT`:`CHASE HIM DOWN · ${Math.round(displayRangeFeet)} FT`}else{coach.className='';coachText.textContent='SEEKER UNCAGED';coachSub.textContent=`HOLD X · BRING BANDIT INTO THE RING · ${Math.round(displayRangeFeet)} FT`}}
 function updateGuidance(){if(!enemyAlive){targetUI.style.opacity='0';return}const local=enemy.position.clone().sub(camera.position).applyQuaternion(camera.quaternion.clone().invert()),front=local.z<0,p=enemy.position.clone().project(camera),ons=front&&Math.abs(p.x)<.86&&Math.abs(p.y)<.76,cx=innerWidth*.5,cy=innerHeight*.42;let x,y;if(ons){x=(p.x*.5+.5)*innerWidth;y=(-p.y*.5+.5)*innerHeight;if(Math.abs(local.x)>.25)guideSide=Math.sign(local.x);targetUI.dataset.stack=''}else{if(Math.abs(local.x)>.4)guideSide=Math.sign(local.x);const az=Math.atan2(local.x,-local.z),flat=Math.max(1,Math.hypot(local.x,local.z));let dx=Math.sin(az),dy=-THREE.MathUtils.clamp(local.y/flat,-.82,.82);if(!front&&Math.abs(dx)<.09)dx=guideSide*.09;const mag=Math.max(.001,Math.hypot(dx,dy));dx/=mag;dy/=mag;const radius=Math.min(innerWidth,innerHeight)*.3;x=cx+dx*radius;y=cy+dy*radius;targetUI.dataset.stack=local.y>flat*.11?'▲':local.y<-flat*.11?'▼':'·'}const follow=ons?.5:.28;guideX=THREE.MathUtils.lerp(guideX,x,follow);guideY=THREE.MathUtils.lerp(guideY,y,follow);targetUI.style.left=guideX+'px';targetUI.style.top=guideY+'px';targetUI.style.opacity=lockState===2?'1':lockState===1?'.78':'.68';const ft=Math.max(0,Math.round(displayRangeFeet/5)*5),closing=ons?(closureFps>18?` ↓ ${Math.round(closureFps)} FT/S`:closureFps<-18?` ↑ ${Math.round(-closureFps)} FT/S`:''):'';targetUI.dataset.range=`${ft} FT${closing}`;targetUI.className=!ons?'offscreen':lockState===2?'lock':lockState===1?'track':''}
 function updateWeapons(dt){missileRearm=Math.max(0,missileRearm-dt);gunClock-=dt;if(keys.Space&&gunClock<=0){fireGun();gunClock=.09}for(let i=tracers.length-1;i>=0;i--){const t=tracers[i],previous=t.mesh.position.clone();t.age+=dt;t.mesh.position.addScaledVector(t.velocity,dt);t.mesh.material.opacity=THREE.MathUtils.clamp((t.life-t.age)/.12,0,1);const travel=t.mesh.position.clone().sub(previous),targetPos=t.friendly===false?ship.position:(enemyAlive?enemy.position:null),toTarget=targetPos?targetPos.clone().sub(previous):null,u=toTarget?THREE.MathUtils.clamp(toTarget.dot(travel)/Math.max(travel.lengthSq(),.001),0,1):0,closest=previous.clone().addScaledVector(travel,u),d2=targetPos?closest.distanceToSquared(targetPos):Infinity,friendlyHit=t.friendly!==false&&enemyAlive&&d2<36,hostileHit=t.friendly===false&&!crashed&&playerInvuln<=0&&d2<25,hostileNear=t.friendly===false&&!t.near&&d2<225&&!hostileHit,expired=t.age>=t.life||t.mesh.position.y<terrainHeight(t.mesh.position.x,t.mesh.position.z);if(hostileNear){t.near=true;hostileNearMiss()}if(friendlyHit||hostileHit||expired){scene.remove(t.mesh);t.mesh.geometry.dispose();t.mesh.material.dispose();tracers.splice(i,1)}if(friendlyHit&&t.salvo!==lastGunHit){lastGunHit=t.salvo;enemyHP--;const lethal=enemyHP<=0;spawnImpactFX(enemy.position.clone(),lethal);flashScreen(lethal?.15:.065);announce(lethal?'GUN KILL':'HIT');if(lethal)explode()}if(hostileHit)hitPlayer()}if(!missile)return;missile.life-=dt;missile.age+=dt;missile.trailClock-=dt;if(!missile.ignited&&missile.age>=missile.igniteAt){missile.ignited=true;missile.flame.visible=true;missile.v.normalize().multiplyScalar(232);chirp(520,.045,.032);chirp(94,.07,.03,.004)}if(missile.ignited&&missile.trailClock<=0){spawnMissileTrail(missile.mesh.position,missile.v);missile.trailClock=.026}const missilePrevious=missile.mesh.position.clone();if(enemyAlive&&missile.guided&&missile.ignited){const desired=enemy.position.clone().addScaledVector(enemyVel,.14).sub(missile.mesh.position).normalize().multiplyScalar(294),turn=1-Math.exp(-dt*4.8);missile.v.lerp(desired,turn);missile.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),missile.v.clone().normalize())}missile.mesh.position.addScaledVector(missile.v,dt);const missileTravel=missile.mesh.position.clone().sub(missilePrevious),missileToEnemy=enemyAlive?enemy.position.clone().sub(missilePrevious):null,missileU=missileToEnemy?THREE.MathUtils.clamp(missileToEnemy.dot(missileTravel)/Math.max(missileTravel.lengthSq(),.001),0,1):0;if(enemyAlive&&missilePrevious.addScaledVector(missileTravel,missileU).distanceToSquared(enemy.position)<81){removeMissile();enemyHP-=4;const lethal=enemyHP<=0;spawnImpactFX(enemy.position.clone(),lethal,false);hitKick=Math.min(1,hitKick+.58);flashScreen(lethal?.23:.12);chirp(72,.115,.05);chirp(390,.06,.032,.012);announce(lethal?'MISSILE KILL':'MISSILE HIT');if(lethal)explode();else{lockState=lockTimer=lastLock=0;enemyLockReacted=false;silence()}return}if(missile.life<=0)removeMissile()}
 const updateWeaponsBase=updateWeapons;updateWeapons=function(dt){if(crashed)return;updateWeaponsBase(dt);if(lastGunHit<0)return;for(let i=tracers.length-1;i>=0;i--){const t=tracers[i];if(t.friendly===false||t.salvo>lastGunHit)continue;scene.remove(t.mesh);t.mesh.geometry.dispose();t.mesh.material.dispose();tracers.splice(i,1)}}
@@ -245,7 +181,29 @@ const atmosphereGLSL=`
 uniform float realm,time,density;uniform vec3 skyTop,skyHorizon,sunTint,sunDir,fogTint;
 ${noiseGLSL}
 float cloudField(vec2 p){float n=fbm(p);return smoothstep(realm>1.5?.36:realm>.5?.49:.56,realm>1.5?.69:.72,n);}
+// Broad angular cloud masses keep the horizon stable in every flight attitude.
+float tempestCloud(vec2 p){return noise2(p)*.6+noise2(p*2.07+13.2)*.27+noise2(p*4.13-8.1)*.13;}
+vec3 tempestSky(vec3 ray){
+  float h=max(ray.y,0.),sd=max(dot(ray,sunDir),0.);
+  vec2 p=ray.xz/(.28+h)*1.45+vec2(time*.0009,0.);
+  float n=tempestCloud(p),detail=fbm(p*4.8+7.);
+  float front=ray.x+.18+h*.6+(n-.5)*1.25+(detail-.5)*.32;
+  float cover=smoothstep(-.25,.10,front);
+  vec3 clear=mix(skyHorizon,skyTop,pow(h,.42));
+  clear+=sunTint*(pow(sd,18.)*.26+pow(sd,180.)*.42);
+  vec3 cloud=mix(vec3(.014,.022,.031),vec3(.105,.128,.15),n*.42+detail*.58);
+  float rim=exp(-pow((front+.15)*12.,2.));
+  cloud+=sunTint*rim*(.08+pow(sd,8.)*.26);
+  vec3 col=mix(clear,cloud,cover);
+  // A luminous, low opening under the front gives the ocean a distant vanishing plane.
+  float horizon=exp(-h*35.);
+  vec3 horizonColor=mix(fogTint,vec3(.39,.39,.34),pow(sd,10.)*.62);
+  col=mix(col,horizonColor,horizon*.86);
+  col+=sunTint*smoothstep(.99994,.99998,sd)*(1.-cover)*2.;
+  return col;
+}
 vec3 skyLight(vec3 ray){
+  if(realm>1.5)return tempestSky(ray);
   float h=ray.y,sd=max(dot(ray,sunDir),0.);
   vec3 col=mix(skyHorizon,skyTop,pow(max(h,0.),.32));
   col+=sunTint*(pow(sd,12.)*.085+pow(sd,150.)*.18+smoothstep(.99993,.99997,sd)*5.);
@@ -309,21 +267,26 @@ void main(){
   float phaseA=wp.x*.0017+wp.z*.0031,phaseB=wp.x*.0023-wp.z*.0019;
   float a=wp.x*.021+wp.z*.013+.9*sin(phaseA)+time*.92,b=wp.x*-.012+wp.z*.032+.7*cos(phaseB)-time*1.17,c=wp.x*.045+wp.z*.023+time*1.6;
   vec3 V=normalize(cameraPosition-wp);float dist=length(cameraPosition-wp);
-  float small=exp(-dist*.0015);vec2 rp=wp.xz*.06+time*.03;float ripple=(noise2(rp+vec2(.1,0.))-noise2(rp-vec2(.1,0.)))*small;
+  float small=exp(-dist*.0012);
+  vec2 wind=vec2(wp.x*.17+wp.z*.037,wp.z*.25-wp.x*.028)+vec2(time*.13,-time*.19);
+  small*=1.-smoothstep(.3,1.4,max(length(dFdx(wind)),length(dFdy(wind))));
+  float grainX=noise2(wind)-noise2(wind+vec2(.7,0.));
+  float grainZ=noise2(wind+vec2(0.,.7))-noise2(wind+vec2(.7,.7));
   float slopeX=cos(a)*2.1*(.021+.00153*cos(phaseA))+cos(b)*1.2*(-.012-.00161*sin(phaseB))+cos(c)*.02025;
   float slopeZ=cos(a)*2.1*(.013+.00279*cos(phaseA))+cos(b)*1.2*(.032+.00133*sin(phaseB))+cos(c)*.01035;
-  // Filter unresolved wave detail before it becomes a repeated horizon stripe.
-  float resolve=exp(-dist*.00065);
-  vec3 N=normalize(vec3((-slopeX+ripple*.08)*resolve,1.,(-slopeZ+ripple*.045)*resolve));
+  float resolve=exp(-dist*.0009),seaPatch=noise2(wp.xz*.008+time*.007);
+  vec3 N=normalize(vec3(-slopeX*resolve*.6+grainX*.13*small,1.,-slopeZ*resolve*.6+grainZ*.11*small));
   vec3 reflection=reflect(-V,N);reflection.y=abs(reflection.y);
   float fresnel=.035+.965*pow(1.-max(dot(N,V),0.),5.);
-  vec3 reflected=mix(skyHorizon,skyTop,sqrt(max(reflection.y,0.)));
-  reflected*=.8+.2*noise2(wp.xz*.003+time*.004);
-  float rough=.16+.07*noise2(wp.xz*.003);vec3 H=normalize(V+sunDir);float ndh=max(dot(N,H),0.),alpha=rough*rough;
+  // The same storm front appears in the reflection; no screen-space reflection pass.
+  vec3 reflected=mix(tempestSky(reflection),mix(fogTint,skyTop,pow(reflection.y,.4)),.22);
+  float rough=.24+seaPatch*.12;vec3 H=normalize(V+sunDir);float ndh=max(dot(N,H),0.),alpha=rough*rough;
   float spec=alpha*alpha/(3.14159*pow(ndh*ndh*(alpha*alpha-1.)+1.,2.));
-  vec3 col=mix(vec3(.008,.032,.041),reflected,fresnel*.86+.1)+sunTint*min(spec*.003,.55);
-  float crest=smoothstep(-51.2,-50.5,wp.y)*smoothstep(.56,.75,noise2(wp.xz*.19+time*.14));
-  col=mix(col,vec3(.24,.33,.34),crest*small*.12);
+  vec3 deep=mix(vec3(.003,.012,.017),vec3(.013,.03,.035),seaPatch);
+  vec3 col=mix(deep,reflected,fresnel*.86+.12)+sunTint*min(spec*.0007,.18);
+  // Sparse broken crest flecks, filtered out before they alias in the distance.
+  float crest=smoothstep(-51.5,-50.7,wp.y)*smoothstep(.68,.82,noise2(wind*.47));
+  col=mix(col,vec3(.26,.31,.31),crest*small*.22);
   gl_FragColor=vec4(aerial(col,wp),1.);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -335,12 +298,13 @@ function applyDistantTheme(){
   const realm=worldIndex;weather.realm.value=realm;
   const palettes=[{top:0x243d50,horizon:0xc3b9a4,fog:0xaab0aa,sun:0xffe5c2,density:.00023},
     {top:0x243d52,horizon:0xc5cfd0,fog:0x9dabb3,sun:0xffedcf,density:.00018},
-    {top:0x152431,horizon:0x8b9da4,fog:0x718893,sun:0xdde5e4,density:.00027}];
+    {top:0x273845,horizon:0x9da5a2,fog:0x788b91,sun:0xf1dfbb,density:.00022}];
   const p=palettes[realm];weather.skyTop.value.setHex(p.top);weather.skyHorizon.value.setHex(p.horizon);weather.sunTint.value.setHex(p.sun);
   scene.fog.color.setHex(p.fog);scene.fog.density=p.density;weather.density.value=p.density;
-  weather.sunDir.value.set(-.48,realm===1?.36:realm===2?.16:.24,-.84).normalize();
-  hemi.color.setHex(realm===2?0xb4cad6:0xdce9ec);hemi.groundColor.setHex(realm===0?0x715441:0x435766);hemi.intensity=realm===2?1.45:realm===0?1.15:1.55;
-  sun.color.setHex(p.sun);sun.intensity=realm===2?2.4:3.5;
+  weather.sunDir.value.set(realm===2?-.32:-.48,realm===1?.36:realm===2?.085:.24,realm===2?-.94:-.84).normalize();
+  hemi.color.setHex(realm===2?0xb0c0cc:0xdce9ec);hemi.groundColor.setHex(realm===0?0x715441:0x435766);hemi.intensity=realm===2?1.25:realm===0?1.15:1.55;
+  sun.color.setHex(p.sun);sun.intensity=realm===2?3.1:3.5;
+  if(realm===2)snow.material.color.setHex(0xc7d2d6);
   sandMat.color.setHex(0x9b8d75);cityDarkMat.color.setHex(0x61625c);rockMat.color.setHex(0x655849);
   ground.visible=farLand.visible=realm!==2;farSea.visible=realm===2;
   launchSite.position.y=terrainHeight(-650,-760)+92;
@@ -370,14 +334,14 @@ for(const plane of [ship,enemy]){
   const tail=new THREE.Mesh(new THREE.ConeGeometry(plane===ship?1.4:1,2.4,24),nozzleMat);tail.geometry.rotateX(Math.PI/2);tail.position.z=plane===ship?5.5:4.3;tail.castShadow=true;plane.add(tail);
 }
 const squalls=[];
-for(const [x,z,w,h] of [[-1300,-2900,1800,750],[2300,-4900,2400,950]]){
+for(const [x,z,w,h] of [[1600,-4200,3400,1100],[4200,-6900,4200,1450]]){
   const curtain=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,uniforms:weather,
     vertexShader:'varying vec2 uvRain;varying vec3 rainWorld;void main(){uvRain=uv;vec4 w=modelMatrix*vec4(position,1.);rainWorld=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
-    fragmentShader:`varying vec2 uvRain;varying vec3 rainWorld;${noiseGLSL}uniform float time;void main(){float edge=sin(uvRain.x*3.14159);float veil=smoothstep(0.,.15,uvRain.y)*(1.-smoothstep(.72,1.,uvRain.y));float streak=noise2(vec2(uvRain.x*45.+uvRain.y*3.,uvRain.y*2.+time*.03));float alpha=edge*edge*veil*(.16+streak*.2);gl_FragColor=vec4(.18,.25,.29,alpha);\n#include <colorspace_fragment>}`
+    fragmentShader:`varying vec2 uvRain;varying vec3 rainWorld;${noiseGLSL}uniform float time;void main(){float edge=sin(uvRain.x*3.14159);float veil=smoothstep(0.,.15,uvRain.y)*(1.-smoothstep(.72,1.,uvRain.y));float streak=noise2(vec2(uvRain.x*45.+uvRain.y*3.,uvRain.y*2.+time*.03));float alpha=edge*edge*veil*(.07+streak*.11);gl_FragColor=vec4(.22,.27,.29,alpha);\n#include <colorspace_fragment>}`
   }));curtain.position.set(x,-54+h*.5,z);scene.add(curtain);squalls.push(curtain);
 }
 const updateWeatherBase=updateWorld;
-updateWorld=function(){updateWeatherBase();for(const curtain of squalls)curtain.visible=worldIndex===2;};
+updateWorld=function(){updateWeatherBase();for(const curtain of squalls)curtain.visible=worldIndex===2;if(worldIndex===2){snow.material.opacity=.32;snow.material.size=.28+burner*.04;}};
 
 for(const x of [-4.8,4.8]){const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.12,.17,2,12),nozzleMat);barrel.rotation.x=Math.PI/2;barrel.position.set(x,-.13,-1.5);barrel.castShadow=true;ship.add(barrel);}
 // Soft precipitation avoids the square point sprites visible in the old build.
@@ -386,9 +350,8 @@ const moistureContext=moistureCanvas.getContext('2d'),moistureGradient=moistureC
 moistureGradient.addColorStop(0,'rgba(255,255,255,1)');moistureGradient.addColorStop(.3,'rgba(255,255,255,.7)');moistureGradient.addColorStop(1,'rgba(255,255,255,0)');moistureContext.fillStyle=moistureGradient;moistureContext.fillRect(0,0,32,32);
 snow.material.map=new THREE.CanvasTexture(moistureCanvas);snow.material.needsUpdate=true;
 
-
 // Player presentation only. Flight transform, collision and weapon origins stay pinned.
-// Restore the Sept 10 continuous, low-profile experimental Emberwing airframe.
+// Replace the old assembly with a continuous, low-profile experimental airframe.
 for(const child of [...ship.children]){ship.remove(child);child.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
 ship.userData.engines=[];ship.userData.plumes=[];
 const airframeControls=[];
@@ -399,7 +362,7 @@ const prototypeControl=new THREE.MeshStandardMaterial({color:0x39444b,roughness:
 const prototypeHot=new THREE.MeshStandardMaterial({color:0x292e32,roughness:.57,metalness:.66});
 const prototypeGlass=new THREE.MeshStandardMaterial({color:0x101a21,roughness:.17,metalness:.72});
 for(const m of [prototypeHull,prototypeWing,prototypeEdge,prototypeHot,prototypeGlass,prototypeControl])m.userData.prototype=true;
-
+// Broad composite bays and a narrow leading-edge treatment, with no textures or extra draws.
 for(const material of [prototypeHull,prototypeWing,prototypeControl]){
  material.onBeforeCompile=shader=>{
   shader.vertexShader='varying vec3 airframePoint;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nairframePoint=position;');
@@ -418,74 +381,41 @@ for(const material of [prototypeHull,prototypeWing,prototypeControl]){
  };
  material.customProgramCacheKey=()=> 'emberwing-composite-v1';
 }
-function airframeMesh(geometry,material,name){
- const m=new THREE.Mesh(geometry,material);m.name=name;
- m.castShadow=material.isMeshStandardMaterial===true;
- m.receiveShadow=material.isMeshStandardMaterial===true;
- ship.add(m);return m;
-}
+function airframeMesh(geometry,material,name){const m=new THREE.Mesh(geometry,material);m.name=name;m.castShadow=material.isMeshStandardMaterial===true;m.receiveShadow=material.isMeshStandardMaterial===true;ship.add(m);return m;}
+// Eight-point sections carry a crisp chine from the needle nose into the wing roots.
 function airframeLoft(stations,material,name){
- const v=[],idx=[];
- for(const [z,w,top,bottom] of stations){
-  for(const [x,y] of [[0,top],[w*.58,top*.83],[w,top*.14],[w*.88,bottom*.68],[0,bottom],[-w*.88,bottom*.68],[-w,top*.14],[-w*.58,top*.83]])v.push(x,y,z);
- }
- for(let j=0;j<stations.length-1;j++)for(let i=0;i<8;i++){
-  const a=j*8+i,b=j*8+(i+1)%8,c=a+8,d=b+8;idx.push(a,c,b,b,c,d);
- }
- for(let i=1;i<7;i++){idx.push(0,i,i+1);const b=(stations.length-1)*8;idx.push(b,b+i+1,b+i);}
- const g=new THREE.BufferGeometry();
- if(material===prototypeHull){
-  const panels=[],faces=[];
-  for(let side=0;side<8;side++){
-   const base=panels.length/3;
-   for(let j=0;j<stations.length;j++)for(const k of [side,(side+1)%8])panels.push(...v.slice((j*8+k)*3,(j*8+k)*3+3));
-   for(let j=0;j<stations.length-1;j++){const a=base+j*2;faces.push(a,a+2,a+1,a+1,a+2,a+3);}
+  const v=[],idx=[];
+  for(const [z,w,top,bottom] of stations){
+    for(const [x,y] of [[0,top],[w*.58,top*.83],[w,top*.14],[w*.88,bottom*.68],[0,bottom],[-w*.88,bottom*.68],[-w,top*.14],[-w*.58,top*.83]])v.push(x,y,z);
   }
-  for(const end of [0,stations.length-1]){
-   const base=panels.length/3;panels.push(...v.slice(end*24,end*24+24));
-   for(let i=1;i<7;i++)faces.push(...(end?[base,base+i+1,base+i]:[base,base+i,base+i+1]));
-  }
-  g.setAttribute('position',new THREE.Float32BufferAttribute(panels,3));g.setIndex(faces);
- }else{
-  g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(idx);
- }
- g.computeVertexNormals();return airframeMesh(g,material,name);
+  for(let j=0;j<stations.length-1;j++)for(let i=0;i<8;i++){const a=j*8+i,b=j*8+(i+1)%8,c=a+8,d=b+8;idx.push(a,c,b,b,c,d);}
+  for(let i=1;i<7;i++){idx.push(0,i,i+1);const b=(stations.length-1)*8;idx.push(b,b+i+1,b+i);}
+  const g=new THREE.BufferGeometry();
+  if(material===prototypeHull){
+    // Separate the longitudinal panels at the chines while smoothing along the nose.
+    const panels=[],faces=[];
+    for(let side=0;side<8;side++){const base=panels.length/3;for(let j=0;j<stations.length;j++)for(const k of [side,(side+1)%8])panels.push(...v.slice((j*8+k)*3,(j*8+k)*3+3));for(let j=0;j<stations.length-1;j++){const a=base+j*2;faces.push(a,a+2,a+1,a+1,a+2,a+3);}}
+    // Keep both ends closed with independent normals.
+    for(const end of [0,stations.length-1]){const base=panels.length/3;panels.push(...v.slice(end*24,end*24+24));for(let i=1;i<7;i++)faces.push(...(end?[base,base+i+1,base+i]:[base,base+i,base+i+1]));}
+    g.setAttribute('position',new THREE.Float32BufferAttribute(panels,3));g.setIndex(faces);
+  }else{g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(idx);}
+  g.computeVertexNormals();return airframeMesh(g,material,name);
 }
-airframeLoft(
- [[-10.8,.025,.015,-.015],[-8.5,.46,.16,-.13],[-6.4,.92,.36,-.29],[-4.4,1.42,.65,-.43],[-2,2.08,.78,-.48],[.6,2.48,.64,-.44],[2.8,2.22,.42,-.29],[4.5,1.84,.17,-.16]],
- prototypeHull,'Blended chine fuselage'
-);
+airframeLoft([[-10.8,.025,.015,-.015],[-8.5,.46,.16,-.13],[-6.4,.92,.36,-.29],[-4.4,1.42,.65,-.43],[-2,2.08,.78,-.48],[.6,2.48,.64,-.44],[2.8,2.22,.42,-.29],[4.5,1.84,.17,-.16]],prototypeHull,'Blended chine fuselage');
+// Closed, tapered lifting surfaces: broad planes with thin intentional edges.
 function airframeSurface(points,thickness,material,name){
  const v=[],idx=[],n=points.length;
- for(const side of [-1,1])for(let i=0;i<n;i++){
-  const p=points[i];v.push(p[0],p[1]+side*thickness[i]/2,p[2]);
- }
+ for(const side of [-1,1])for(let i=0;i<n;i++){const p=points[i];v.push(p[0],p[1]+side*thickness[i]/2,p[2]);}
  const outline=points.map(p=>new THREE.Vector2(p[0],p[2]));
- for(const t of THREE.ShapeUtils.triangulateShape(outline,[])){
-  const [a,b,c]=t.map(i=>points[i]);
-  if((b[2]-a[2])*(c[0]-a[0])-(b[0]-a[0])*(c[2]-a[2])<0)t.reverse();
-  idx.push(...[...t].reverse(),...t.map(i=>i+n));
- }
+ for(const t of THREE.ShapeUtils.triangulateShape(outline,[])){const [a,b,c]=t.map(i=>points[i]);if((b[2]-a[2])*(c[0]-a[0])-(b[0]-a[0])*(c[2]-a[2])<0)t.reverse();idx.push(...[...t].reverse(),...t.map(i=>i+n));}
  const area=points.reduce((sum,p,i)=>{const q=points[(i+1)%n];return sum+p[0]*q[2]-q[0]*p[2];},0);
- for(let i=0;i<n;i++){
-  const j=(i+1)%n,wall=[i,i+n,j,j,i+n,j+n];if(area<0)wall.reverse();idx.push(...wall);
- }
- const g=new THREE.BufferGeometry();
- g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(idx);
- const crisp=g.toNonIndexed();g.dispose();crisp.computeVertexNormals();
+ for(let i=0;i<n;i++){const j=(i+1)%n,wall=[i,i+n,j,j,i+n,j+n];if(area<0)wall.reverse();idx.push(...wall);}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(idx);const crisp=g.toNonIndexed();g.dispose();crisp.computeVertexNormals();
+ // Average only faces on the same skin; never round the knife edges into the underside.
  const pos=crisp.attributes.position,norm=crisp.attributes.normal,skinVertices=new Map();
  const skinCount=THREE.ShapeUtils.triangulateShape(outline,[]).length*6;
- for(let i=0;i<skinCount;i++){
-  const key=[pos.getX(i),pos.getY(i),pos.getZ(i),norm.getY(i)>0?1:-1].join(',');
-  if(!skinVertices.has(key))skinVertices.set(key,[]);
-  skinVertices.get(key).push(i);
- }
- for(const ids of skinVertices.values()){
-  const avg=new THREE.Vector3();
-  for(const i of ids)avg.add(new THREE.Vector3().fromBufferAttribute(norm,i));
-  avg.normalize();
-  for(const i of ids)norm.setXYZ(i,avg.x,avg.y,avg.z);
- }
+ for(let i=0;i<skinCount;i++){const key=[pos.getX(i),pos.getY(i),pos.getZ(i),norm.getY(i)>0?1:-1].join(',');if(!skinVertices.has(key))skinVertices.set(key,[]);skinVertices.get(key).push(i);}
+ for(const ids of skinVertices.values()){const avg=new THREE.Vector3();for(const i of ids)avg.add(new THREE.Vector3().fromBufferAttribute(norm,i));avg.normalize();for(const i of ids)norm.setXYZ(i,avg.x,avg.y,avg.z);}
  crisp.computeBoundingSphere();return airframeMesh(crisp,material,name);
 }
 function hingeSurface(mesh,start,end,side,kind){
@@ -495,40 +425,23 @@ function hingeSurface(mesh,start,end,side,kind){
  airframeControls.push({pivot,axis,side,kind,angle:0});
 }
 for(const s of [-1,1]){
- airframeSurface(
-  [[s*.78,.16,-6.8],[s*2.0,.15,-4.7],[s*7.65,-.08,.45],[s*7.25,-.05,1.28],[s*6.88,-.031,1.456],[s*6.88,.005,.955],[s*2.975,.22,2.675],[s*2.975,.17,3.30],[s*1.18,.3,2.5]],
-  [.15,.35,.035,.035,.045,.045,.10,.21,.42],prototypeWing,'Swept diamond wing'
- );
- const elevon=airframeSurface(
-  [[s*3.025,.22,2.72],[s*6.85,.005,.995],[s*6.85,-.03,1.47],[s*3.025,.17,3.288]],
-  [.095,.04,.035,.075],prototypeControl,'Flush elevon'
- );
+ // Cut the elevon out of the wing: moving surfaces have real clearance, not an overlay.
+ airframeSurface([[s*.78,.16,-6.8],[s*2.0,.15,-4.7],[s*7.65,-.08,.45],[s*7.25,-.05,1.28],[s*6.88,-.031,1.456],[s*6.88,.005,.955],[s*2.975,.22,2.675],[s*2.975,.17,3.30],[s*1.18,.3,2.5]], [.15,.35,.035,.035,.045,.045,.10,.21,.42],prototypeWing,'Swept diamond wing');
+ const elevon=airframeSurface([[s*3.025,.22,2.72],[s*6.85,.005,.995],[s*6.85,-.03,1.47],[s*3.025,.17,3.288]],[.095,.04,.035,.075],prototypeControl,'Flush elevon');
  hingeSurface(elevon,new THREE.Vector3(s*3.025,.22,2.72),new THREE.Vector3(s*6.85,.005,.995),s,'elevon');
- const tail=airframeSurface(
-  [[s*1.62,.38,.4],[s*3.05,1.75,2.55],[s*3.18,1.77,3.3],[s*2.05,.3,4.48]],
-  [.14,.055,.035,.13],prototypeWing,'Canted ruddervator'
- );
+ const tail=airframeSurface([[s*1.62,.38,.4],[s*3.05,1.75,2.55],[s*3.18,1.77,3.3],[s*2.05,.3,4.48]],[.14,.055,.035,.13],prototypeWing,'Canted ruddervator');
  hingeSurface(tail,new THREE.Vector3(s*1.835,.34,2.44),new THREE.Vector3(s*3.115,1.76,2.925),s,'tail');
+ // A recessed dark inlet blends beneath each shoulder, without external pods.
  airframeLoft([[-3.45,.42,.24,-.24],[-2.85,.55,.31,-.32],[1.7,.6,.31,-.3],[4.1,.5,.22,-.22]],prototypeHot,'Engine channel').position.set(s*1.48,-.2,0);
- const nozzle=airframeMesh(new THREE.CylinderGeometry(.47,.53,.7,12,1,true),prototypeHot,'Titanium nozzle');
- nozzle.rotation.x=Math.PI/2;nozzle.position.set(s*1.48,-.17,4.22);nozzle.scale.z=.7;
- const rim=airframeMesh(new THREE.TorusGeometry(.455,.035,4,16),prototypeEdge,'Nozzle lip');
- rim.position.set(s*1.48,-.17,4.58);rim.scale.y=.7;
- const recess=airframeMesh(new THREE.CircleGeometry(.425,20),new THREE.MeshBasicMaterial({color:0x090c0e}),'Dark exhaust throat');
- recess.position.set(s*1.48,-.17,4.40);recess.scale.y=.7;
- const glow=airframeMesh(new THREE.CircleGeometry(.34,20),new THREE.MeshBasicMaterial({color:0xffbd80,transparent:true,opacity:.20,blending:THREE.AdditiveBlending,depthWrite:false}),'Recessed engine heat');
- glow.position.set(s*1.48,-.17,4.42);glow.scale.y=.7;ship.userData.engines.push(glow);
+ const nozzle=airframeMesh(new THREE.CylinderGeometry(.47,.53,.7,12,1,true),prototypeHot,'Titanium nozzle');nozzle.rotation.x=Math.PI/2;nozzle.position.set(s*1.48,-.17,4.22);nozzle.scale.z=.7;
+ const rim=airframeMesh(new THREE.TorusGeometry(.455,.035,4,16),prototypeEdge,'Nozzle lip');rim.position.set(s*1.48,-.17,4.58);rim.scale.y=.7;
+ const recess=airframeMesh(new THREE.CircleGeometry(.425,20),new THREE.MeshBasicMaterial({color:0x090c0e}),'Dark exhaust throat');recess.position.set(s*1.48,-.17,4.40);recess.scale.y=.7;
+ const glow=airframeMesh(new THREE.CircleGeometry(.34,20),new THREE.MeshBasicMaterial({color:0xffbd80,transparent:true,opacity:.20,blending:THREE.AdditiveBlending,depthWrite:false}),'Recessed engine heat');glow.position.set(s*1.48,-.17,4.42);glow.scale.y=.7;ship.userData.engines.push(glow);
  const pg=new THREE.ConeGeometry(.32,2.5,16,1,true);pg.rotateX(Math.PI/2);pg.translate(0,0,1.25);
- const plume=airframeMesh(pg,new THREE.MeshBasicMaterial({color:0xffc58d,transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false}),'Tapered exhaust');
- plume.position.set(s*1.48,-.17,4.6);ship.userData.plumes.push(plume);
- const barrel=airframeMesh(new THREE.CylinderGeometry(.10,.14,1.05,10),prototypeHot,'Recessed cannon');
- barrel.rotation.x=Math.PI/2;barrel.position.set(s*4.8,-.13,-1.975);
+ const plume=airframeMesh(pg,new THREE.MeshBasicMaterial({color:0xffc58d,transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false}),'Tapered exhaust');plume.position.set(s*1.48,-.17,4.6);ship.userData.plumes.push(plume);
+ const barrel=airframeMesh(new THREE.CylinderGeometry(.10,.14,1.05,10),prototypeHot,'Recessed cannon');barrel.rotation.x=Math.PI/2;barrel.position.set(s*4.8,-.13,-1.975);
 }
-airframeLoft(
- [[-6.7,.025,.39,.31],[-5.55,.46,.91,.33],[-4.25,.58,1.13,.44],[-2.9,.47,1.04,.52],[-1.75,.025,.79,.55]],
- prototypeGlass,'Smoked teardrop canopy'
-);
-
+const cockpit=airframeLoft([[-6.7,.025,.39,.31],[-5.55,.46,.91,.33],[-4.25,.58,1.13,.44],[-2.9,.47,1.04,.52],[-1.75,.025,.79,.55]],prototypeGlass,'Smoked teardrop canopy');
 const prototypeSpeedBase=updateSpeedFX;
 updateSpeedFX=function(dt){
  prototypeSpeedBase(dt);
@@ -542,11 +455,9 @@ updateSpeedFX=function(dt){
  for(const e of ship.userData.engines){e.scale.set(1,.7,1);e.material.opacity=.20+burner*.64;}
  for(const p of ship.userData.plumes){p.material.opacity=.21+burner*.66;p.scale.x=p.scale.y=.78+burner*.22;}
 };
+
 const resetAirframeBase=reset;
-reset=function(){
- resetAirframeBase();
- for(const s of airframeControls){s.angle=0;s.pivot.quaternion.identity();}
-};
+reset=function(){resetAirframeBase();for(const s of airframeControls){s.angle=0;s.pivot.quaternion.identity();}};
 
 // V38 presentation only: studio-like sky reflection on the existing airframes.
 // A tiny static environment is filtered once, without a per-frame render pass.
@@ -651,7 +562,7 @@ touchUI.innerHTML='<div id="stick" aria-label="Flight joystick"><span id="stickD
 document.body.appendChild(touchUI);
 const stick=document.getElementById('stick'),stickDot=document.getElementById('stickDot');let stickPointer=null;
 function releaseTouch(){touchState.active=false;touchState.x=touchState.y=0;stickPointer=null;stickDot.style.transform='';for(const k of ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyZ','KeyX'])keys[k]=false;if(seeker)setSeeker(false);for(const b of touchUI.querySelectorAll('button'))b.classList.remove('active');}
-function moveStick(e){const r=stick.getBoundingClientRect(),radius=Math.max(48,Math.min(r.width,r.height)*.42);touchState.x=THREE.MathUtils.clamp((e.clientX-r.left-r.width/2)/radius,-1,1);touchState.y=THREE.MathUtils.clamp((e.clientY-r.top-r.height/2)/radius,-1,1);stickDot.style.transform=`translate(${touchState.x*38}px,${touchState.y*38}px)`;}
+function moveStick(e){const r=stick.getBoundingClientRect();touchState.x=THREE.MathUtils.clamp((e.clientX-r.left-r.width/2)/45,-1,1);touchState.y=THREE.MathUtils.clamp((e.clientY-r.top-r.height/2)/45,-1,1);stickDot.style.transform=`translate(${touchState.x*35}px,${touchState.y*35}px)`;}
 stick.addEventListener('pointerdown',e=>{audio();stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);touchState.active=true;moveStick(e);});
 stick.addEventListener('pointermove',e=>{if(e.pointerId===stickPointer)moveStick(e);});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(type,()=>{touchState.active=false;touchState.x=touchState.y=0;stickPointer=null;stickDot.style.transform='';for(const k of ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'])keys[k]=false;});
@@ -662,11 +573,98 @@ for(const [id,code] of [['touchFire','Space'],['touchMissile','KeyX'],['touchBoo
   for(const type of ['pointercancel','lostpointercapture'])b.addEventListener(type,()=>{if(held){held=false;keys[code]=false;if(code==='KeyX'&&seeker)setSeeker(false);}b.classList.remove('active');});
 }
 addEventListener('blur',releaseTouch);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseTouch();});
-function updateTouchFlight(){if(!touchState.active)return;const dead=.30;keys.ArrowLeft=touchState.x<-dead;keys.ArrowRight=touchState.x>dead;keys.ArrowUp=touchState.y<-dead;keys.ArrowDown=touchState.y>dead;}
+function updateTouchFlight(){if(!touchState.active)return;keys.ArrowLeft=touchState.x<-.18;keys.ArrowRight=touchState.x>.18;keys.ArrowUp=touchState.y<-.18;keys.ArrowDown=touchState.y>.18;}
 let metricsSeconds=0,metricsFrames=0,flightFps=0;
 function updateFlightMetrics(dt){metricsSeconds+=dt;metricsFrames++;if(metricsSeconds>1){flightFps=metricsFrames/metricsSeconds;metricsSeconds=metricsFrames=0;}}
 
 function updateTouchLabels(){if(!matchMedia("(pointer:coarse),(max-width:700px)").matches)return;for(const el of [coachText,coachSub])el.textContent=el.textContent.replaceAll("SPACE","FIRE").replaceAll("RELEASE X","RELEASE TRACK").replaceAll("HOLD X","HOLD TRACK").replaceAll("ARROWS","JOYSTICK");}
+
+// Geometry-led encounters. Player handling, weapons, terrain and airframe stay pinned.
+const duel={state:'extend',age:0,pursuit:0,cooldown:0,side:1,reversed:false,merged:false,pressure:0,speed:112,
+ course:new THREE.Vector3(0,0,-1),forward:new THREE.Vector3(),playerForward:new THREE.Vector3(),toPlayer:new THREE.Vector3(),right:new THREE.Vector3(),intent:new THREE.Vector3(),aim:new THREE.Vector3(),q:new THREE.Quaternion()};
+function duelState(state){
+ const previous=duel.state;duel.state=state;duel.age=0;duel.merged=false;duel.reversed=false;duel.course.copy(duel.forward);
+ if(state==='extend'&&previous!=='extend')duel.course.applyAxisAngle(worldUp,duel.side*.95).normalize();
+ if(state==='break'){duel.pursuit=0;duel.cooldown=8;duel.side*=-1;}
+ if(state==='engage')announce('BANDIT TURNING IN');
+ if(state==='break')announce('BANDIT BREAKING');
+ if(state==='extend'&&previous==='press')announce('BANDIT EXTENDING');
+}
+const spawnDuelBase=spawnEnemy;
+spawnEnemy=function(first=false){spawnDuelBase(first);duel.forward.set(0,0,-1).applyQuaternion(enemy.quaternion);duelState('extend');duel.course.copy(duel.forward);duel.pursuit=duel.pressure=duel.cooldown=0;duel.speed=enemyRole==='ROOKIE'?108:118;duel.side=(kills+worldIndex)%2?1:-1;resetEnemyAttack(first?4:2.5);};
+const inactiveDuelBase=updateEnemy;
+updateEnemy=function(dt){
+ if(!enemyAlive){inactiveDuelBase(dt);return;}
+ if(crashed||missionComplete||missionCompleteTimer>0)return;
+ lastEnemy.copy(enemy.position);enemyTime+=dt;duel.age+=dt;duel.cooldown=Math.max(0,duel.cooldown-dt);
+ const f=duel.forward.set(0,0,-1).applyQuaternion(enemy.quaternion).normalize();
+ const pf=duel.playerForward.set(0,0,-1).applyQuaternion(ship.quaternion).normalize();
+ const to=duel.toPlayer.copy(ship.position).sub(enemy.position),range=to.length();to.multiplyScalar(1/Math.max(range,.001));
+ const facing=f.dot(to),behind=pf.dot(to),tail=range<240&&range>25&&facing<-.65&&behind<-.75;
+ duel.pursuit=tail?duel.pursuit+dt:Math.max(0,duel.pursuit-dt*2);
+ duel.pressure=behind>.55&&facing>.65&&range<460?duel.pressure+dt:Math.max(0,duel.pressure-dt*2);
+ if(duel.pursuit>(enemyRole==='ROOKIE'?2.5:1.65)&&duel.cooldown<=0&&duel.state!=='break')duelState('break');
+ if(duel.state==='extend'&&duel.age>(firstTarget?3.8:3.1)&&(range>310||duel.age>5.5))duelState('engage');
+ if(duel.state==='engage'){
+  if(range<100)duel.merged=true;
+  if(duel.pressure>.35)duelState('press');
+  else if((duel.merged&&range>155&&facing<.2)||duel.age>9){duelState('extend');duel.side*=-1;}
+ }
+ if(duel.state==='break'){
+  if(behind>.35&&duel.age>.65)duelState('press');
+  else if(duel.age>1.55&&!duel.reversed&&tail){duel.side*=-1;duel.reversed=true;}
+  if(duel.state==='break'&&duel.age>3.2)duelState('engage');
+ }
+ if(duel.state==='press'&&(duel.age>6.5||(duel.age>1.8&&(range>540||behind<-.25))))duelState('extend');
+ const intent=duel.intent,right=duel.right.crossVectors(pf,worldUp).normalize();
+ let targetSpeed=enemyRole==='ROOKIE'?110:enemyRole==='ACE'?130:120,turn=enemyRole==='ROOKIE'?1.05:1.35;
+ if(duel.state==='extend'){
+  intent.copy(duel.course);targetSpeed+=8;
+ }else if(duel.state==='break'){
+  right.crossVectors(duel.course,worldUp).normalize();
+  intent.copy(duel.course).multiplyScalar(.2).addScaledVector(right,duel.side);
+  targetSpeed=enemyRole==='ROOKIE'?91:87;turn=1.95;
+ }else{
+  // A lateral offset creates an oblique merge; fade it near contact so passes stay close.
+  const offset=duel.state==='engage'?duel.side*Math.min(95,range*.23):0;
+  duel.aim.copy(ship.position).addScaledVector(pf,Math.min(range/(targetSpeed+speed),.65)*speed).addScaledVector(right,offset);
+  intent.copy(duel.aim).sub(enemy.position);
+  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=138;
+  if(duel.state==='press'){targetSpeed=Math.min(134,Math.max(100,speed+(range>160?7:-8)));turn=1.25;}
+ }
+ const clearance=enemyRole==='SKIMMER'?42:enemyRole==='CLIMBER'?90:62;
+ // Stay in the player's altitude band; a climber's modest high-side pass is bounded.
+ const altitude=Math.max(terrainHeight(enemy.position.x,enemy.position.z)+clearance,ship.position.y+(enemyRole==='CLIMBER'&&duel.state==='engage'?55:8));
+ intent.normalize();intent.y=THREE.MathUtils.clamp((altitude-enemy.position.y)/210,-.28,.34);intent.normalize();
+ const dir=steerAroundObstacles(enemy.position,intent,clearance);
+ duel.q.setFromUnitVectors(new THREE.Vector3(0,0,-1),dir);
+ // Bounded angular speed prevents instantaneous flips at the merge.
+ enemy.quaternion.rotateTowards(duel.q,turn*dt);
+ duel.speed=THREE.MathUtils.lerp(duel.speed,targetSpeed,1-Math.exp(-dt/.65));
+ enemy.position.addScaledVector(duel.forward.set(0,0,-1).applyQuaternion(enemy.quaternion),duel.speed*dt);
+ enemy.position.y=Math.max(enemy.position.y,terrainHeight(enemy.position.x,enemy.position.z)+16);
+ separateEnemyFromObstacles();enemyVel.copy(enemy.position).sub(lastEnemy).divideScalar(Math.max(dt,.001));
+ enemyCourse.copy(duel.forward);
+};
+// Existing tracers/damage, with a longer warning and breathing room for the easier roles.
+enemyFireSolution=function(){
+ if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<3||duel.state==='extend'||duel.state==='break')return false;
+ const aim=ship.position.clone().sub(enemy.position),range=aim.length();
+ if(range<80||range>(enemyRole==='ACE'?500:420))return false;
+ const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion);
+ return forward.dot(aim.multiplyScalar(1/Math.max(range,.001)))>(enemyRole==='ACE'?.94:.97)&&enemyLOS();
+};
+// Keep the existing edge-of-screen locator, and make a genuine rear threat explicit.
+const duelGuidanceBase=updateGuidance;
+updateGuidance=function(){
+ duelGuidanceBase();
+ if(!enemyAlive||crashed||missionComplete)return;
+ const behind=duel.playerForward.dot(duel.toPlayer)>.55,range=enemy.position.distanceTo(ship.position);
+ if(behind&&range<460&&duel.forward.dot(duel.toPlayer)>.65){
+  targetUI.dataset.range='ON YOUR SIX · '+Math.round(displayRangeFeet)+' FT';targetUI.style.opacity='1';
+  if(!seeker){coachText.textContent='BANDIT ON YOUR SIX';coachSub.textContent='BREAK / REVERSE / BOOST';}
+ }else if(!seeker&&duel.state==='engage'&&range>240){coachSub.textContent='BANDIT TURNING IN · '+Math.round(displayRangeFeet)+' FT';}
+};
 
 const clock=new THREE.Clock();function loop(){requestAnimationFrame(loop);const rawDt=Math.min(clock.getDelta(),.033),dt=rawDt*(killSlow>0?.42:1);killSlow=Math.max(0,killSlow-rawDt);if(!crashed&&!missionComplete&&missionCompleteTimer<=0)missionElapsed+=rawDt;updateTouchFlight();updateFlight(dt);updateDanger(dt);updateWorld();updateEnemy(dt);updateEnemyAttack(dt);updateMission(dt);updateRange(dt);updateCamera(dt);updateSpeedFX(dt);updateCombatFX(dt);renderer.render(scene,camera);updateFlightMetrics(rawDt);updateTargeting(dt);updateGuidance();updateWeapons(dt);updateTouchLabels();const shownTime=finalTime||missionElapsed;scoreUI.textContent=`THEATER ${worldIndex+1}/3 · CONTACTS ${String(Math.max(0,MISSION_KILLS-kills)).padStart(2,'0')} · ${formatTime(shownTime)}${bestTime<Infinity?' · RECORD '+formatTime(bestTime):''}`;readout.textContent=`EW–01 · HULL ${playerHP}/3 · ${Math.round(speed)} SPD · ${Math.round(Math.max(0,ship.position.y-terrainHeight(ship.position.x,ship.position.z)))} ALT · ${enemyAlive?Math.round(displayRangeFeet)+' RNG':'— RNG'}`}reset();const realm=new URLSearchParams(location.search).get('realm');if(realm==='tempest')deployTempest();if(realm==='alpine')deployAlpine();requestAnimationFrame(loop);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>

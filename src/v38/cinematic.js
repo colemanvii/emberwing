@@ -10,6 +10,7 @@ airframeMap.dispose();airframePMREM.dispose();
 for(const plane of [ship,enemy])plane.traverse(o=>{
   if(!o.isMesh||!o.material.isMeshStandardMaterial)return;
   const m=o.material;m.envMap=airframeEnvironment.texture;m.envMapIntensity=.72;
+  if(m.userData.prototype){m.envMapIntensity=m===prototypeGlass?.8:.58;m.needsUpdate=true;return;}
   const glass=o.geometry.type==='SphereGeometry';
   m.roughness=glass?.13:.39;m.metalness=glass?.76:.48;
   if(plane===ship&&!glass)m.color.lerp(new THREE.Color(0x626b70),.32);

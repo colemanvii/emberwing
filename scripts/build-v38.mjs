@@ -9,12 +9,14 @@ html=html.replaceAll('!worldIndex&&worldTravel<2000','!worldIndex');
 html=html.replace('const size=3800,seg=150','const size=6400,seg=200');
 html=html.replace('new THREE.Vector3(side*4.8,-.05,-7.4)','new THREE.Vector3(side*4.8,-.13,-2.5)');
 html=html.replace('function updateCamera(dt){','function legacyCamera(dt){');
-// The core remains pinned to V37; only the presentation and collision fixes below override it.
+// The source remains pinned to V37; focused presentation, collision and dogfight layers override it.
 const world=readFileSync(new URL('../src/v38/world.js',import.meta.url),'utf8');
+const airframe=readFileSync(new URL('../src/v38/airframe.js',import.meta.url),'utf8');
 const cinematic=readFileSync(new URL('../src/v38/cinematic.js',import.meta.url),'utf8');
 const camera=readFileSync(new URL('../src/v38/camera.js',import.meta.url),'utf8');
+const dogfight=readFileSync(new URL('../src/v38/dogfight.js',import.meta.url),'utf8');
 const controls=readFileSync(new URL('../src/v38/controls.js',import.meta.url),'utf8');
-html=html.replace('const clock=new THREE.Clock();',world+'\n'+cinematic+'\n'+camera+'\n'+controls+'\nconst clock=new THREE.Clock();');
+html=html.replace('const clock=new THREE.Clock();',world+'\n'+airframe+'\n'+cinematic+'\n'+camera+'\n'+controls+'\n'+dogfight+'\nconst clock=new THREE.Clock();');
 html=html.replace("reset();if(new URLSearchParams(location.search).get('realm')==='tempest')deployTempest();", "reset();const realm=new URLSearchParams(location.search).get('realm');if(realm==='tempest')deployTempest();if(realm==='alpine')deployAlpine();");
 html=html.replace('turnAssist=(bank*.72+ri*.18)', 'turnAssist=(Math.asin(Math.sin(bank))*.72+ri*.18)');
 // Never ease an aircraft up from below solid terrain.
@@ -31,5 +33,12 @@ html=html.replace('flare.scale.set(1,1,2.8)', 'flare.scale.set(.32,.32,1.2)');
 html=html.replace('color:0xffb44d', 'color:0xffe6bd');
 html=html.replace('color:i%3?0xffb33f:0xffffff', 'color:i%3?0xffd4a0:0xffffff');
 html=html.replace('350+Math.random()*400', '100+Math.random()*140');
+
+// Give all roles access to the existing gun behavior, with generous novice telegraphs.
+html=html.replace("&&(enemyRole==='CLIMBER'||enemyRole==='ACE');if(!eligible)", ";if(!eligible)");
+html=html.replace("enemyAttackTimer=enemyRole==='ACE'?.32:.42", "enemyAttackTimer=enemyRole==='ACE'?.65:.95");
+html=html.replace("maxShots=enemyRole==='ACE'?4:3", "maxShots=enemyRole==='ACE'?3:2");
+html=html.replace("enemyAttackTimer=enemyRole==='ACE'?2.65:3.35", "enemyAttackTimer=enemyRole==='ACE'?3.5:4.8");
+html=html.replace("'GET ON HIS SIX'", "'LEAD THE CROSSING'");
 writeFileSync(new URL('../v38.html',import.meta.url),html);
 console.log('Built V38 from the preserved V37 core.');

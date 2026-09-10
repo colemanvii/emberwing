@@ -20,4 +20,24 @@ Run `node scripts/prepare-v38-review.mjs`, serve the repository, and open `.revi
 
 Verified in the Codex Chromium browser at desktop and 390×844 portrait size. Desktop tests measured approximately 32 FPS in low-altitude landscape runs and 63 FPS during the sea maneuver stress sequence. The sea stress endpoint used 28 draw calls; desert peaked at 115 in its final run. These are local observations, not guarantees for other hardware. Low-altitude terrain performance still has room to improve. Visually checked all three theaters, touch joystick/fire/seeker/boost/reset, shader errors and campaign transitions. Physical iOS/Android devices and their audio behavior have not been tested.
 
-The aircraft and buildings still inherit relatively simple V37 geometry. Clouds are procedural sky shading, not traversable volumetric clouds. Water uses approximate sky reflection, not full scene reflections. Terrain LOD is a bounded two-mesh solution rather than a streaming world. Those remain worthwhile directions for future passes.
+The player aircraft now uses a longer chined fuselage, tapered diamond wings, canted tails, a smoked canopy, and recessed twin exhausts. Graphite composite and titanium materials retain broad highlights without chrome. The presentation replacement preserves the player transform, flight model, collision rules, and existing cannon origins. Buildings still inherit relatively simple V37 geometry. Clouds are procedural sky shading, not traversable volumetric clouds. Water uses approximate sky reflection, not full scene reflections. Terrain LOD is a bounded two-mesh solution rather than a streaming world. Those remain worthwhile directions for future passes.
+
+## Aircraft polish — September 10
+
+Rebuilt the player silhouette and materials without changing terrain, atmosphere, world population, camera, flight physics, controls, weapons, or campaign progression. Existing local Tempest sky and ocean changes were preserved. Exhaust now stretches from the nozzle lip and fades aft; idle heat is subdued and boost increases length and intensity.
+
+Verified desert and Tempest launch views, an alpine bank, boosted chase view, and settled 390×844 portrait framing. The existing regression suite passed all checks. A 21-second live flight stress run completed without crashing or browser errors. Browser-only validation; no physical mobile device test or deployment was performed in this pass.
+
+### Surface and motion follow-up
+
+The approved silhouette is retained. Wing skins now shade smoothly across their internal triangles while keeping sharp edges. Composite panels have restrained color and roughness variation, with a fine highlight along the leading edge. The elevons are cut from the trailing edge and rotate around fixed hinges; the canted tails respond subtly to pitch and roll. Deflection is capped below 11 degrees and eases back to neutral. This animation follows the existing flight rates and adds no flight forces or camera movement.
+
+Verified control-surface direction, deflection limits, fixed hinge positions, settling and reset. The full existing gameplay regression suite passed, with no browser shader errors. Protected gameplay and camera function bodies match the approved design build.
+
+### Dogfight geometry follow-up
+
+Bandits now use four bounded behaviors: extend, turn in for an offset merge, defend a sustained tail chase, and press a positional advantage. Defensive breaks smoothly reduce speed and can reverse once; they have an eight-second cooldown. A rear attack lasts at most 6.5 seconds before the bandit turns away to create separation. Re-engagement aims across the player's projected path, while climbers can take a modest high-side approach. Existing terrain avoidance and clearance remain in force.
+
+The rear locator now says “ON YOUR SIX” when position and nose direction support an actual threat. All enemy roles can use the existing guns, with longer warning times, short bursts and recovery intervals. They do not fire while extending or breaking. Player guns, missile acquisition/guidance, controls, camera, aircraft, terrain and campaign remain unchanged.
+
+Validation: all four roles exchanged front/rear position, defended sustained pursuit, gained attacking position and re-engaged in 60-second geometry scenarios. An offset opposing pass reached 9 metres separation without a position jump. Led cannon fire hit a 90-degree crossing, and missile acquisition accepted an offset broadside target. Rear gun warning and suppression during separation passed. A 40-second live encounter with two player break turns recorded two rear-pressure phases, separation and re-engagement, no crash and approximately 116 FPS on this local browser. The existing full gameplay regression suite passed. These are bounded playtests, not exhaustive difficulty balancing or physical-device verification. This pass is local and has not been published.
