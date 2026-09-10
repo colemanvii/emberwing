@@ -18,9 +18,20 @@ updateFlight=function(dt){
  tmpF.set(0,0,-1).applyQuaternion(ship.quaternion).normalize();
  flightRight.set(1,0,0).applyQuaternion(ship.quaternion);flightUp.set(0,1,0).applyQuaternion(ship.quaternion);
  const horizontal=Math.hypot(tmpF.x,tmpF.z),bank=Math.atan2(-flightRight.y,flightUp.y);
- // Neutral settling only. Pulling holds the chosen bank; neither correction fights held pitch/roll.
- if(!pi&&!ri){ship.rotateZ(Math.sin(bank)*.62*horizontal*dt);ship.rotateX(-tmpF.y*.3*dt);}
- if(!pi){flightStep.setFromAxisAngle(worldUp,-(Math.sin(bank)*.55+ri*.18)*horizontal*dt);ship.quaternion.premultiply(flightStep);}
+ // Keep one continuous turn model: bank coordination fades smoothly as local pitch takes over,
+ // but never disappears completely during a hard pull.
+ const pullBlend=THREE.MathUtils.clamp(Math.abs(pitchRate)/1.25,0,1);
+ const coordinationGain=THREE.MathUtils.lerp(1,.28,pullBlend);
+ if(horizontal>.001&&coordinationGain>.001){
+  flightStep.setFromAxisAngle(worldUp,-(Math.sin(bank)*.55+ri*.18)*horizontal*dt*coordinationGain);
+  ship.quaternion.premultiply(flightStep);
+ }
+ // Neutral settling fades in only after commanded rates have decayed, avoiding a release/reversal handoff.
+ const settleGain=(!pi&&!ri)?THREE.MathUtils.clamp(1-Math.max(Math.abs(pitchRate)/.55,Math.abs(rollRate)/1.0),0,1):0;
+ if(settleGain>0){
+  ship.rotateZ(Math.sin(bank)*.62*horizontal*dt*settleGain);
+  ship.rotateX(-tmpF.y*.3*dt*settleGain);
+ }
  ship.quaternion.normalize();tmpF.set(0,0,-1).applyQuaternion(ship.quaternion).normalize();
  ship.position.addScaledVector(tmpF,speed*dt);worldTravel+=speed*dt;
  const floor=terrainHeight(ship.position.x,ship.position.z)+3;if(ship.position.y<floor){ship.position.y=floor;crashNow();return;}checkObstacleCollision();
