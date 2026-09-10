@@ -4,7 +4,7 @@ const duel={state:'extend',age:0,pursuit:0,cooldown:0,side:1,reversed:false,merg
 function duelState(state){
  const previous=duel.state;duel.state=state;duel.age=0;duel.merged=false;duel.reversed=false;duel.course.copy(duel.forward);
  if(state==='extend'&&previous!=='extend')duel.course.applyAxisAngle(worldUp,duel.side*.95).normalize();
- if(state==='break'){duel.pursuit=0;duel.cooldown=8;duel.side*=-1;}
+ if(state==='break'){duel.pursuit=0;duel.cooldown=12;duel.side*=-1;}
  if(state==='engage')announce('BANDIT TURNING IN');
  if(state==='break')announce('BANDIT BREAKING');
  if(state==='extend'&&previous==='press')announce('BANDIT EXTENDING');
@@ -22,7 +22,7 @@ updateEnemy=function(dt){
  const facing=f.dot(to),behind=pf.dot(to),tail=range<240&&range>25&&facing<-.65&&behind<-.75;
  duel.pursuit=tail?duel.pursuit+dt:Math.max(0,duel.pursuit-dt*2);
  duel.pressure=behind>.55&&facing>.65&&range<460?duel.pressure+dt:Math.max(0,duel.pressure-dt*2);
- if(duel.pursuit>(enemyRole==='ROOKIE'?2.5:1.65)&&duel.cooldown<=0&&duel.state!=='break')duelState('break');
+ if(duel.pursuit>(enemyRole==='ROOKIE'?3.6:2.8)&&duel.cooldown<=0&&duel.state!=='break')duelState('break');
  if(duel.state==='extend'&&duel.age>(firstTarget?3.8:3.1)&&(range>310||duel.age>5.5))duelState('engage');
  if(duel.state==='engage'){
   if(range<100)duel.merged=true;
@@ -31,24 +31,24 @@ updateEnemy=function(dt){
  }
  if(duel.state==='break'){
   if(behind>.35&&duel.age>.65)duelState('press');
-  else if(duel.age>1.55&&!duel.reversed&&tail){duel.side*=-1;duel.reversed=true;}
-  if(duel.state==='break'&&duel.age>3.2)duelState('engage');
+  else if(duel.age>2.2&&!duel.reversed&&tail){duel.side*=-1;duel.reversed=true;}
+  if(duel.state==='break'&&duel.age>3.7)duelState('engage');
  }
  if(duel.state==='press'&&(duel.age>6.5||(duel.age>1.8&&(range>540||behind<-.25))))duelState('extend');
  const intent=duel.intent,right=duel.right.crossVectors(pf,worldUp).normalize();
- let targetSpeed=enemyRole==='ROOKIE'?110:enemyRole==='ACE'?130:120,turn=enemyRole==='ROOKIE'?1.05:1.35;
+ let targetSpeed=enemyRole==='ROOKIE'?110:enemyRole==='ACE'?130:120,turn=enemyRole==='ROOKIE'?.9:1.12;
  if(duel.state==='extend'){
   intent.copy(duel.course);targetSpeed+=8;
  }else if(duel.state==='break'){
   right.crossVectors(duel.course,worldUp).normalize();
   intent.copy(duel.course).multiplyScalar(.2).addScaledVector(right,duel.side);
-  targetSpeed=enemyRole==='ROOKIE'?91:87;turn=1.95;
+  targetSpeed=enemyRole==='ROOKIE'?101:98;turn=1.45;
  }else{
   // A lateral offset creates an oblique merge; fade it near contact so passes stay close.
   const offset=duel.state==='engage'?duel.side*Math.min(95,range*.23):0;
   duel.aim.copy(ship.position).addScaledVector(pf,Math.min(range/(targetSpeed+speed),.65)*speed).addScaledVector(right,offset);
   intent.copy(duel.aim).sub(enemy.position);
-  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=138;
+  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=126;
   if(duel.state==='press'){targetSpeed=Math.min(134,Math.max(100,speed+(range>160?7:-8)));turn=1.25;}
  }
  const clearance=enemyRole==='SKIMMER'?42:enemyRole==='CLIMBER'?90:62;

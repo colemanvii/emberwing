@@ -7,13 +7,14 @@ function updateCamera(dt){
   gunKick*=Math.exp(-dt/.065);hitKick*=Math.exp(-dt/.075);
   camF.set(0,0,-1).applyQuaternion(ship.quaternion).normalize();
   shipUpCamera.copy(worldUp).applyQuaternion(ship.quaternion);
-  const bank=Math.atan2(shipUpCamera.x,shipUpCamera.y),pi=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),
+  const cameraShipRight=new THREE.Vector3(1,0,0).applyQuaternion(ship.quaternion);
+  const bank=Math.atan2(-cameraShipRight.y,shipUpCamera.y),pi=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),
     pull=Math.abs(pi)*THREE.MathUtils.smoothstep(Math.abs(bank),.26,.78),
     alt=Math.max(0,ship.position.y-terrainHeight(ship.position.x,ship.position.z)),
-    velocity=THREE.MathUtils.clamp((speed-124)/56,0,1),a=1-Math.exp(-dt/.12);
+    velocity=THREE.MathUtils.clamp((speed-124)/56,0,1),a=1-Math.exp(-dt/.075);
   speedFXClock+=dt*(2+velocity*8);
-  camBank=THREE.MathUtils.lerp(camBank,Math.sin(bank)*.1,1-Math.exp(-dt/.19));
-  camPos.copy(ship.position).addScaledVector(camF,-14-velocity*2.5-pull*4.2-Math.max(0,1/camera.aspect-1)*12).addScaledVector(worldUp,5.3+pull*1.7);
+  camBank=THREE.MathUtils.lerp(camBank,Math.sin(bank)*.055,1-Math.exp(-dt/.19));
+  camPos.copy(ship.position).addScaledVector(camF,-14-velocity*2.5-pull*1.5-Math.max(0,1/camera.aspect-1)*12).addScaledVector(worldUp,5.3+pull*.5);
   camera.position.lerp(camPos,a);
   // Keep the chase camera out of terrain and out of the aircraft during reversals.
   camSegment.copy(camera.position).sub(ship.position);
@@ -41,7 +42,7 @@ function updateCamera(dt){
   viewRotation.setFromRotationMatrix(viewMatrix);
   viewRotation.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),-camBank));
   camera.quaternion.slerp(viewRotation,1-Math.exp(-dt/.055));
-  camera.fov=THREE.MathUtils.lerp(camera.fov,66+velocity*8.5+pull*5.5+THREE.MathUtils.clamp((80-alt)/80,0,1)*2.5+gunKick*.6+hitKick*.4,1-Math.exp(-dt/.18));
+  camera.fov=THREE.MathUtils.lerp(camera.fov,66+velocity*8.5+pull*2+THREE.MathUtils.clamp((80-alt)/80,0,1)*2.5+gunKick*.6+hitKick*.4,1-Math.exp(-dt/.18));
   camera.updateProjectionMatrix();sky.position.copy(camera.position);
 }
 

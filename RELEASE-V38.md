@@ -41,3 +41,13 @@ Bandits now use four bounded behaviors: extend, turn in for an offset merge, def
 The rear locator now says “ON YOUR SIX” when position and nose direction support an actual threat. All enemy roles can use the existing guns, with longer warning times, short bursts and recovery intervals. They do not fire while extending or breaking. Player guns, missile acquisition/guidance, controls, camera, aircraft, terrain and campaign remain unchanged.
 
 Validation: all four roles exchanged front/rear position, defended sustained pursuit, gained attacking position and re-engaged in 60-second geometry scenarios. An offset opposing pass reached 9 metres separation without a position jump. Led cannon fire hit a 90-degree crossing, and missile acquisition accepted an offset broadside target. Rear gun warning and suppression during separation passed. A 40-second live encounter with two player break turns recorded two rear-pressure phases, separation and re-engagement, no crash and approximately 116 FPS on this local browser. The existing full gameplay regression suite passed. These are bounded playtests, not exhaustive difficulty balancing or physical-device verification. This pass is local and has not been published.
+
+### Control recovery
+
+Preserved the authoritative workspace on GitHub before this change (59fff083cc0598ef0224bb815fd82df561de75dc). No experimental build was used.
+
+The player now integrates pitch and roll together in local aircraft space. Removed range-dependent boost attenuation, bank-dependent pitch amplification, stacked extra pitch, and world-yaw/leveling corrections during held pitch. Bank measurement uses aircraft axes rather than the world X component of its up vector; neutral corrections use a continuous sine with reduced influence near vertical flight. Pitch/roll input smoothing is retained. The camera follows more promptly, with less pull-induced retreat, FOV widening and roll.
+
+Bandits retain all four behaviors, but break less often, turn less sharply, decelerate less and have a lower catch-up speed. This leaves longer pursuit windows without deleting crossings, merges or positional reversals.
+
+Browser checks: identical 16-second input trajectories and boost speed with a close rear attacker and missile lock versus a distant enemy (maximum difference zero); bounded sustained pulls at 45, 60, 75, 89 and 91 degrees; full existing gameplay regression passed. All enemy roles still passed the positional-exchange geometry scenarios. Live escape/re-engagement testing supplements these deterministic checks; subjective handling still requires the player's assessment.

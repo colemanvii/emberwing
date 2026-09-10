@@ -127,3 +127,17 @@ qaButton('Crossing weapons',()=>{
  rows.push(`${geometry().state?'PASS':'FAIL'} missile acquisition accepts an offset broadside target`);qaResult.textContent=rows.join('\n');
 });
 qaButton('Rear threat view',()=>{qaScene(2);qaPaused=true;ship.position.set(0,1000,0);enemy.position.set(15,1008,210);enemy.quaternion.identity();duel.forward.set(0,0,-1);duelState('press');duel.pursuit=duel.pressure=0;enemyTime=5;updateEnemy(1/60);for(let i=0;i<60;i++)updateCamera(1/60);updateWorld();updateRange(1/60);updateTargeting(1/60);updateGuidance();renderer.render(scene,camera);qaResult.textContent='Rear locator and break cue at normal chase distance';});
+qaButton('Player authority regression',()=>{
+ qaPaused=true;const results=[];
+ function run(threat){qaScene(2);ship.position.set(0,8000,0);ship.quaternion.identity();pitchRate=rollRate=burner=0;speed=124;crashed=false;const trace=[];let maxStep=0,prev=new THREE.Quaternion();
+ for(let i=0;i<960;i++){for(const k in keys)keys[k]=false;const stage=Math.floor(i/120);keys.KeyZ=true;if(stage===0||stage===4)keys.ArrowLeft=true;if(stage===1||stage===5){keys.ArrowLeft=true;keys.ArrowUp=true;}if(stage===2||stage===6)keys.ArrowUp=true;if(stage===3||stage===7){keys.ArrowRight=true;keys.ArrowUp=true;}
+ if(threat){enemy.position.copy(ship.position).add(new THREE.Vector3(0,0,40));duel.state=i%2?'press':'break';seeker=true;lockState=2;}else{enemy.position.set(5000,8000,-9000);seeker=false;lockState=0;}
+ prev.copy(ship.quaternion);updateFlight(1/60);updateCamera(1/60);maxStep=Math.max(maxStep,prev.angleTo(ship.quaternion));trace.push([...ship.position.toArray(),...ship.quaternion.toArray(),speed]);}
+ return {trace,maxStep};}
+ const free=run(false),rear=run(true);let error=0;for(let i=0;i<free.trace.length;i++)for(let j=0;j<8;j++)error=Math.max(error,Math.abs(free.trace[i][j]-rear.trace[i][j]));
+ results.push(`${error<1e-9?'PASS':'FAIL'} identical input trajectory / boost with rear threat + lock: ${error}`);
+ results.push(`${rear.maxStep<.05?'PASS':'FAIL'} bounded hard-turn rotation: ${(rear.maxStep*180/Math.PI).toFixed(2)} deg/frame`);
+ for(const bank of [45,60,75,89,91]){qaScene(2);ship.position.set(0,8000,0);ship.rotation.z=-bank*Math.PI/180;pitchRate=rollRate=0;for(const k in keys)keys[k]=false;keys.ArrowUp=true;let peak=0;const prev=new THREE.Quaternion();for(let i=0;i<480;i++){prev.copy(ship.quaternion);updateFlight(1/60);updateCamera(1/60);peak=Math.max(peak,prev.angleTo(ship.quaternion));}results.push(`${peak<.023&&ship.quaternion.toArray().every(Number.isFinite)?'PASS':'FAIL'} sustained pull at ${bank}deg: ${(peak*180/Math.PI).toFixed(2)} deg/frame`);}
+ qaScene(0);qaResult.textContent=results.join('\n');
+});
+qaButton('Pursuit recovery',()=>{qaScene(2);qaPaused=true;ship.position.set(0,3000,0);ship.quaternion.identity();enemy.position.set(0,3008,-320);enemy.quaternion.identity();duel.forward.set(0,0,-1);duelState('extend');duel.course.copy(duel.forward);duel.cooldown=12;duel.speed=120;duel.pursuit=duel.pressure=0;keys.KeyZ=true;let window=0,min=Infinity;for(let i=0;i<240;i++){updateFlight(1/60);updateEnemy(1/60);const r=enemy.position.distanceTo(ship.position);min=Math.min(min,r);if(r<240&&enemy.position.z<ship.position.z)window+=1/60;}keys.KeyZ=false;qaResult.textContent=`${min<190&&window>1?'PASS':'FAIL'} catch committed bandit: closest ${min.toFixed(0)}m, ${window.toFixed(1)}s pursuit window`;});

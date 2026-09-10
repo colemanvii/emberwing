@@ -14,9 +14,10 @@ const world=readFileSync(new URL('../src/v38/world.js',import.meta.url),'utf8');
 const airframe=readFileSync(new URL('../src/v38/airframe.js',import.meta.url),'utf8');
 const cinematic=readFileSync(new URL('../src/v38/cinematic.js',import.meta.url),'utf8');
 const camera=readFileSync(new URL('../src/v38/camera.js',import.meta.url),'utf8');
+const flight=readFileSync(new URL('../src/v38/flight.js',import.meta.url),'utf8');
 const dogfight=readFileSync(new URL('../src/v38/dogfight.js',import.meta.url),'utf8');
 const controls=readFileSync(new URL('../src/v38/controls.js',import.meta.url),'utf8');
-html=html.replace('const clock=new THREE.Clock();',world+'\n'+airframe+'\n'+cinematic+'\n'+camera+'\n'+controls+'\n'+dogfight+'\nconst clock=new THREE.Clock();');
+html=html.replace('const clock=new THREE.Clock();',world+'\n'+airframe+'\n'+cinematic+'\n'+camera+'\n'+controls+'\n'+flight+'\n'+dogfight+'\nconst clock=new THREE.Clock();');
 html=html.replace("reset();if(new URLSearchParams(location.search).get('realm')==='tempest')deployTempest();", "reset();const realm=new URLSearchParams(location.search).get('realm');if(realm==='tempest')deployTempest();if(realm==='alpine')deployAlpine();");
 html=html.replace('turnAssist=(bank*.72+ri*.18)', 'turnAssist=(Math.asin(Math.sin(bank))*.72+ri*.18)');
 // Never ease an aircraft up from below solid terrain.

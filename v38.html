@@ -511,13 +511,14 @@ function updateCamera(dt){
   gunKick*=Math.exp(-dt/.065);hitKick*=Math.exp(-dt/.075);
   camF.set(0,0,-1).applyQuaternion(ship.quaternion).normalize();
   shipUpCamera.copy(worldUp).applyQuaternion(ship.quaternion);
-  const bank=Math.atan2(shipUpCamera.x,shipUpCamera.y),pi=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),
+  const cameraShipRight=new THREE.Vector3(1,0,0).applyQuaternion(ship.quaternion);
+  const bank=Math.atan2(-cameraShipRight.y,shipUpCamera.y),pi=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),
     pull=Math.abs(pi)*THREE.MathUtils.smoothstep(Math.abs(bank),.26,.78),
     alt=Math.max(0,ship.position.y-terrainHeight(ship.position.x,ship.position.z)),
-    velocity=THREE.MathUtils.clamp((speed-124)/56,0,1),a=1-Math.exp(-dt/.12);
+    velocity=THREE.MathUtils.clamp((speed-124)/56,0,1),a=1-Math.exp(-dt/.075);
   speedFXClock+=dt*(2+velocity*8);
-  camBank=THREE.MathUtils.lerp(camBank,Math.sin(bank)*.1,1-Math.exp(-dt/.19));
-  camPos.copy(ship.position).addScaledVector(camF,-14-velocity*2.5-pull*4.2-Math.max(0,1/camera.aspect-1)*12).addScaledVector(worldUp,5.3+pull*1.7);
+  camBank=THREE.MathUtils.lerp(camBank,Math.sin(bank)*.055,1-Math.exp(-dt/.19));
+  camPos.copy(ship.position).addScaledVector(camF,-14-velocity*2.5-pull*1.5-Math.max(0,1/camera.aspect-1)*12).addScaledVector(worldUp,5.3+pull*.5);
   camera.position.lerp(camPos,a);
   // Keep the chase camera out of terrain and out of the aircraft during reversals.
   camSegment.copy(camera.position).sub(ship.position);
@@ -545,7 +546,7 @@ function updateCamera(dt){
   viewRotation.setFromRotationMatrix(viewMatrix);
   viewRotation.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),-camBank));
   camera.quaternion.slerp(viewRotation,1-Math.exp(-dt/.055));
-  camera.fov=THREE.MathUtils.lerp(camera.fov,66+velocity*8.5+pull*5.5+THREE.MathUtils.clamp((80-alt)/80,0,1)*2.5+gunKick*.6+hitKick*.4,1-Math.exp(-dt/.18));
+  camera.fov=THREE.MathUtils.lerp(camera.fov,66+velocity*8.5+pull*2+THREE.MathUtils.clamp((80-alt)/80,0,1)*2.5+gunKick*.6+hitKick*.4,1-Math.exp(-dt/.18));
   camera.updateProjectionMatrix();sky.position.copy(camera.position);
 }
 
@@ -579,13 +580,41 @@ function updateFlightMetrics(dt){metricsSeconds+=dt;metricsFrames++;if(metricsSe
 
 function updateTouchLabels(){if(!matchMedia("(pointer:coarse),(max-width:700px)").matches)return;for(const el of [coachText,coachSub])el.textContent=el.textContent.replaceAll("SPACE","FIRE").replaceAll("RELEASE X","RELEASE TRACK").replaceAll("HOLD X","HOLD TRACK").replaceAll("ARROWS","JOYSTICK");}
 
+// Player-only attitude integration. No target, lock, hostile or camera state is read here.
+const flightLocalRate=new THREE.Vector3(),flightStep=new THREE.Quaternion(),flightRight=new THREE.Vector3(),flightUp=new THREE.Vector3();
+updateFlight=function(dt){
+ if(crashed||missionComplete||missionCompleteTimer>0)return;
+ turboBurst=Math.max(0,turboBurst-dt);
+ const pi=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),ri=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),ab=keys.KeyZ||keys.ShiftLeft||keys.ShiftRight||turboBurst>0;
+ burner=THREE.MathUtils.lerp(burner,ab?1:0,1-Math.exp(-dt/(ab?.1:.2)));
+ speed=THREE.MathUtils.lerp(speed,124-Math.abs(pi)*10+burner*56,1-Math.exp(-dt/.14));
+ burnerUI.className=burner>.35?'on':'';
+ const flicker=1+Math.sin(performance.now()*.027)*.045+Math.sin(performance.now()*.061)*.018;
+ for(const e of ship.userData.engines){e.scale.setScalar(.94+burner*.34+flicker*.045);e.material.opacity=.78+burner*.2;}
+ for(const p of ship.userData.plumes){p.scale.z=(1.05+burner*1.95)*flicker;p.material.opacity=.66+burner*.32;}
+ pitchRate=THREE.MathUtils.lerp(pitchRate,pi*1.25,1-Math.exp(-dt/.17));
+ rollRate=THREE.MathUtils.lerp(rollRate,ri*2.2,1-Math.exp(-dt/.09));
+ // Integrate both local axes together: no extra pitch and no world-yaw correction during a pull.
+ flightLocalRate.set(pitchRate,0,-rollRate);const angularSpeed=flightLocalRate.length();
+ if(angularSpeed>1e-8){flightStep.setFromAxisAngle(flightLocalRate.multiplyScalar(1/angularSpeed),angularSpeed*dt);ship.quaternion.multiply(flightStep);}
+ tmpF.set(0,0,-1).applyQuaternion(ship.quaternion).normalize();
+ flightRight.set(1,0,0).applyQuaternion(ship.quaternion);flightUp.set(0,1,0).applyQuaternion(ship.quaternion);
+ const horizontal=Math.hypot(tmpF.x,tmpF.z),bank=Math.atan2(-flightRight.y,flightUp.y);
+ // Neutral settling only. Pulling holds the chosen bank; neither correction fights held pitch/roll.
+ if(!pi&&!ri){ship.rotateZ(Math.sin(bank)*.62*horizontal*dt);ship.rotateX(-tmpF.y*.3*dt);}
+ if(!pi){flightStep.setFromAxisAngle(worldUp,-(Math.sin(bank)*.55+ri*.18)*horizontal*dt);ship.quaternion.premultiply(flightStep);}
+ ship.quaternion.normalize();tmpF.set(0,0,-1).applyQuaternion(ship.quaternion).normalize();
+ ship.position.addScaledVector(tmpF,speed*dt);worldTravel+=speed*dt;
+ const floor=terrainHeight(ship.position.x,ship.position.z)+3;if(ship.position.y<floor){ship.position.y=floor;crashNow();return;}checkObstacleCollision();
+};
+
 // Geometry-led encounters. Player handling, weapons, terrain and airframe stay pinned.
 const duel={state:'extend',age:0,pursuit:0,cooldown:0,side:1,reversed:false,merged:false,pressure:0,speed:112,
  course:new THREE.Vector3(0,0,-1),forward:new THREE.Vector3(),playerForward:new THREE.Vector3(),toPlayer:new THREE.Vector3(),right:new THREE.Vector3(),intent:new THREE.Vector3(),aim:new THREE.Vector3(),q:new THREE.Quaternion()};
 function duelState(state){
  const previous=duel.state;duel.state=state;duel.age=0;duel.merged=false;duel.reversed=false;duel.course.copy(duel.forward);
  if(state==='extend'&&previous!=='extend')duel.course.applyAxisAngle(worldUp,duel.side*.95).normalize();
- if(state==='break'){duel.pursuit=0;duel.cooldown=8;duel.side*=-1;}
+ if(state==='break'){duel.pursuit=0;duel.cooldown=12;duel.side*=-1;}
  if(state==='engage')announce('BANDIT TURNING IN');
  if(state==='break')announce('BANDIT BREAKING');
  if(state==='extend'&&previous==='press')announce('BANDIT EXTENDING');
@@ -603,7 +632,7 @@ updateEnemy=function(dt){
  const facing=f.dot(to),behind=pf.dot(to),tail=range<240&&range>25&&facing<-.65&&behind<-.75;
  duel.pursuit=tail?duel.pursuit+dt:Math.max(0,duel.pursuit-dt*2);
  duel.pressure=behind>.55&&facing>.65&&range<460?duel.pressure+dt:Math.max(0,duel.pressure-dt*2);
- if(duel.pursuit>(enemyRole==='ROOKIE'?2.5:1.65)&&duel.cooldown<=0&&duel.state!=='break')duelState('break');
+ if(duel.pursuit>(enemyRole==='ROOKIE'?3.6:2.8)&&duel.cooldown<=0&&duel.state!=='break')duelState('break');
  if(duel.state==='extend'&&duel.age>(firstTarget?3.8:3.1)&&(range>310||duel.age>5.5))duelState('engage');
  if(duel.state==='engage'){
   if(range<100)duel.merged=true;
@@ -612,24 +641,24 @@ updateEnemy=function(dt){
  }
  if(duel.state==='break'){
   if(behind>.35&&duel.age>.65)duelState('press');
-  else if(duel.age>1.55&&!duel.reversed&&tail){duel.side*=-1;duel.reversed=true;}
-  if(duel.state==='break'&&duel.age>3.2)duelState('engage');
+  else if(duel.age>2.2&&!duel.reversed&&tail){duel.side*=-1;duel.reversed=true;}
+  if(duel.state==='break'&&duel.age>3.7)duelState('engage');
  }
  if(duel.state==='press'&&(duel.age>6.5||(duel.age>1.8&&(range>540||behind<-.25))))duelState('extend');
  const intent=duel.intent,right=duel.right.crossVectors(pf,worldUp).normalize();
- let targetSpeed=enemyRole==='ROOKIE'?110:enemyRole==='ACE'?130:120,turn=enemyRole==='ROOKIE'?1.05:1.35;
+ let targetSpeed=enemyRole==='ROOKIE'?110:enemyRole==='ACE'?130:120,turn=enemyRole==='ROOKIE'?.9:1.12;
  if(duel.state==='extend'){
   intent.copy(duel.course);targetSpeed+=8;
  }else if(duel.state==='break'){
   right.crossVectors(duel.course,worldUp).normalize();
   intent.copy(duel.course).multiplyScalar(.2).addScaledVector(right,duel.side);
-  targetSpeed=enemyRole==='ROOKIE'?91:87;turn=1.95;
+  targetSpeed=enemyRole==='ROOKIE'?101:98;turn=1.45;
  }else{
   // A lateral offset creates an oblique merge; fade it near contact so passes stay close.
   const offset=duel.state==='engage'?duel.side*Math.min(95,range*.23):0;
   duel.aim.copy(ship.position).addScaledVector(pf,Math.min(range/(targetSpeed+speed),.65)*speed).addScaledVector(right,offset);
   intent.copy(duel.aim).sub(enemy.position);
-  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=138;
+  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=126;
   if(duel.state==='press'){targetSpeed=Math.min(134,Math.max(100,speed+(range>160?7:-8)));turn=1.25;}
  }
  const clearance=enemyRole==='SKIMMER'?42:enemyRole==='CLIMBER'?90:62;
