@@ -424,7 +424,7 @@ touchUI.innerHTML='<div id="stick" aria-label="Flight joystick"><span id="stickD
 document.body.appendChild(touchUI);
 const stick=document.getElementById('stick'),stickDot=document.getElementById('stickDot');let stickPointer=null;
 function releaseTouch(){touchState.active=false;touchState.x=touchState.y=0;stickPointer=null;stickDot.style.transform='';for(const k of ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyZ','KeyX'])keys[k]=false;if(seeker)setSeeker(false);for(const b of touchUI.querySelectorAll('button'))b.classList.remove('active');}
-function moveStick(e){const r=stick.getBoundingClientRect();touchState.x=THREE.MathUtils.clamp((e.clientX-r.left-r.width/2)/45,-1,1);touchState.y=THREE.MathUtils.clamp((e.clientY-r.top-r.height/2)/45,-1,1);stickDot.style.transform=`translate(${touchState.x*35}px,${touchState.y*35}px)`;}
+function moveStick(e){const r=stick.getBoundingClientRect(),radius=Math.max(48,Math.min(r.width,r.height)*.42);touchState.x=THREE.MathUtils.clamp((e.clientX-r.left-r.width/2)/radius,-1,1);touchState.y=THREE.MathUtils.clamp((e.clientY-r.top-r.height/2)/radius,-1,1);stickDot.style.transform=`translate(${touchState.x*38}px,${touchState.y*38}px)`;}
 stick.addEventListener('pointerdown',e=>{audio();stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);touchState.active=true;moveStick(e);});
 stick.addEventListener('pointermove',e=>{if(e.pointerId===stickPointer)moveStick(e);});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(type,()=>{touchState.active=false;touchState.x=touchState.y=0;stickPointer=null;stickDot.style.transform='';for(const k of ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'])keys[k]=false;});
@@ -435,7 +435,7 @@ for(const [id,code] of [['touchFire','Space'],['touchMissile','KeyX'],['touchBoo
   for(const type of ['pointercancel','lostpointercapture'])b.addEventListener(type,()=>{if(held){held=false;keys[code]=false;if(code==='KeyX'&&seeker)setSeeker(false);}b.classList.remove('active');});
 }
 addEventListener('blur',releaseTouch);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseTouch();});
-function updateTouchFlight(){if(!touchState.active)return;keys.ArrowLeft=touchState.x<-.18;keys.ArrowRight=touchState.x>.18;keys.ArrowUp=touchState.y<-.18;keys.ArrowDown=touchState.y>.18;}
+function updateTouchFlight(){if(!touchState.active)return;const dead=.30;keys.ArrowLeft=touchState.x<-dead;keys.ArrowRight=touchState.x>dead;keys.ArrowUp=touchState.y<-dead;keys.ArrowDown=touchState.y>dead;}
 let metricsSeconds=0,metricsFrames=0,flightFps=0;
 function updateFlightMetrics(dt){metricsSeconds+=dt;metricsFrames++;if(metricsSeconds>1){flightFps=metricsFrames/metricsSeconds;metricsSeconds=metricsFrames=0;}}
 
