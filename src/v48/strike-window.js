@@ -60,6 +60,7 @@ const v48EnemyBase=updateEnemy;
 updateEnemy=function(dt){
  if(worldIndex===0){
   if((v48.stage==='radar'||v48.stage==='window')&&!enemyAlive){
+   updateEncounter(dt);
    respawn=999999;
    if(v48.stage==='window'&&!v48.secondSpawned&&missionElapsed>=v48.secondDue){
     v48.secondSpawned=true;
@@ -76,6 +77,7 @@ updateEnemy=function(dt){
    return;
   }
   if(v48.stage==='strike'&&!enemyAlive){
+   updateEncounter(dt);
    respawn=999999;
    return;
   }
