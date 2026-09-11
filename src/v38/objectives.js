@@ -5,7 +5,7 @@
 const encounter={
   kind:null,phase:'idle',age:0,timer:0,offered:false,callout:false,runCue:false,
   group:null,wreck:null,dishPivot:null,beacon:null,beaconLight:null,targetPos:new THREE.Vector3(),
-  lastRange:0,carrierTimer:0,carrier:null,fx:[]
+  lastRange:0,carrierTimer:0,carrier:null,paint:0,paintPulse:0,paintStage:0,fx:[]
 };
 
 function disposeObject3D(root){
@@ -60,7 +60,7 @@ function clearEncounterVisuals(){
 function resetEncounter(allowAgain=false){
   clearEncounterVisuals();
   encounter.kind=null;encounter.phase='idle';encounter.age=encounter.timer=0;
-  encounter.callout=false;encounter.runCue=false;encounter.beaconLight=null;encounter.lastRange=0;encounter.carrierTimer=0;
+  encounter.callout=false;encounter.runCue=false;encounter.beaconLight=null;encounter.lastRange=0;encounter.carrierTimer=0;encounter.paint=0;encounter.paintPulse=0;encounter.paintStage=0;
   if(allowAgain)encounter.offered=false;
 }
 
@@ -158,9 +158,11 @@ function beginRadarOpportunity(){
 function activateRadarOpportunity(){
   if(encounterBlocked())return;
   encounter.phase='active';encounter.age=0;encounter.callout=false;encounter.runCue=false;
+  encounter.paint=0;encounter.paintPulse=0;encounter.paintStage=0;
   placeRadarInstallation();
-  encounter.carrierTimer=0;
-  objective.textContent='';
+  encounter.carrierTimer=1.35;
+  announce('SIGNAL DETECTED');
+  radarCarrier();
 }
 
 function finishRadarOpportunity(status){
@@ -309,29 +311,57 @@ function updateEncounter(dt){
   }
 
   if(encounter.phase==='active'){
-    if(encounter.dishPivot)encounter.dishPivot.rotation.y+=dt*.52;
-    if(encounter.beacon){
-      const pulse=.78+.22*Math.sin(encounter.age*7.5);
-      encounter.beacon.scale.setScalar(.9+pulse*.22);
-      encounter.beacon.material.emissiveIntensity=2.2+pulse*2.4;
-      if(encounter.beaconLight)encounter.beaconLight.intensity=4.5+pulse*5.5;
-    }
     const range=ship.position.distanceTo(encounter.targetPos);
     const bearing=encounter.targetPos.clone().sub(ship.position).normalize().dot(heading());
-    encounter.carrierTimer-=dt;
-    if(!encounter.callout&&encounter.carrierTimer<=0){radarCarrier();encounter.carrierTimer=2.3;}
-    // Evidence precedes identification. Looking toward a nearby site or deliberately
-    // designating it reveals the existing optional strike controls.
-    if(!encounter.callout&&((encounter.age>2.6&&range<620&&bearing>.2)||(seeker&&strikeGeometry().state))){
+    encounter.carrierTimer-=dt;encounter.paintPulse-=dt;
+
+    // Keep discovery atmospheric, but never vague: the player gets a clear signal,
+    // then identification as the installation enters the forward hemisphere.
+    if(!encounter.callout&&encounter.carrierTimer<=0){radarCarrier();encounter.carrierTimer=1.65;}
+    if(!encounter.callout&&((encounter.age>1.35&&range<760&&bearing>-.12)||(seeker&&strikeGeometry().state))){
       encounter.callout=true;stopRadarCarrier();announce('RADAR EMITTER');
+      chirp(510,.055,.03);chirp(760,.07,.026,.07);
     }
+
+    // The site is not scenery: once inside its envelope it actively paints the aircraft.
+    const painting=encounter.callout&&range<560;
+    encounter.paint=THREE.MathUtils.clamp(encounter.paint+dt*(painting?.62:-1.45),0,1);
+    if(encounter.paint>.07&&encounter.paintStage===0){
+      encounter.paintStage=1;announce('RADAR PAINT');flashScreen(.025);
+      chirp(560,.055,.028);chirp(820,.06,.024,.08);
+    }
+    if(encounter.paint>.72&&encounter.paintStage<2){
+      encounter.paintStage=2;announce('TRACKED — STRIKE OR BREAK');flashScreen(.065);hitKick=Math.max(hitKick,.12);
+      chirp(930,.07,.038);chirp(1180,.09,.032,.08);
+    }
+    if(encounter.paintStage&&encounter.paintPulse<=0){
+      const urgency=encounter.paint;
+      chirp(560+urgency*430,.045,.018+urgency*.018);
+      encounter.paintPulse=THREE.MathUtils.lerp(.82,.24,urgency);
+    }
+    if(encounter.paint<.025&&encounter.paintStage){
+      encounter.paintStage=0;announce('RADAR TRACK BROKEN');chirp(460,.055,.022);
+    }
+
+    // The dish visibly stops sweeping and turns toward the player when tracking.
+    if(encounter.dishPivot){
+      if(encounter.paint>.025)encounter.dishPivot.lookAt(ship.position);
+      else encounter.dishPivot.rotation.y+=dt*.52;
+    }
+    if(encounter.beacon){
+      const pulse=.78+.22*Math.sin(encounter.age*(7.5+encounter.paint*6));
+      encounter.beacon.scale.setScalar(.9+pulse*(.22+encounter.paint*.12));
+      encounter.beacon.material.emissiveIntensity=2.2+pulse*(2.4+encounter.paint*3.2);
+      if(encounter.beaconLight)encounter.beaconLight.intensity=4.5+pulse*(5.5+encounter.paint*8);
+    }
+
     if(encounter.callout&&!encounter.runCue&&range<430){
       encounter.runCue=true;announce('STRIKE WINDOW');
       chirp(720,.045,.028);chirp(980,.07,.024,.065);
     }
     // Weapon resolution owns the final decision once a strike has been launched.
     const strikeLive=missile&&missile.strikeTarget;
-    if(!strikeLive&&(encounter.age>28||(encounter.age>8&&range>1750)))finishRadarOpportunity('lost');
+    if(!strikeLive&&(encounter.age>32||(encounter.age>9&&range>1750)))finishRadarOpportunity('lost');
     return;
   }
 
@@ -380,8 +410,8 @@ updateTargeting=function(dt){
     if(!encounter.callout&&!seeker){coachText.textContent='AIRSPACE QUIET';coachSub.textContent='';return;}
     const ft=Math.max(0,Math.round(displayRangeFeet/10)*10);
     if(!seeker){
-      coachText.textContent='HOLD X — DESIGNATE';
-      coachSub.textContent='OPTIONAL STRIKE · RADAR EMITTER · '+ft+' FT';
+      coachText.textContent=encounter.paintStage>=2?'RADAR TRACK':encounter.paintStage===1?'RADAR PAINT':'HOLD X — DESIGNATE';
+      coachSub.textContent=encounter.paintStage?'BREAK AWAY OR HOLD X — DESIGNATE · '+ft+' FT':'OPTIONAL STRIKE · RADAR EMITTER · '+ft+' FT';
     }else if(lockState===2){
       coachText.textContent='GROUND LOCK';
       coachSub.textContent=ft+' FT · RELEASE X — FIRE';
