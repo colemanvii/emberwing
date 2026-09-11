@@ -188,9 +188,12 @@ key=function(e,down){
  briefingKeyBase(e,down);
 };
 // Freeze tactical state behind the brief; scenery can remain alive.
-for(const name of ['updateFlight','updateDanger','updateEnemy','updateEnemyAttack','updateMission','updateWeapons']){
- const base=eval(name);globalThis['__brief_'+name]=base;eval(name+'=function(...args){if(missionBriefActive)return;return globalThis.__brief_'+name+'(...args)}');
-}
+const briefingFlightBase=updateFlight;updateFlight=function(dt){if(missionBriefActive)return;briefingFlightBase(dt);};
+const briefingDangerBase=updateDanger;updateDanger=function(dt){if(missionBriefActive)return;briefingDangerBase(dt);};
+const briefingEnemyBase=updateEnemy;updateEnemy=function(dt){if(missionBriefActive)return;briefingEnemyBase(dt);};
+const briefingAttackBase=updateEnemyAttack;updateEnemyAttack=function(dt){if(missionBriefActive)return;briefingAttackBase(dt);};
+const briefingMissionBase=updateMission;updateMission=function(dt){if(missionBriefActive)return;briefingMissionBase(dt);};
+const briefingWeaponsBase=updateWeapons;updateWeapons=function(dt){if(missionBriefActive)return;briefingWeaponsBase(dt);};
 queueMicrotask(()=>{if(worldIndex===0){missionBrief.classList.add('show');releaseMissionInputs();}else{missionBriefActive=false;missionBrief.style.display='none';}});
 
 // After the radar strike, reconnect the action to the hostile launch site.
