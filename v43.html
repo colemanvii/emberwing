@@ -2195,9 +2195,9 @@ seatStrikeRoute();
 
 // Distant launch-site steam gives the final objective a visual signature miles out.
 const vaporGeo=new THREE.IcosahedronGeometry(1,1);
-const vaporMat=new THREE.MeshBasicMaterial({color:0xd8d2c4,transparent:true,opacity:.12,depthWrite:false,fog:true});
+const v43VaporMat=new THREE.MeshBasicMaterial({color:0xd8d2c4,transparent:true,opacity:.12,depthWrite:false,fog:true});
 for(let i=0;i<7;i++){
- const m=new THREE.Mesh(vaporGeo,vaporMat.clone());m.frustumCulled=true;scene.add(m);
+ const m=new THREE.Mesh(vaporGeo,v43VaporMat.clone());m.frustumCulled=true;scene.add(m);
  v43.vapor.push({mesh:m,phase:i/7,seed:i*2.17});
 }
 function updateLaunchVapor(){
