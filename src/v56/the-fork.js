@@ -67,3 +67,79 @@ updateV46StealthBreak=function(){
   missionControl.task='';missionCue('INTERCEPTOR COMMITTED','KEEP NORTH / FIGHT THROUGH');
  }
 };
+
+const v56ValleyBase=updateV45ValleyDirector;
+updateV45ValleyDirector=function(){
+ if(worldIndex!==0){v56ValleyBase();return;}
+ if(missionBriefActive||crashed)return;
+ const agl=ship.position.y-terrainHeight(ship.position.x,ship.position.z);
+
+ if(!v53.revealed){
+  const rightReveal=ship.position.z<760&&ship.position.x>150;
+  const leftReveal=ship.position.z<-380&&ship.position.x<-180;
+  if(rightReveal||leftReveal){
+   v53.revealed=true;v53.revealAt=missionElapsed;v45.entered=true;missionControl.task='';
+  }
+ }
+ if(v53.revealed&&!v53.dropCue&&missionElapsed-v53.revealAt>1){
+  v53.dropCue=true;missionControl.task='';
+  if(v56.choice==='left')missionCue('STAY IN THE WASH','TARGET WILL REAPPEAR AHEAD');
+  else missionCue('BASIN OPEN','PRESS OR BREAK LEFT FOR COVER');
+ }
+ if(v53.revealed&&!v45.dropped){
+  if(agl<155&&ship.position.z<560)v45.dropped=true;
+  else if(agl>225&&ship.position.z<500&&missionElapsed-v45.lastHighCue>5){
+   v45.lastHighCue=missionElapsed;missionCue('YOU ARE EXPOSED','TERRAIN IS YOUR COVER');
+  }
+ }
+ if(v41.launch.destroyed){
+  if(!v45.northCue){v45.northCue=true;missionControl.task='';missionCue('TARGET BURNING','CLIMB NORTH / HIGH PASS');}
+  if(!v45.clearCue&&ship.position.z<-4140){v45.clearCue=true;missionControl.task='';missionCue('HIGH PASS AHEAD','TAKE THE GAP / KEEP GOING');}
+ }
+};
+
+const v56BreakBase=v46BreakStealth;
+v46BreakStealth=function(reason){
+ if(v46.chaos||worldIndex!==0)return;
+ v56BreakBase(reason);
+ if(v56.choice==='right'){
+  v46.interceptorDue=Math.max(v46.interceptorDue,missionElapsed+6);
+  v41.sam.cooldown=Math.max(v41.sam.cooldown,8.6);
+ }
+};
+
+const v56GuideBase=updateGuidance;
+updateGuidance=function(){
+ v56GuideBase();
+ if(worldIndex!==0)return;
+ if(!v53.revealed&&ship.position.z<1320&&ship.position.z>820&&!seeker){
+  coachText.textContent='THE WASH DIVIDES';
+  coachSub.textContent='READ THE TERRAIN';
+ }
+ if(v53.revealAt>=0){
+  const age=missionElapsed-v53.revealAt;
+  if(age>=0&&age<1.05&&!seeker){
+   targetUI.style.opacity='0';
+   if(v42.objectiveBug)v42.objectiveBug.style.opacity='0';
+  }
+ }
+};
+
+const v56ResetBase=reset;
+reset=function(){
+ v56.choice=null;
+ v56ResetBase();
+ const cz=Math.round(v55.startZ/620)*620;
+ rebuildTerrain(0,cz);positionDistantRidges(0,cz);
+ for(const m of scenery)place(m,true,false);
+ clearSpawnCorridor();
+ const sx=v55CenterX(v55.startZ);
+ ship.position.set(sx,terrainHeight(sx,v55.startZ)+88,v55.startZ);
+ ship.quaternion.identity();
+ camera.position.set(sx,ship.position.y+5.3,v55.startZ+12);
+ camera.lookAt(ship.position.clone().add(new THREE.Vector3(0,-7,-48)));
+ v56Reseat();v46SilenceDefenders();
+};
+
+const v56AlpineBase=deployAlpine;
+deployAlpine=function(){launchSite.scale.setScalar(1);v56AlpineBase();};
