@@ -40,9 +40,10 @@ function seatStrikeRoute(){
   const x=THREE.MathUtils.lerp(15,v42Corridor.launch.x,t)+Math.sin(t*Math.PI*2)*14;
   makeRouteSegment(x,z,225,6.5);
  }
- // Cross-road at the radar site makes the emitter feel installed, not spawned.
- makeRouteSegment(v42Corridor.radar.x,v42Corridor.radar.z,150,5.5);
- const cross=v43.road.children[v43.road.children.length-1];cross.rotation.y=Math.PI/2;
+ // Short east-west service spur at the radar site makes it feel installed, not spawned.
+ const ry=terrainHeight(v42Corridor.radar.x,v42Corridor.radar.z)+.42;
+ const spur=new THREE.Mesh(new THREE.BoxGeometry(150,.65,5.5),routeMat);
+ spur.position.set(v42Corridor.radar.x,ry,v42Corridor.radar.z);spur.receiveShadow=true;v43.road.add(spur);
 }
 seatStrikeRoute();
 
