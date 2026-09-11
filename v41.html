@@ -1680,7 +1680,10 @@ function removeSamMissile(){
 }
 function clearSamNetwork(){
  removeSamMissile();
- for(const s of v41.sam.sites)scene.remove(s.group);
+ for(const s of v41.sam.sites){
+  s.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&!([samConcrete,samSteel,samDark].includes(o.material)))try{o.material.dispose()}catch{}});
+  scene.remove(s.group);
+ }
  v41.sam.sites.length=0;v41.sam.lock=0;v41.sam.stage=0;v41.sam.site=null;
 }
 function setupSamNetwork(){
@@ -1822,6 +1825,9 @@ updateEncounter=function(dt){
   encounter.age+=dt;encounter.targetPos.copy(rocket.position);encounter.lastRange=ship.position.distanceTo(encounter.targetPos);
   return;
  }
+ // V41 SAM batteries own the surface-missile threat. Keep the radar as sensor /
+ // strike objective without also spawning the old prototype surface shot.
+ if(encounter.kind==='radar'&&encounter.phase==='active')encounter.shotFired=true;
  v41EncounterBase(dt);
 };
 const v41ExplodeBase=explode;
@@ -1867,7 +1873,7 @@ groundStrikeImpact=function(){
  if(!launchHit){v41GroundStrikeBase();return;}
  const impact=encounter.targetPos.clone();
  v41GroundStrikeBase();
- v41.launch.active=false;v41.launch.destroyed=true;v41.launch.egress=8.5;rocket.visible=false;rocketFlame.visible=false;
+ v41.launch.active=false;v41.launch.destroyed=true;v41.launch.egress=14;rocket.visible=false;rocketFlame.visible=false;
  destinations[0].name='HIGH PASS EGRESS';
  v41EgressPoint.y=terrainHeight(v41EgressPoint.x,v41EgressPoint.z)+115;destinations[0].position.copy(v41EgressPoint);
  addLaunchSmoke(impact);
@@ -1903,7 +1909,8 @@ const v41MissionBase=updateMission;
 updateMission=function(dt){
  if(worldIndex===0&&v41.launch.destroyed&&v41.launch.egress>0){
   v41.launch.egress-=dt;
-  if(v41.launch.egress<=0){citySplit=missionElapsed;missionCompleteTimer=.95;}
+  const northClear=ship.position.z<launchSite.position.z-650;
+  if(northClear||v41.launch.egress<=0){citySplit=missionElapsed;missionCompleteTimer=.95;}
   return;
  }
  v41MissionBase(dt);
