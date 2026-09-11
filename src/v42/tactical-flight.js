@@ -13,6 +13,38 @@ const v42={
  ticks:[]
 };
 
+// One-way mission geometry. A successful Desert run keeps pushing north:
+// ingress -> radar -> launch vehicle -> high-pass egress. No backtracking.
+const v42Corridor={
+ radar:new THREE.Vector3(-55,0,-1880),
+ launch:new THREE.Vector3(-120,0,-3050),
+ egress:new THREE.Vector3(180,0,-5200)
+};
+function placeV42Corridor(){
+ const ly=terrainHeight(v42Corridor.launch.x,v42Corridor.launch.z);
+ launchSite.position.set(v42Corridor.launch.x,ly+92,v42Corridor.launch.z);
+ v41.launchDestination.set(v42Corridor.launch.x,ly,v42Corridor.launch.z);
+ v41EgressPoint.copy(v42Corridor.egress);
+ v41EgressPoint.y=terrainHeight(v41EgressPoint.x,v41EgressPoint.z)+115;
+ destinations[0].name='LAUNCH COMPLEX';
+ destinations[0].position.copy(v41.launchDestination);
+}
+placeV42Corridor();
+
+// Override the inherited radar staging so it lies BEFORE the launch complex on
+// the same northbound penetration corridor instead of appearing off-route.
+stagePersistentRadarSite=function(){
+ if(worldIndex!==0||encounter.group||encounter.wreck)return;
+ const x=v42Corridor.radar.x,z=v42Corridor.radar.z,y=terrainHeight(x,z);
+ encounter.targetPos.set(x,y+9,z);
+ encounter.group=makeRadarInstallation();
+ encounter.group.position.set(x,y+.15,z);
+ encounter.group.rotation.y=.12;
+ encounter.group.scale.setScalar(1.35);
+ scene.add(encounter.group);
+ encounter.lastRange=ship.position.distanceTo(encounter.targetPos);
+};
+
 // Plain-language aviation wording: "north" now maps to an actual cockpit instrument.
 if(typeof missionBrief!=='undefined'&&missionBrief){
  const orders=[...missionBrief.querySelectorAll('.briefOrders span')];
@@ -152,7 +184,7 @@ launchSam=function(site){
 const v42DismissBase=dismissMissionBrief;
 dismissMissionBrief=function(){
  v42DismissBase();
- if(worldIndex===0)missionCue('RADAR COVERAGE AHEAD','USE THE RIDGELINE');
+ if(worldIndex===0)missionCue('PUSH NORTH','USE TERRAIN / EXPECT INTERCEPTORS');
 };
 
 // Keep the compass alive as a quiet cockpit instrument, not a waypoint UI.
@@ -160,4 +192,13 @@ const v42WorldBase=updateWorld;
 updateWorld=function(){
  v42WorldBase();
  updateHeadingTape();
+};
+
+
+// Reassert corridor geometry before each Desert reset. V41's reset then stages
+// the persistent radar and SAM batteries around these fixed mission landmarks.
+const v42ResetBase=reset;
+reset=function(){
+ placeV42Corridor();
+ v42ResetBase();
 };
