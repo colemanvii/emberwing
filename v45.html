@@ -2648,6 +2648,21 @@ const v45={
  passPoint:new THREE.Vector3(180,0,-4620)
 };
 
+// V45 briefing matches the physical mission the player is about to fly.
+if(typeof missionBrief!=='undefined'&&missionBrief){
+ const title=missionBrief.querySelector('.briefTitle');
+ const orders=missionBrief.querySelector('.briefOrders');
+ if(title)title.textContent='VALLEY STRIKE';
+ if(orders)orders.innerHTML=[
+  'CROSS THE SOUTH RIDGELINE',
+  'DROP INTO THE VALLEY — STAY LOW',
+  'FIGHT THROUGH THE INTERCEPTORS',
+  'DESTROY THE RADAR',
+  'DESTROY THE LAUNCH VEHICLE',
+  'CLIMB OUT NORTH THROUGH HIGH PASS'
+ ].map(line=>'<span>'+line+'</span>').join('');
+}
+
 // Extend the V44 insertion. The target is now genuinely far away, with a ridgeline
 // between EW-01 and the defended valley.
 v44.startZ=2850;
