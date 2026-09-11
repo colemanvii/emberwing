@@ -16,8 +16,9 @@ const cinematic=readFileSync(new URL('../src/v38/cinematic.js',import.meta.url),
 const camera=readFileSync(new URL('../src/v38/camera.js',import.meta.url),'utf8');
 const flight=readFileSync(new URL('../src/v38/flight.js',import.meta.url),'utf8');
 const dogfight=readFileSync(new URL('../src/v38/dogfight.js',import.meta.url),'utf8');
+const objectives=readFileSync(new URL('../src/v38/objectives.js',import.meta.url),'utf8');
 const controls=readFileSync(new URL('../src/v38/controls.js',import.meta.url),'utf8');
-html=html.replace('const clock=new THREE.Clock();',world+'\n'+airframe+'\n'+cinematic+'\n'+camera+'\n'+controls+'\n'+flight+'\n'+dogfight+'\nconst clock=new THREE.Clock();');
+html=html.replace('const clock=new THREE.Clock();',world+'\n'+airframe+'\n'+cinematic+'\n'+camera+'\n'+controls+'\n'+flight+'\n'+dogfight+'\n'+objectives+'\nconst clock=new THREE.Clock();');
 html=html.replace("reset();if(new URLSearchParams(location.search).get('realm')==='tempest')deployTempest();", "reset();const realm=new URLSearchParams(location.search).get('realm');if(realm==='tempest')deployTempest();if(realm==='alpine')deployAlpine();");
 html=html.replace('turnAssist=(bank*.72+ri*.18)', 'turnAssist=(Math.asin(Math.sin(bank))*.72+ri*.18)');
 // Never ease an aircraft up from below solid terrain.
@@ -41,5 +42,6 @@ html=html.replace("enemyAttackTimer=enemyRole==='ACE'?.32:.42", "enemyAttackTime
 html=html.replace("maxShots=enemyRole==='ACE'?4:3", "maxShots=enemyRole==='ACE'?3:2");
 html=html.replace("enemyAttackTimer=enemyRole==='ACE'?2.65:3.35", "enemyAttackTimer=enemyRole==='ACE'?3.5:4.8");
 html=html.replace("'GET ON HIS SIX'", "'LEAD THE CROSSING'");
+if(!html.includes(objectives)||html.indexOf(objectives)<html.indexOf(dogfight))throw Error('V38 encounter composition lost');
 writeFileSync(new URL('../v38.html',import.meta.url),html);
 console.log('Built V38 from the preserved V37 core.');

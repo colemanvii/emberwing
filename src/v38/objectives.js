@@ -5,7 +5,7 @@
 const encounter={
   kind:null,phase:'idle',age:0,timer:0,offered:false,callout:false,runCue:false,
   group:null,wreck:null,dishPivot:null,beacon:null,beaconLight:null,targetPos:new THREE.Vector3(),
-  lastRange:0,fx:[]
+  lastRange:0,carrierTimer:0,carrier:null,fx:[]
 };
 
 function disposeObject3D(root){
@@ -20,20 +20,47 @@ function disposeObject3D(root){
   scene.remove(root);
 }
 
+function encounterBlocked(){return crashed||missionComplete||missionCompleteTimer>0;}
+
+function clearRadarInstallation(){
+  disposeObject3D(encounter.group);
+  encounter.group=encounter.dishPivot=encounter.beacon=encounter.beaconLight=null;
+}
+
+function stopRadarCarrier(){
+  if(!encounter.carrier)return;
+  encounter.carrier.gain.disconnect();encounter.carrier.osc.stop();encounter.carrier=null;
+}
+
+function radarCarrier(){
+  if(!audioCtx||audioCtx.state!=='running'||encounterBlocked())return;
+  stopRadarCarrier();
+  const local=encounter.targetPos.clone().sub(ship.position).applyQuaternion(ship.quaternion.clone().invert()).normalize();
+  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),pan=audioCtx.createStereoPanner(),t=audioCtx.currentTime;
+  osc.type='sine';osc.frequency.value=410;
+  pan.pan.value=THREE.MathUtils.clamp(local.x,-1,1);
+  gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(.008*(.35+.65*Math.max(0,-local.z)),t+.025);gain.gain.linearRampToValueAtTime(0,t+.16);
+  osc.connect(gain).connect(pan).connect(audioCtx.destination);osc.start(t);osc.stop(t+.18);
+  const carrier={osc,gain};encounter.carrier=carrier;
+  osc.onended=()=>{gain.disconnect();pan.disconnect();if(encounter.carrier===carrier)encounter.carrier=null;};
+}
+
 function clearEncounterVisuals(){
-  disposeObject3D(encounter.group);encounter.group=null;
+  stopRadarCarrier();clearRadarInstallation();
   disposeObject3D(encounter.wreck);encounter.wreck=null;
   for(const fx of encounter.fx){
     if(fx.mesh)disposeObject3D(fx.mesh);
     if(fx.light)scene.remove(fx.light);
   }
-  encounter.fx.length=0;encounter.dishPivot=null;encounter.beacon=null;
+  encounter.fx.length=0;
+  for(let i=combatFX.length-1;i>=0;i--)if(combatFX[i].encounterOwned){disposeObject3D(combatFX[i].mesh);combatFX.splice(i,1);}
+  if(missile&&missile.strikeTarget)removeMissile();
 }
 
 function resetEncounter(allowAgain=false){
   clearEncounterVisuals();
   encounter.kind=null;encounter.phase='idle';encounter.age=encounter.timer=0;
-  encounter.callout=false;encounter.runCue=false;encounter.beaconLight=null;encounter.lastRange=0;
+  encounter.callout=false;encounter.runCue=false;encounter.beaconLight=null;encounter.lastRange=0;encounter.carrierTimer=0;
   if(allowAgain)encounter.offered=false;
 }
 
@@ -120,7 +147,7 @@ function placeRadarInstallation(){
 }
 
 function beginRadarOpportunity(){
-  if(encounter.offered||worldIndex!==0||crashed||missionComplete)return;
+  if(encounter.offered||worldIndex!==0||encounterBlocked())return;
   encounter.offered=true;encounter.kind='radar';encounter.phase='quiet';
   encounter.timer=2.6;encounter.age=0;encounter.callout=false;
   respawn=999;
@@ -129,14 +156,16 @@ function beginRadarOpportunity(){
 }
 
 function activateRadarOpportunity(){
+  if(encounterBlocked())return;
   encounter.phase='active';encounter.age=0;encounter.callout=false;encounter.runCue=false;
   placeRadarInstallation();
-  announce('SIGNAL DETECTED');
-  chirp(460,.05,.028);chirp(690,.07,.025,.07);
+  encounter.carrierTimer=0;
+  objective.textContent='';
 }
 
 function finishRadarOpportunity(status){
-  if(encounter.phase!=='active')return;
+  if(encounterBlocked()||encounter.phase!=='active')return;
+  stopRadarCarrier();clearRadarInstallation();
   encounter.phase='egress';encounter.timer=status==='destroyed'?3.3:1.6;
   encounter.age=0;
   lockState=lockTimer=lastLock=0;
@@ -178,10 +207,10 @@ function makeStrikeWreck(){
 }
 
 function groundStrikeImpact(){
-  if(encounter.phase!=='active')return;
+  if(encounterBlocked()||encounter.phase!=='active')return;
   const pos=encounter.targetPos.clone();pos.y=terrainHeight(pos.x,pos.z)+4.5;
   removeMissile();
-  if(encounter.group)encounter.group.visible=false;
+  clearRadarInstallation();
   makeStrikeWreck();
 
   flashScreen(.72);hitKick=Math.max(hitKick,1);killSlow=Math.max(killSlow,.34);
@@ -206,7 +235,7 @@ function groundStrikeImpact(){
     mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*8,Math.random()*7,(Math.random()-.5)*8));
     scene.add(mesh);
     const v=new THREE.Vector3(Math.random()-.5,.12+Math.random()*.85,Math.random()-.5).normalize().multiplyScalar(26+Math.random()*62);
-    const life=.55+Math.random()*.45;combatFX.push({mesh,v,life,maxLife:life,smoke:false});
+    const life=.55+Math.random()*.45;combatFX.push({encounterOwned:true,mesh,v,life,maxLife:life,smoke:false});
   }
   for(let i=0;i<18;i++){
     const mesh=new THREE.Mesh(new THREE.SphereGeometry(1.8+Math.random()*2.6,8,6),new THREE.MeshBasicMaterial({
@@ -215,7 +244,7 @@ function groundStrikeImpact(){
     mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*18,Math.random()*7,(Math.random()-.5)*18));
     scene.add(mesh);
     const v=new THREE.Vector3((Math.random()-.5)*4,4+Math.random()*8,(Math.random()-.5)*4);
-    const life=5.8+Math.random()*4.2;combatFX.push({mesh,v,life,maxLife:life,smoke:true,baseOpacity:.44,grow:.25+Math.random()*.2});
+    const life=5.8+Math.random()*4.2;combatFX.push({encounterOwned:true,mesh,v,life,maxLife:life,smoke:true,baseOpacity:.44,grow:.25+Math.random()*.2});
   }
   // One slow vertical column remains after the flash so the kill has a geographic memory.
   for(let i=0;i<9;i++){
@@ -225,7 +254,7 @@ function groundStrikeImpact(){
     mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*6,2+i*3.2,(Math.random()-.5)*6));
     scene.add(mesh);
     const v=new THREE.Vector3((Math.random()-.5)*1.3,2.4+Math.random()*2.8,(Math.random()-.5)*1.3);
-    const life=8.5+Math.random()*5.5;combatFX.push({mesh,v,life,maxLife:life,smoke:true,baseOpacity:.36,grow:.16+Math.random()*.1});
+    const life=8.5+Math.random()*5.5;combatFX.push({encounterOwned:true,mesh,v,life,maxLife:life,smoke:true,baseOpacity:.36,grow:.16+Math.random()*.1});
   }
   const fireCore=new THREE.Mesh(new THREE.SphereGeometry(2.8,12,9),new THREE.MeshBasicMaterial({color:0xff7a35,transparent:true,opacity:.86,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
   fireCore.position.copy(pos).addScaledVector(worldUp,2.2);scene.add(fireCore);
@@ -237,7 +266,7 @@ function groundStrikeImpact(){
     mesh.position.copy(pos);scene.add(mesh);
     const v=new THREE.Vector3(Math.random()-.5,.25+Math.random()*.9,Math.random()-.5).normalize().multiplyScalar(16+Math.random()*36);
     const life=1.8+Math.random()*1.5;
-    combatFX.push({mesh,v,life,maxLife:life,debris:true,spin:new THREE.Vector3((Math.random()-.5)*8,(Math.random()-.5)*10,(Math.random()-.5)*8)});
+    combatFX.push({encounterOwned:true,mesh,v,life,maxLife:life,debris:true,spin:new THREE.Vector3((Math.random()-.5)*8,(Math.random()-.5)*10,(Math.random()-.5)*8)});
   }
 
   finishRadarOpportunity('destroyed');
@@ -268,6 +297,7 @@ function updateEncounterFX(dt){
 }
 
 function updateEncounter(dt){
+  if(encounterBlocked()){stopRadarCarrier();return;}
   updateEncounterFX(dt);
   if(encounter.phase==='idle'||encounter.phase==='done')return;
   encounter.age+=dt;
@@ -286,15 +316,22 @@ function updateEncounter(dt){
       encounter.beacon.material.emissiveIntensity=2.2+pulse*2.4;
       if(encounter.beaconLight)encounter.beaconLight.intensity=4.5+pulse*5.5;
     }
-    if(!encounter.callout&&encounter.age>1.15){
-      encounter.callout=true;announce('OPPORTUNITY — RADAR EMITTER');
-    }
     const range=ship.position.distanceTo(encounter.targetPos);
-    if(!encounter.runCue&&range<430){
+    const bearing=encounter.targetPos.clone().sub(ship.position).normalize().dot(heading());
+    encounter.carrierTimer-=dt;
+    if(!encounter.callout&&encounter.carrierTimer<=0){radarCarrier();encounter.carrierTimer=2.3;}
+    // Evidence precedes identification. Looking toward a nearby site or deliberately
+    // designating it reveals the existing optional strike controls.
+    if(!encounter.callout&&((encounter.age>2.6&&range<620&&bearing>.2)||(seeker&&strikeGeometry().state))){
+      encounter.callout=true;stopRadarCarrier();announce('RADAR EMITTER');
+    }
+    if(encounter.callout&&!encounter.runCue&&range<430){
       encounter.runCue=true;announce('STRIKE WINDOW');
       chirp(720,.045,.028);chirp(980,.07,.024,.065);
     }
-    if(encounter.age>28||(encounter.age>8&&range>1750))finishRadarOpportunity('lost');
+    // Weapon resolution owns the final decision once a strike has been launched.
+    const strikeLive=missile&&missile.strikeTarget;
+    if(!strikeLive&&(encounter.age>28||(encounter.age>8&&range>1750)))finishRadarOpportunity('lost');
     return;
   }
 
@@ -302,7 +339,7 @@ function updateEncounter(dt){
     encounter.timer-=dt;
     if(encounter.timer<=0){
       encounter.phase='done';respawn=.9;
-      if(encounter.group&&!encounter.wreck){disposeObject3D(encounter.group);encounter.group=null;}
+      clearRadarInstallation();
     }
   }
 }
@@ -337,8 +374,10 @@ updateRange=function(dt){
 
 const encounterTargetingBase=updateTargeting;
 updateTargeting=function(dt){
+  if(encounter.kind&&encounterBlocked()){stopRadarCarrier();silence();return;}
   encounterTargetingBase(dt);
   if(!enemyAlive&&encounter.phase==='active'){
+    if(!encounter.callout&&!seeker){coachText.textContent='AIRSPACE QUIET';coachSub.textContent='';return;}
     const ft=Math.max(0,Math.round(displayRangeFeet/10)*10);
     if(!seeker){
       coachText.textContent='HOLD X — DESIGNATE';
@@ -362,9 +401,12 @@ updateTargeting=function(dt){
 const encounterGuidanceBase=updateGuidance;
 updateGuidance=function(){
   if(enemyAlive||encounter.phase!=='active'){encounterGuidanceBase();return;}
+  if(encounterBlocked()||(!encounter.callout&&!seeker)){targetUI.style.opacity='0';return;}
   const local=encounter.targetPos.clone().sub(camera.position).applyQuaternion(camera.quaternion.clone().invert()),
     front=local.z<0,p=encounter.targetPos.clone().project(camera),ons=front&&Math.abs(p.x)<.86&&Math.abs(p.y)<.76,
     cx=innerWidth*.5,cy=innerHeight*.42;
+  // Refresh from this target's bearing, never from the previous airborne contact.
+  guideSide=local.x<0?-1:1;
   let x,y;
   if(ons){
     x=(p.x*.5+.5)*innerWidth;y=(-p.y*.5+.5)*innerHeight;targetUI.dataset.stack='';
@@ -384,7 +426,7 @@ updateGuidance=function(){
 };
 
 function fireStrikeMissile(){
-  if(crashed||missionComplete||encounter.phase!=='active'||enemyAlive||missile||missileRearm>0||lockState!==2)return;
+  if(encounterBlocked()||encounter.phase!=='active'||enemyAlive||missile||missileRearm>0||lockState!==2)return;
   const m=new THREE.Group(),
     body=new THREE.Mesh(new THREE.CylinderGeometry(.16,.2,2.4,8),new THREE.MeshStandardMaterial({color:0xe8ded0,metalness:.35,roughness:.45})),
     flame=new THREE.Mesh(new THREE.ConeGeometry(.14,1.4,8),new THREE.MeshBasicMaterial({color:0xff7b31,transparent:true,opacity:.9}));
@@ -403,6 +445,7 @@ fireMissile=function(){
 
 const encounterWeaponsBase=updateWeapons;
 updateWeapons=function(dt){
+  if(encounter.kind&&encounterBlocked()){stopRadarCarrier();return;}
   const strike=missile&&missile.strikeTarget?missile:null;
   const previous=strike?strike.mesh.position.clone():null;
   if(strike&&strike.ignited&&encounter.phase==='active'){
@@ -411,7 +454,7 @@ updateWeapons=function(dt){
     strike.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),strike.v.clone().normalize());
   }
   encounterWeaponsBase(dt);
-  if(!strike||missile!==strike||encounter.phase!=='active')return;
+  if(encounterBlocked()||!strike||missile!==strike||encounter.phase!=='active')return;
   const travel=strike.mesh.position.clone().sub(previous),toTarget=encounter.targetPos.clone().sub(previous);
   const u=THREE.MathUtils.clamp(toTarget.dot(travel)/Math.max(travel.lengthSq(),.001),0,1);
   const closest=previous.clone().addScaledVector(travel,u);
@@ -424,10 +467,14 @@ updateWeapons=function(dt){
       const mesh=new THREE.Mesh(new THREE.SphereGeometry(.16+Math.random()*.28,5,4),new THREE.MeshBasicMaterial({color:i%2?0xffa14f:0xffe0a1,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false}));
       mesh.position.copy(missPos);scene.add(mesh);
       const v=new THREE.Vector3(Math.random()-.5,.2+Math.random()*.6,Math.random()-.5).normalize().multiplyScalar(7+Math.random()*14),life=.28+Math.random()*.22;
-      combatFX.push({mesh,v,life,maxLife:life,smoke:false});
+      combatFX.push({encounterOwned:true,mesh,v,life,maxLife:life,smoke:false});
     }
   }
 };
+
+// Keep strike aftermath frozen behind terminal/transition UI too.
+const encounterCombatFXBase=updateCombatFX;
+updateCombatFX=function(dt){if(encounter.kind&&encounterBlocked())return;encounterCombatFXBase(dt);};
 
 const encounterExplodeBase=explode;
 explode=function(){

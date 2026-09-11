@@ -1,0 +1,13 @@
+import {readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import assert from 'node:assert/strict';
+const root=new URL('../',import.meta.url);
+const build=()=>{execFileSync(process.execPath,['scripts/build-v38.mjs'],{cwd:root});return readFileSync(new URL('v38.html',root),'utf8');};
+const first=build(),second=build(),objectives=readFileSync(new URL('src/v38/objectives.js',root),'utf8');
+assert.equal(first,second,'V38 rebuild must be deterministic');
+assert.ok(second.includes(objectives),'Complete objectives source must survive rebuilding');
+assert.equal(second.split('const encounter={').length-1,1,'Encounter layer must appear exactly once');
+const dogfight=readFileSync(new URL('src/v38/dogfight.js',root),'utf8');
+assert.ok(second.includes(dogfight),'Complete dogfight source must survive rebuilding');
+assert.ok(second.indexOf(objectives)>second.indexOf(dogfight),'Encounter wraps dogfight after composition');
+console.log('PASS: deterministic V38 build preserves exactly one complete radar encounter layer.');

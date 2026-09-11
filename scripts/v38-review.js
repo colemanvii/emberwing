@@ -141,3 +141,79 @@ qaButton('Player authority regression',()=>{
  qaScene(0);qaResult.textContent=results.join('\n');
 });
 qaButton('Pursuit recovery',()=>{qaScene(2);qaPaused=true;ship.position.set(0,3000,0);ship.quaternion.identity();enemy.position.set(0,3008,-320);enemy.quaternion.identity();duel.forward.set(0,0,-1);duelState('extend');duel.course.copy(duel.forward);duel.cooldown=12;duel.speed=120;duel.pursuit=duel.pressure=0;keys.KeyZ=true;let window=0,min=Infinity;for(let i=0;i<240;i++){updateFlight(1/60);updateEnemy(1/60);const r=enemy.position.distanceTo(ship.position);min=Math.min(min,r);if(r<240&&enemy.position.z<ship.position.z)window+=1/60;}keys.KeyZ=false;qaResult.textContent=`${min<190&&window>1?'PASS':'FAIL'} catch committed bandit: closest ${min.toFixed(0)}m, ${window.toFixed(1)}s pursuit window`;});
+
+// Radar lifecycle fixtures exercise production functions; never included in the game build.
+function qaRadarStart(){
+ qaScene(0);qaPaused=true;enemy.position.copy(ship.position).add(new THREE.Vector3(0,0,-90));enemyVel.set(0,0,0);enemyHP=2;keys.Space=true;
+ for(let i=0;i<80&&enemyAlive;i++)updateWeapons(1/60);keys.Space=false;
+}
+function qaRadarActive(){qaRadarStart();for(let i=0;i<170;i++)updateEnemy(1/60);}
+function qaRadarAim(){
+ ship.position.copy(encounter.targetPos).add(new THREE.Vector3(0,95,350));ship.quaternion.identity();
+ camera.position.copy(ship.position).add(new THREE.Vector3(0,5,14));camera.lookAt(encounter.targetPos);camera.updateMatrixWorld(true);
+ encounter.callout=true;updateRange(1/60);setSeeker(true);for(let i=0;i<90;i++)updateTargeting(1/60);
+}
+qaButton('Radar lifecycle suite',async()=>{
+ qaPaused=true;const rows=[],check=(name,ok,detail='')=>rows.push(`${ok?'PASS':'FAIL'} ${name} ${detail}`);
+ qaRadarStart();check('first cannon kill starts quiet phase',kills===1&&!enemyAlive&&encounter.phase==='quiet');
+ for(let i=0;i<170;i++)updateEnemy(1/60);
+ check('quiet becomes radar without bandit respawn',encounter.phase==='active'&&!!encounter.group&&!enemyAlive);
+ updateTargeting(1/60);updateGuidance();check('world evidence precedes radar brackets',!encounter.callout&&targetUI.style.opacity==='0');
+ const oldGroup=encounter.group;encounter.age=9;ship.position.copy(encounter.targetPos).add(new THREE.Vector3(0,100,2000));updateEnemy(1/60);
+ check('fly away announces signal lost and clears installation',encounter.phase==='egress'&&objective.textContent==='SIGNAL LOST'&&!oldGroup.parent&&!encounter.group&&!encounter.dishPivot&&!encounter.beacon&&!encounter.beaconLight);
+ for(let i=0;i<200;i++)updateEnemy(1/60);check('abandonment resumes bandit flow',enemyAlive&&encounter.phase==='done');
+ for(const late of [false,true]){
+  qaRadarActive();qaRadarAim();check('actual designator acquires ground lock',lockState===2);
+  const installation=encounter.group;encounter.age=late?27.999:4;key({code:'KeyX',repeat:false,preventDefault(){}},false);
+  check((late?'deadline ':'')+'release X launches strike',!!missile&&missile.strikeTarget);
+  updateEnemy(1/60);check('live missile retains active encounter',encounter.phase==='active');
+  for(let i=0;i<340;i++){updateEnemy(1/60);updateWeapons(1/60);updateCombatFX(1/60);}
+  check((late?'deadline ':'')+'missile impacts and removes installation',!missile&&!!encounter.wreck&&!installation.parent&&!encounter.group&&!encounter.beaconLight);
+  for(let i=0;i<330;i++){updateEnemy(1/60);updateCombatFX(1/60);}
+  check('strike aftermath resumes bandit flow',enemyAlive&&encounter.phase==='done');
+ }
+ for(const state of ['crash','complete','transition']){
+  qaRadarActive();qaRadarAim();fireStrikeMissile();
+  if(state==='crash')crashNow('RADAR QA');if(state==='complete')missionComplete=true;if(state==='transition')missionCompleteTimer=1;
+  const age=encounter.age,angle=encounter.dishPivot.rotation.y,scale=encounter.beacon.scale.x,life=missile.life,phase=encounter.phase;
+  const savedAnnounce=announce,savedChirp=chirp;let events=0;announce=()=>events++;chirp=()=>events++;
+  for(let i=0;i<240;i++){updateEnemy(1/60);updateTargeting(1/60);updateWeapons(1/60);updateCombatFX(1/60);}
+  announce=savedAnnounce;chirp=savedChirp;
+  check(state+' freezes dish/beacon/phase/missile/audio',encounter.age===age&&encounter.phase===phase&&encounter.dishPivot.rotation.y===angle&&encounter.beacon.scale.x===scale&&missile.life===life&&events===0&&!encounter.carrier);
+ }
+ qaRadarActive();groundStrikeImpact();crashNow('AFTERMATH QA');
+ const flashLife=encounter.fx[0].life,smoke=combatFX.find(f=>f.encounterOwned),smokeLife=smoke.life,smokePos=smoke.mesh.position.clone();
+ for(let i=0;i<240;i++){updateEnemy(1/60);updateCombatFX(1/60);updateWeapons(1/60);}
+ check('crash freezes aftermath flash and smoke',encounter.fx[0].life===flashLife&&smoke.life===smokeLife&&smoke.mesh.position.equals(smokePos));
+ qaRadarActive();qaRadarAim();fireStrikeMissile();encounter.age=29;missile.life=.001;updateEnemy(1/60);updateWeapons(1/60);updateEnemy(1/60);
+ check('expired strike resolves before signal-lost cleanup',!missile&&encounter.phase==='egress'&&!encounter.group);
+ qaRadarActive();encounter.callout=true;camera.quaternion.identity();camera.position.set(0,400,0);
+ for(const side of [-1,1]){encounter.targetPos.set(side*.01,400,100);guideSide=-side;guideX=innerWidth*.5;guideY=innerHeight*.42;updateGuidance();check('rear bearing '+side+' ignores stale guide side',guideSide===side&&(guideX-innerWidth*.5)*side>0);}
+ qaScene(0);await new Promise(resolve=>setTimeout(resolve,300));const count=scene.children.length;let clean=true;
+ for(let i=0;i<6;i++){qaRadarActive();groundStrikeImpact();qaScene(0);await new Promise(resolve=>setTimeout(resolve,300));clean&&=scene.children.length===count&&!encounter.group&&!encounter.wreck&&!encounter.dishPivot&&!encounter.beacon&&!encounter.beaconLight&&!encounter.fx.length&&!combatFX.length&&!missile;}
+ check('six destruction/reset cycles leave no owned objects or lights',clean,`scene children ${scene.children.length}/${count}`);
+ qaScene(0);qaResult.textContent=rows.join('\n');console.log(qaResult.textContent);
+});
+qaButton('Live radar discovery',()=>{qaRadarStart();audio();qaPaused=false;qaResult.textContent='Real cannon kill → quiet → radar. Arrow keys remain yours.';});
+qaButton('Live radar strike setup',()=>{qaRadarActive();qaRadarAim();setSeeker(false);ship.quaternion.identity();for(let i=0;i<60;i++)updateCamera(1/60);qaPaused=false;qaResult.textContent='Hold X to designate, release to fire. Coast past the strike.';});
+qaButton('Radar state',()=>{qaResult.textContent=JSON.stringify({phase:encounter.phase,age:encounter.age,identified:encounter.callout,enemyAlive,missile:!!missile,group:!!encounter.group,wreck:!!encounter.wreck,fx:encounter.fx.length,ownedFX:combatFX.filter(f=>f.encounterOwned).length,beaconLight:!!encounter.beaconLight,crashed},null,2);});
+qaButton('Hold designator X',()=>{key({code:'KeyX',repeat:false,preventDefault(){}},true);qaResult.textContent='Holding X through the real input handler';});
+qaButton('Release designator X',()=>{key({code:'KeyX',repeat:false,preventDefault(){}},false);qaResult.textContent='Released X through the real input handler';});
+qaButton('Release X at deadline',()=>{encounter.age=27.999;key({code:'KeyX',repeat:false,preventDefault(){}},false);qaResult.textContent='Released X immediately before 28-second timeout';});
+qaButton('Crash active radar',()=>{crashNow('RADAR LIVE CHECK');qaResult.textContent='Crash UI active; radar must remain frozen';});
+let qaRadarLive=null;
+const qaRadarTickBase=qaTick;
+qaTick=function(dt){
+ qaRadarTickBase(dt);if(!qaRadarLive)return;
+ const r=qaRadarLive;r.elapsed+=dt;
+ const state=`${encounter.phase}, missile ${!!missile}, wreck ${!!encounter.wreck}, bandit ${enemyAlive}, crashed ${crashed}`;
+ if(state!==r.last){r.events.push(`${r.elapsed.toFixed(2)}s ${state}`);r.last=state;}
+ qaResult.textContent=r.events.join('\n');
+ if((encounter.phase==='done'&&enemyAlive)||crashed||r.elapsed>15){qaPaused=true;qaRadarLive=null;}
+};
+for(const late of [false,true])qaButton(late?'Live deadline strike replay':'Live strike replay',()=>{
+ qaRadarActive();qaRadarAim();setSeeker(false);ship.position.copy(encounter.targetPos).add(new THREE.Vector3(0,95,650));ship.quaternion.identity();
+ camera.position.copy(ship.position).add(new THREE.Vector3(0,5,14));for(let i=0;i<60;i++)updateCamera(1/60);
+ audio();qaPaused=false;qaRadarLive={elapsed:0,events:[],last:''};key({code:'KeyX',repeat:false,preventDefault(){}},true);
+ setTimeout(()=>{if(late)encounter.age=27.999;key({code:'KeyX',repeat:false,preventDefault(){}},false);},700);
+});
