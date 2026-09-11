@@ -83,21 +83,63 @@ updateGuidance=function(){
  }
  if(missionElapsed<missionControl.until){coachText.textContent=missionControl.line;coachSub.textContent=missionControl.sub;}
 };
-// Small, muted flag painted on the upper aft fuselage; geometry stays unchanged.
+// Desert mission identity: make the Launch Complex read like a real flight-test installation,
+// not a ladder. This is presentation only; mission position and flight authority are untouched.
+for(const child of [...launchSite.children])launchSite.remove(child);
+const launchSteel=new THREE.MeshStandardMaterial({color:0x4b5458,roughness:.74,metalness:.42});
+const launchDark=new THREE.MeshStandardMaterial({color:0x2e3539,roughness:.82,metalness:.28});
+const launchConcrete=new THREE.MeshStandardMaterial({color:0x8b8272,roughness:.96,metalness:.02});
+const launchTank=new THREE.MeshStandardMaterial({color:0x7d817c,roughness:.72,metalness:.24});
+const launchBeaconMat=new THREE.MeshBasicMaterial({color:0xe9a05e});
+function launchBox(w,h,d,x,y,z,mat=launchSteel){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;launchSite.add(m);return m;
+}
+function launchCylinder(rt,rb,h,x,y,z,mat=launchTank,rotZ=0){
+ const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,14),mat);m.position.set(x,y,z);m.rotation.z=rotZ;m.castShadow=true;m.receiveShadow=true;launchSite.add(m);return m;
+}
+function launchBeacon(x,y,z,r=1.25){const m=new THREE.Mesh(new THREE.SphereGeometry(r,8,6),launchBeaconMat);m.position.set(x,y,z);launchSite.add(m);return m;}
+const launchGround=-90;
+// Broad concrete pad and service apron establish scale from miles out.
+launchBox(166,4,112,0,launchGround+2,0,launchConcrete);
+launchBox(118,2,26,0,launchGround+3,67,launchConcrete);
+// Twin gantry towers with chunky vertical mass and sparse catwalks.
+for(const x of[-34,34]){
+ launchBox(8,104,8,x,launchGround+52,0,launchDark);
+ launchBox(3.5,100,3.5,x-9,launchGround+50,0,launchSteel);
+ launchBox(3.5,100,3.5,x+9,launchGround+50,0,launchSteel);
+ for(const y of[launchGround+18,launchGround+42,launchGround+66])launchBox(25,3,5,x,y,0,launchSteel);
+ launchBeacon(x,launchGround+106,0,1.4);
+}
+launchBox(86,6,14,0,launchGround+84,0,launchSteel);
+launchBox(68,3,10,0,launchGround+52,0,launchDark);
+// Central launch cradle / service core.
+launchBox(18,25,18,0,launchGround+14,-6,launchDark);
+launchBox(22,3,18,0,launchGround+27,-3,launchSteel);
+// Tanks, hangar and instrumentation mast make the complex asymmetrical and authored.
+for(const x of[-61,61])launchCylinder(10,10,30,x,launchGround+15,25,launchTank);
+launchBox(38,17,28,-59,launchGround+8.5,-42,launchConcrete);
+launchBox(40,2.5,30,-59,launchGround+18,-42,launchDark);
+launchBox(2.5,54,2.5,66,launchGround+27,-34,launchDark);
+launchBox(13,2,3,66,launchGround+48,-34,launchSteel);
+launchBeacon(66,launchGround+55,-34,1.2);
+for(const z of[-30,-8,14,36])launchBeacon(0,launchGround+5,z,.7);
+
+// Small, readable US markings on the canted tail surfaces.
+
 const flagCanvas=document.createElement('canvas');flagCanvas.width=190;flagCanvas.height=100;
 const flagContext=flagCanvas.getContext('2d');
 for(let row=0;row<13;row++){flagContext.fillStyle=row%2?'#b8b9b0':'#80565a';flagContext.fillRect(0,row*100/13,190,100/13+1);}
 flagContext.fillStyle='#435360';flagContext.fillRect(0,0,76,700/13);
 flagContext.fillStyle='#c1c3b8';for(let row=0;row<9;row++)for(let col=0;col<(row%2?5:6);col++){flagContext.beginPath();const x=7+col*12+(row%2?6:0),y=5+row*5.5;for(let p=0;p<10;p++){const a=p*Math.PI/5-Math.PI/2,r=p%2?1:2.4;flagContext.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}flagContext.closePath();flagContext.fill();}
 const flagTexture=new THREE.CanvasTexture(flagCanvas);flagTexture.colorSpace=THREE.SRGBColorSpace;
-const flagMaterial=new THREE.MeshStandardMaterial({map:flagTexture,roughness:.68,metalness:.08,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2});
+const flagMaterial=new THREE.MeshStandardMaterial({map:flagTexture,roughness:.62,metalness:.06,emissive:0x151515,emissiveIntensity:.12,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2});
 function addTailFlag(side){
  const s=side<0?-1:1;
  const a=new THREE.Vector3(s*1.62,.38,.4),b=new THREE.Vector3(s*3.05,1.75,2.55),c=new THREE.Vector3(s*3.18,1.77,3.3);
  const normal=new THREE.Vector3().crossVectors(b.clone().sub(a),c.clone().sub(a)).normalize();
- const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.42,.75),flagMaterial.clone());
+ const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.68,.88),flagMaterial.clone());
  flag.name='US flag tail marking';
- flag.position.set(s*2.62,1.22,2.85).addScaledVector(normal,.035);
+ flag.position.set(s*2.58,1.18,2.72).addScaledVector(normal,.035);
  flag.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),normal);
  ship.add(flag);
 }
