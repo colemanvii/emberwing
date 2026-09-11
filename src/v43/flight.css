@@ -1,0 +1,136 @@
+html,body{background:#263342;touch-action:none;overscroll-behavior:none}
+#hud{text-shadow:0 1px 4px #0009}#grade{background:radial-gradient(ellipse at 50% 45%,transparent 45%,#08101922 100%)}
+#frame,#program{display:none}#mark:after{content:'FLIGHT ARTICLE 043 / ATTACK RUN';opacity:.5;color:inherit}
+#mark,#readout{font-size:9px;letter-spacing:.13em}#score{font-size:9px}#objective{top:13%;font-size:8px;opacity:.7}
+#capture,#capture.track,#capture.lock{box-shadow:none}#reticle,#target{box-shadow:none}#coach{border:0;border-top:1px solid #dae2db55;background:linear-gradient(90deg,transparent,#10202b66,transparent);box-shadow:none;backdrop-filter:none;padding:9px 16px;min-width:280px}
+#coach strong{font-size:9px}#coach small{font-size:8px}#burner,#burner.on{background:none;border:0;box-shadow:none;font-size:8px}
+#hint{font-size:8px;opacity:.55}#realmCard{background:linear-gradient(90deg,#05111e99,transparent,#05111e99)}#realmCard .plate{background:none;box-shadow:none;border-color:#e5ece555;min-width:0}#realmTitle{font-size:21px;letter-spacing:.22em;text-shadow:none}
+#touchControls{display:none;position:fixed;inset:0;pointer-events:none;z-index:8}#touchControls button{pointer-events:auto;touch-action:none;border:1px solid #e2ece866;border-radius:50%;background:#0b192955;color:#f1f4ee;font:9px ui-monospace;letter-spacing:.08em;width:64px;height:64px;position:absolute;user-select:none;-webkit-user-select:none}#touchControls button.active{background:#c3d4d64d;border-color:#fff}#stick{position:absolute;pointer-events:auto;touch-action:none;left:30px;bottom:32px;width:120px;height:120px;border:1px solid #dce8e344;border-radius:50%;background:#10202a22}#stick:before{content:'FLIGHT';position:absolute;left:0;right:0;top:50px;text-align:center;font:8px ui-monospace;color:#fff8}#stickDot{position:absolute;left:45px;top:45px;width:30px;height:30px;border:1px solid #e0ece699;border-radius:50%;background:#d1e4e122}#touchFire{right:26px;bottom:30px}#touchMissile{right:101px;bottom:60px}#touchBoost{right:26px;bottom:110px}#touchReset{right:22px;top:56px;width:42px!important;height:32px!important;border-radius:3px!important;font-size:7px!important}
+@media(pointer:coarse),(max-width:700px){#touchControls{display:block}#hint,#focus,#burner{display:none}#mark{top:16px;left:14px;font-size:8px}#readout{top:40px;right:14px;font-size:7px}#score{top:16px;right:14px;left:auto;transform:none;font-size:7px}#mark:after{display:none}#coach{bottom:190px;min-width:220px;max-width:80vw;padding:7px;font-size:8px}#coach strong{font-size:8px}#objective{top:19%}#realmTitle{font-size:17px}#realmCard .plate{padding:20px}#capture{width:260px;height:260px}}
+@media(pointer:coarse),(max-width:700px){#score{top:31px;left:14px;right:auto}#readout{top:46px;left:14px;right:auto}#mark{max-width:calc(100vw - 28px)}#coach{bottom:185px}#realmTitle{letter-spacing:.12em}}
+
+/* Navigation must stay restrained, but it cannot be ambiguous.
+   Primary destinations use a small world-anchored diamond; off-screen, the same
+   diamond becomes a clearer edge cue. Combat styling remains unchanged. */
+#target[data-owner="destination"],#target[data-owner="challenge"]{
+  width:20px;height:20px;
+  border:1px solid rgba(255,244,207,.72);
+  background:rgba(18,28,31,.08);
+  box-shadow:none;
+}
+#target[data-owner="challenge"]{
+  width:24px;height:24px;
+  border-color:rgba(255,216,121,.86);
+}
+#target[data-owner="destination"]::after,#target[data-owner="challenge"]::after{
+  font-size:9px;letter-spacing:1px;
+  left:26px;top:-4px;
+}
+#target[data-owner="destination"].offscreen,#target[data-owner="challenge"].offscreen{
+  width:26px;height:26px;
+  border-width:1.5px;
+  background:rgba(18,28,31,.16);
+  filter:drop-shadow(0 0 6px rgba(255,223,151,.18));
+}
+#target[data-owner="destination"].offscreen::before,#target[data-owner="challenge"].offscreen::before{
+  font-size:11px;top:-18px;
+}
+#target[data-owner="bandit"]:not(.lock):not(.track){
+  width:12px;height:12px;border-color:transparent;border-top:1px solid currentColor;box-shadow:none
+}
+#target[data-owner="bandit"]::after{font-size:9px;letter-spacing:1px}
+
+
+/* Operation Distant Thunder opening brief — classified, terse, readable. */
+#missionBrief{position:fixed;inset:0;z-index:40;display:grid;place-items:center;pointer-events:auto;background:radial-gradient(circle at 50% 42%,rgba(20,29,33,.96),rgba(3,7,10,.995) 68%);color:#e8ece6;opacity:0;transition:opacity .55s ease;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;text-shadow:none}
+#missionBrief.show{opacity:1}#missionBrief.depart{opacity:0;pointer-events:none}
+#missionBrief .briefFrame{width:min(640px,84vw);padding:32px 38px 28px;border-top:1px solid rgba(228,235,224,.38);border-bottom:1px solid rgba(228,235,224,.2);background:linear-gradient(90deg,transparent,rgba(8,15,19,.7) 12%,rgba(8,15,19,.7) 88%,transparent)}
+#missionBrief .briefProgram{font-size:8px;letter-spacing:.32em;color:#aeb9b4;opacity:.62}
+#missionBrief .briefRule{height:1px;margin:14px 0 23px;background:linear-gradient(90deg,#d8ded655,transparent 78%)}
+#missionBrief .briefKicker{font-size:10px;letter-spacing:.34em;color:#cfb47a;margin-bottom:10px}
+#missionBrief .briefTitle{font-size:24px;letter-spacing:.24em;font-weight:700;color:#f2f3ec;margin-bottom:23px}
+#missionBrief .briefAlert{font-size:12px;letter-spacing:.16em;color:#e4c58c;margin-bottom:7px}
+#missionBrief .briefIntel{font-size:9px;letter-spacing:.13em;color:#aab4b2;opacity:.78;margin-bottom:27px}
+#missionBrief .briefObjective{font-size:8px;letter-spacing:.3em;color:#78898a;margin-bottom:10px}
+#missionBrief .briefOrders{display:grid;gap:7px;padding-left:15px;border-left:1px solid rgba(214,225,218,.24);font-size:10px;letter-spacing:.13em;color:#dfe4dc}
+#missionBrief .briefOrders span::before{content:'—';margin-right:10px;color:#a9956b;opacity:.75}
+#missionBrief button{margin-top:29px;padding:10px 0 8px;border:0;border-top:1px solid rgba(217,226,218,.28);border-bottom:1px solid rgba(217,226,218,.12);width:100%;background:transparent;color:#d9c08d;font:700 10px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.18em;text-align:left;cursor:pointer}
+#missionBrief button:hover{color:#fff0be;border-top-color:rgba(255,240,190,.48)}
+#missionBrief button b{color:#eef2ea;font-weight:800}
+@media(max-width:700px){#missionBrief .briefFrame{width:88vw;padding:24px 22px 22px}#missionBrief .briefTitle{font-size:18px;letter-spacing:.16em}#missionBrief .briefOrders{font-size:9px;gap:8px}#missionBrief .briefAlert{font-size:10px}}
+
+
+/* V41 final-strike locator: explicit, restrained, mission-critical. */
+#target[data-owner="launch"]{width:26px;height:26px;border:1px solid rgba(255,210,122,.92);background:rgba(42,24,10,.13);box-shadow:0 0 9px rgba(255,190,95,.12)}
+#target[data-owner="launch"]::after{font-size:9px;letter-spacing:1px;left:31px;top:-3px;color:#f0d39a}
+#target[data-owner="launch"].offscreen{width:30px;height:30px;border-width:1.5px;filter:drop-shadow(0 0 7px rgba(255,190,95,.22))}
+
+
+/* V42 — quiet aircraft heading tape. North is world -Z, east is +X. */
+#headingTape{
+ position:fixed;z-index:22;top:14px;left:50%;transform:translateX(-50%);
+ width:min(520px,66vw);height:58px;pointer-events:none;overflow:visible;
+ opacity:0;transition:opacity .35s ease;
+ font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+ color:rgba(230,235,228,.78);text-shadow:0 1px 3px rgba(0,0,0,.72);
+}
+#headingTape::before{
+ content:"";position:absolute;left:8%;right:8%;top:19px;height:1px;
+ background:linear-gradient(90deg,transparent,rgba(225,231,225,.18) 14%,rgba(225,231,225,.28) 50%,rgba(225,231,225,.18) 86%,transparent);
+}
+.headingTrack{position:absolute;inset:0;overflow:hidden;mask-image:linear-gradient(90deg,transparent 0,#000 11%,#000 89%,transparent 100%)}
+.headingTick{
+ position:absolute;top:18px;width:1px;height:6px;background:rgba(225,231,225,.28);
+ transform:translateX(-50%);font-size:9px;letter-spacing:.7px;white-space:nowrap;
+}
+.headingTick.major{height:9px;background:rgba(225,231,225,.42)}
+.headingTick.cardinal{height:12px;background:rgba(235,239,231,.6)}
+.headingTick span{position:absolute;top:13px;left:50%;transform:translateX(-50%);color:rgba(225,231,225,.62)}
+.headingTick.cardinal span{font-size:10px;color:rgba(241,237,220,.9);font-weight:700}
+.headingCaret{
+ position:absolute;top:14px;left:50%;width:0;height:0;transform:translateX(-50%);
+ border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid rgba(239,205,139,.88);
+}
+.headingReadout{
+ position:absolute;top:40px;left:50%;transform:translateX(-50%);
+ font-size:9px;letter-spacing:1.25px;color:rgba(233,229,211,.82);
+}
+.headingObjective,.headingThreat{
+ position:absolute;top:2px;transform:translateX(-50%);font-size:8px;letter-spacing:.9px;white-space:nowrap;
+ transition:opacity .15s ease;color:rgba(236,195,117,.92);
+}
+.headingObjective::after{
+ content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);
+ width:1px;height:7px;background:rgba(236,195,117,.7);
+}
+.headingObjective[data-edge="1"]{color:rgba(241,211,150,.96)}
+.headingThreat{top:50px;color:rgba(244,137,91,.95);text-shadow:0 0 5px rgba(255,80,35,.22)}
+.headingThreat::before{
+ content:"";position:absolute;bottom:11px;left:50%;transform:translateX(-50%);
+ width:1px;height:8px;background:rgba(244,118,72,.75);
+}
+@media(max-width:700px){
+ #headingTape{top:8px;width:84vw;height:50px}
+ .headingTick span{font-size:8px}
+ .headingTick.cardinal span{font-size:9px}
+ .headingReadout{top:38px;font-size:8px}
+ .headingObjective,.headingThreat{font-size:7px}
+}
+
+
+/* V43 — tactical pressure stays peripheral. The world remains primary. */
+#hud.sam-search #grade{
+ background:
+  radial-gradient(ellipse at 50% 41%,rgba(255,190,112,.02) 0,transparent 34%,rgba(30,10,13,.05) 67%,rgba(17,5,10,.24) 100%),
+  linear-gradient(90deg,rgba(210,109,42,.045),transparent 13%,transparent 87%,rgba(210,109,42,.045));
+}
+#hud.sam-inbound #grade{
+ background:
+  radial-gradient(ellipse at 50% 41%,rgba(255,190,112,.02) 0,transparent 32%,rgba(44,10,9,.07) 62%,rgba(29,4,4,.34) 100%),
+  linear-gradient(90deg,rgba(255,72,32,.10),transparent 17%,transparent 83%,rgba(255,72,32,.10));
+ animation:samEdge 1.05s ease-in-out infinite alternate;
+}
+@keyframes samEdge{to{filter:brightness(1.16)}}
+#hud.strike-egress #objective{color:#ffd7a0;opacity:.68}
+#hud.strike-egress #burner.on{box-shadow:0 0 42px #48c8ff55,inset 0 0 24px #48c8ff1f}
+#target[data-owner="bandit"].offscreen{filter:drop-shadow(0 0 9px rgba(255,194,95,.26))}
