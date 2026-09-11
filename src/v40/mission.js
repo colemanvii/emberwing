@@ -90,8 +90,18 @@ for(let row=0;row<13;row++){flagContext.fillStyle=row%2?'#b8b9b0':'#80565a';flag
 flagContext.fillStyle='#435360';flagContext.fillRect(0,0,76,700/13);
 flagContext.fillStyle='#c1c3b8';for(let row=0;row<9;row++)for(let col=0;col<(row%2?5:6);col++){flagContext.beginPath();const x=7+col*12+(row%2?6:0),y=5+row*5.5;for(let p=0;p<10;p++){const a=p*Math.PI/5-Math.PI/2,r=p%2?1:2.4;flagContext.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}flagContext.closePath();flagContext.fill();}
 const flagTexture=new THREE.CanvasTexture(flagCanvas);flagTexture.colorSpace=THREE.SRGBColorSpace;
-const flagMark=new THREE.Mesh(new THREE.PlaneGeometry(1.35,.71),new THREE.MeshStandardMaterial({map:flagTexture,roughness:.72,metalness:.1,polygonOffset:true,polygonOffsetFactor:-2}));
-flagMark.name='Small US aft marking';flagMark.rotation.x=-Math.PI/2;flagMark.position.set(.3,.53,1.7);ship.add(flagMark);
+const flagMaterial=new THREE.MeshStandardMaterial({map:flagTexture,roughness:.68,metalness:.08,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2});
+function addTailFlag(side){
+ const s=side<0?-1:1;
+ const a=new THREE.Vector3(s*1.62,.38,.4),b=new THREE.Vector3(s*3.05,1.75,2.55),c=new THREE.Vector3(s*3.18,1.77,3.3);
+ const normal=new THREE.Vector3().crossVectors(b.clone().sub(a),c.clone().sub(a)).normalize();
+ const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.42,.75),flagMaterial.clone());
+ flag.name='US flag tail marking';
+ flag.position.set(s*2.62,1.22,2.85).addScaledVector(normal,.035);
+ flag.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),normal);
+ ship.add(flag);
+}
+addTailFlag(-1);addTailFlag(1);
 // Hold only the existing Alpine transition until the physical route is complete.
 const missionExplodeBase=explode;
 explode=function(){missionExplodeBase();if(worldIndex===1&&!relayPass.cleared&&kills>=MISSION_KILLS){missionCompleteTimer=0;respawn=999999;objective.textContent='RELAY PASS REQUIRED';}};
