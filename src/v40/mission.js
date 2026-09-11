@@ -124,26 +124,55 @@ launchBox(13,2,3,66,launchGround+48,-34,launchSteel);
 launchBeacon(66,launchGround+55,-34,1.2);
 for(const z of[-30,-8,14,36])launchBeacon(0,launchGround+5,z,.7);
 
-// Small, readable US markings on the canted tail surfaces.
+// Aircraft marking pass deferred: remove the floating flag decal rather than ship a bad marking.
 
-const flagCanvas=document.createElement('canvas');flagCanvas.width=190;flagCanvas.height=100;
-const flagContext=flagCanvas.getContext('2d');
-for(let row=0;row<13;row++){flagContext.fillStyle=row%2?'#b8b9b0':'#80565a';flagContext.fillRect(0,row*100/13,190,100/13+1);}
-flagContext.fillStyle='#435360';flagContext.fillRect(0,0,76,700/13);
-flagContext.fillStyle='#c1c3b8';for(let row=0;row<9;row++)for(let col=0;col<(row%2?5:6);col++){flagContext.beginPath();const x=7+col*12+(row%2?6:0),y=5+row*5.5;for(let p=0;p<10;p++){const a=p*Math.PI/5-Math.PI/2,r=p%2?1:2.4;flagContext.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}flagContext.closePath();flagContext.fill();}
-const flagTexture=new THREE.CanvasTexture(flagCanvas);flagTexture.colorSpace=THREE.SRGBColorSpace;
-const flagMaterial=new THREE.MeshStandardMaterial({map:flagTexture,roughness:.62,metalness:.06,emissive:0x151515,emissiveIntensity:.12,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2});
-function addTailFlag(side){
- const s=side<0?-1:1;
- const a=new THREE.Vector3(s*1.62,.38,.4),b=new THREE.Vector3(s*3.05,1.75,2.55),c=new THREE.Vector3(s*3.18,1.77,3.3);
- const normal=new THREE.Vector3().crossVectors(b.clone().sub(a),c.clone().sub(a)).normalize();
- const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.68,.88),flagMaterial.clone());
- flag.name='US flag tail marking';
- flag.position.set(s*2.58,1.18,2.72).addScaledVector(normal,.035);
- flag.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),normal);
- ship.add(flag);
+// The radar site is real geography, not a spawned event.
+// It exists from mission start, quietly scanning in the distance; combat state activates later.
+function stagePersistentRadarSite(){
+ if(worldIndex!==0||encounter.group||encounter.wreck)return;
+ const launch=destinations[0].position;
+ const x=launch.x+220,z=launch.z+780,y=terrainHeight(x,z);
+ encounter.targetPos.set(x,y+9,z);
+ encounter.group=makeRadarInstallation();
+ encounter.group.position.set(x,y+.15,z);
+ encounter.group.rotation.y=.18;
+ encounter.group.scale.setScalar(1.35);
+ scene.add(encounter.group);
+ encounter.lastRange=ship.position.distanceTo(encounter.targetPos);
 }
-addTailFlag(-1);addTailFlag(1);
+const persistentRadarResetBase=reset;
+reset=function(){
+ persistentRadarResetBase();
+ if(worldIndex===0)stagePersistentRadarSite();
+};
+const persistentRadarActivateBase=activateRadarOpportunity;
+activateRadarOpportunity=function(){
+ if(encounterBlocked())return;
+ if(!encounter.group)stagePersistentRadarSite();
+ encounter.phase='active';encounter.age=0;encounter.callout=false;encounter.runCue=false;
+ encounter.carrierTimer=0;encounter.paint=0;encounter.tracking=false;encounter.launchWarned=false;encounter.shotFired=false;
+ encounter.lastRange=ship.position.distanceTo(encounter.targetPos);
+ objective.textContent='';
+};
+const persistentRadarBeginBase=beginRadarOpportunity;
+beginRadarOpportunity=function(){
+ persistentRadarBeginBase();
+ if(worldIndex===0&&encounter.phase==='quiet'){missionControl.task='';missionCue('RADAR SITE AHEAD','KNOCK IT OUT');}
+};
+const persistentRadarWorldBase=updateWorld;
+updateWorld=function(){
+ persistentRadarWorldBase();
+ if(worldIndex===0&&encounter.group&&encounter.phase==='idle'){
+  if(encounter.dishPivot)encounter.dishPivot.rotation.y=(performance.now()*.00022)%(Math.PI*2);
+  if(encounter.beacon){
+   const pulse=.88+.12*Math.sin(performance.now()*.0048);
+   encounter.beacon.scale.setScalar(pulse);
+   encounter.beacon.material.emissiveIntensity=2.2+pulse*1.7;
+   if(encounter.beaconLight)encounter.beaconLight.intensity=4.2+pulse*3.8;
+  }
+ }
+};
+
 // Opening operational brief: enough context to understand the sortie without lore bloat.
 const missionBrief=document.createElement('div');
 missionBrief.id='missionBrief';
