@@ -144,6 +144,62 @@ function addTailFlag(side){
  ship.add(flag);
 }
 addTailFlag(-1);addTailFlag(1);
+// Opening operational brief: enough context to understand the sortie without lore bloat.
+const missionBrief=document.createElement('div');
+missionBrief.id='missionBrief';
+missionBrief.innerHTML=`<div class="briefFrame">
+  <div class="briefProgram">JFTD-7 // EW-01 // EYES ONLY</div>
+  <div class="briefRule"></div>
+  <div class="briefKicker">OPERATION DISTANT THUNDER</div>
+  <div class="briefTitle">DESERT CORRIDOR</div>
+  <div class="briefAlert">HOSTILE LAUNCH COMPLEX ACTIVE</div>
+  <div class="briefIntel">AIR DEFENSE PATROLS + RADAR EMITTER IN SECTOR</div>
+  <div class="briefObjective">MISSION</div>
+  <div class="briefOrders">
+    <span>PENETRATE THE VALLEY</span>
+    <span>NEUTRALIZE AIR COVER</span>
+    <span>SUPPRESS AIR DEFENSE RADAR</span>
+    <span>DISRUPT LAUNCH OPERATIONS</span>
+    <span>EXIT NORTH THROUGH HIGH PASS</span>
+  </div>
+  <button id="briefDeploy" type="button"><b>EW-01</b> // CLEARED HOT</button>
+</div>`;
+document.body.appendChild(missionBrief);
+let missionBriefActive=true;
+function dismissMissionBrief(){
+ if(!missionBriefActive)return;
+ missionBriefActive=false;releaseMissionInputs();
+ missionElapsed=citySplit=alpineSplit=finalTime=0;
+ audio();chirp(480,.055,.026);chirp(760,.09,.024,.07);
+ missionBrief.classList.add('depart');
+ missionControl.task='';missionCue('LAUNCH COMPLEX ACTIVE','PENETRATE THE VALLEY');
+ setTimeout(()=>missionBrief.style.display='none',720);
+ renderer.domElement.focus();focusUI.style.opacity='0';
+}
+missionBrief.querySelector('#briefDeploy').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();dismissMissionBrief();});
+missionBrief.addEventListener('pointerdown',e=>e.stopPropagation());
+const briefingKeyBase=key;
+key=function(e,down){
+ if(missionBriefActive){
+  if(down&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();dismissMissionBrief();}
+  else if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','KeyZ','KeyX','Space','KeyR'].includes(e.code))e.preventDefault();
+  return;
+ }
+ briefingKeyBase(e,down);
+};
+// Freeze tactical state behind the brief; scenery can remain alive.
+for(const name of ['updateFlight','updateDanger','updateEnemy','updateEnemyAttack','updateMission','updateWeapons']){
+ const base=eval(name);globalThis['__brief_'+name]=base;eval(name+'=function(...args){if(missionBriefActive)return;return globalThis.__brief_'+name+'(...args)}');
+}
+queueMicrotask(()=>{if(worldIndex===0){missionBrief.classList.add('show');releaseMissionInputs();}else{missionBriefActive=false;missionBrief.style.display='none';}});
+
+// After the radar strike, reconnect the action to the hostile launch site.
+const briefRadarFinishBase=finishRadarOpportunity;
+finishRadarOpportunity=function(status){
+ briefRadarFinishBase(status);
+ if(status==='destroyed'&&worldIndex===0){missionControl.task='';missionCue('LAUNCH DEFENSES DEGRADED','CONTINUE TO LAUNCH COMPLEX');}
+};
+
 // Hold only the existing Alpine transition until the physical route is complete.
 const missionExplodeBase=explode;
 explode=function(){missionExplodeBase();if(worldIndex===1&&!relayPass.cleared&&kills>=MISSION_KILLS){missionCompleteTimer=0;respawn=999999;objective.textContent='RELAY PASS REQUIRED';}};
