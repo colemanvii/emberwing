@@ -229,6 +229,9 @@ explode=function(){
  }
 };
 function updateV43Director(dt){
+ hud.classList.toggle('sam-search',worldIndex===0&&v41.sam.stage>0&&!v41.sam.missile);
+ hud.classList.toggle('sam-inbound',worldIndex===0&&!!v41.sam.missile);
+ hud.classList.toggle('strike-egress',worldIndex===0&&v41.launch.destroyed);
  if(worldIndex!==0||missionBriefActive||crashed)return;
  if(v41.launch.destroyed&&!v43.egressBanditSpawned&&missionElapsed>=v43.egressBanditAt){
   if(!enemyAlive&&(!v41.sam.missile||missionElapsed-v43.egressBanditAt>2.4)){
