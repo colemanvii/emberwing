@@ -152,15 +152,15 @@ missionBrief.innerHTML=`<div class="briefFrame">
   <div class="briefRule"></div>
   <div class="briefKicker">OPERATION DISTANT THUNDER</div>
   <div class="briefTitle">DESERT CORRIDOR</div>
-  <div class="briefAlert">HOSTILE LAUNCH COMPLEX ACTIVE</div>
-  <div class="briefIntel">AIR DEFENSE PATROLS + RADAR EMITTER IN SECTOR</div>
+  <div class="briefAlert">A HOSTILE LAUNCH COMPLEX IS PREPARING TO FIRE.</div>
+  
   <div class="briefObjective">MISSION</div>
   <div class="briefOrders">
-    <span>PENETRATE THE VALLEY</span>
-    <span>NEUTRALIZE AIR COVER</span>
-    <span>SUPPRESS AIR DEFENSE RADAR</span>
-    <span>DISRUPT LAUNCH OPERATIONS</span>
-    <span>EXIT NORTH THROUGH HIGH PASS</span>
+    <span>ENTER THE VALLEY</span>
+    <span>DESTROY THE DEFENDING FIGHTERS</span>
+    <span>KNOCK OUT THE RADAR</span>
+    <span>STOP THE LAUNCH</span>
+    <span>ESCAPE NORTH THROUGH THE MOUNTAINS</span>
   </div>
   <button id="briefDeploy" type="button"><b>EW-01</b> // CLEARED HOT</button>
 </div>`;
@@ -172,7 +172,7 @@ function dismissMissionBrief(){
  missionElapsed=citySplit=alpineSplit=finalTime=0;
  audio();chirp(480,.055,.026);chirp(760,.09,.024,.07);
  missionBrief.classList.add('depart');
- missionControl.task='';missionCue('LAUNCH COMPLEX ACTIVE','PENETRATE THE VALLEY');
+ missionControl.task='';missionCue('LAUNCH COMPLEX ACTIVE','ENTER THE VALLEY');
  setTimeout(()=>missionBrief.style.display='none',720);
  renderer.domElement.focus();focusUI.style.opacity='0';
 }
@@ -200,7 +200,7 @@ queueMicrotask(()=>{if(worldIndex===0){missionBrief.classList.add('show');releas
 const briefRadarFinishBase=finishRadarOpportunity;
 finishRadarOpportunity=function(status){
  briefRadarFinishBase(status);
- if(status==='destroyed'&&worldIndex===0){missionControl.task='';missionCue('LAUNCH DEFENSES DEGRADED','CONTINUE TO LAUNCH COMPLEX');}
+ if(status==='destroyed'&&worldIndex===0){missionControl.task='';missionCue('RADAR SITE DESTROYED','CONTINUE TO LAUNCH COMPLEX');}
 };
 
 // Hold only the existing Alpine transition until the physical route is complete.
