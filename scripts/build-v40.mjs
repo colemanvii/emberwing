@@ -1,0 +1,10 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+let html=read('v39.html');
+const previous=read('src/v39/navigation.js');
+if(!html.includes(previous))throw Error('V39 navigation source mismatch');
+html=html.replace(previous,read('src/v40/navigation.js'));
+html=html.replace('Emberwing V39 — Distant Thunder','Emberwing V40 — Mission Flight').replace('src/v39/flight.css','src/v40/flight.css');
+html=html.replace('const clock=new THREE.Clock();',read('src/v40/mission.js')+'\nconst clock=new THREE.Clock();');
+writeFileSync(new URL('../v40.html',import.meta.url),html);
+console.log('Built V40 without writing earlier versions.');

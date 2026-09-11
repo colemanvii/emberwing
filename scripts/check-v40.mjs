@@ -1,0 +1,12 @@
+import {readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import assert from 'node:assert/strict';
+const root=new URL('../',import.meta.url),read=p=>readFileSync(new URL(p,root),'utf8');
+const paths=['v38.html','v39.html','mobile.html','src/v39/navigation.js'];const before=paths.map(read);
+const build=()=>{execFileSync(process.execPath,['scripts/build-v40.mjs'],{cwd:root});return read('v40.html');};
+const a=build(),b=build();assert.equal(a,b);paths.forEach((p,i)=>assert.equal(read(p),before[i]));
+for(const n of ['flight','camera','world','airframe'])assert.ok(b.includes(read('src/v38/'+n+'.js')));
+assert.ok(b.includes(read('src/v39/dogfight.js')));assert.ok(b.includes(read('src/v39/objectives.js')));
+const audio=read('v39.html').match(/function audio\([\s\S]*?function heading/);if(audio)assert.ok(b.includes(audio[0]));
+for(const m of b.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(m[1].trim())execFileSync(process.execPath,['--input-type=module','--check'],{input:m[1]});
+console.log('PASS deterministic build; V38/V39/mobile preserved; protected layers intact; JavaScript parses.');
