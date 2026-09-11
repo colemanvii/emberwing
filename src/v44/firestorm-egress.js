@@ -35,6 +35,7 @@ function v44StageInsertion(){
 
 const v44ResetBase=reset;
 reset=function(){
+ v44ClearFirestorm();
  v44ResetBase();
  v44StageInsertion();
 };
