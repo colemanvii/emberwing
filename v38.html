@@ -1088,7 +1088,17 @@ updateWeapons=function(dt){
   const u=THREE.MathUtils.clamp(toTarget.dot(travel)/Math.max(travel.lengthSq(),.001),0,1);
   const closest=previous.clone().addScaledVector(travel,u);
   const terrain=terrainHeight(strike.mesh.position.x,strike.mesh.position.z);
-  if(closest.distanceToSquared(encounter.targetPos)<144||strike.mesh.position.y<=terrain+2.5)groundStrikeImpact();
+  if(closest.distanceToSquared(encounter.targetPos)<144){groundStrikeImpact();return;}
+  if(strike.mesh.position.y<=terrain+2.5){
+    const missPos=strike.mesh.position.clone();removeMissile();
+    flashScreen(.08);chirp(92,.08,.026);announce('IMPACT — NO EFFECT');
+    for(let i=0;i<7;i++){
+      const mesh=new THREE.Mesh(new THREE.SphereGeometry(.16+Math.random()*.28,5,4),new THREE.MeshBasicMaterial({color:i%2?0xffa14f:0xffe0a1,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false}));
+      mesh.position.copy(missPos);scene.add(mesh);
+      const v=new THREE.Vector3(Math.random()-.5,.2+Math.random()*.6,Math.random()-.5).normalize().multiplyScalar(7+Math.random()*14),life=.28+Math.random()*.22;
+      combatFX.push({mesh,v,life,maxLife:life,smoke:false});
+    }
+  }
 };
 
 const encounterExplodeBase=explode;
