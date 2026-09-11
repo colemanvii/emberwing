@@ -39,3 +39,22 @@ html,body{background:#263342;touch-action:none;overscroll-behavior:none}
   width:12px;height:12px;border-color:transparent;border-top:1px solid currentColor;box-shadow:none
 }
 #target[data-owner="bandit"]::after{font-size:9px;letter-spacing:1px}
+
+
+/* Operation Distant Thunder opening brief — classified, terse, readable. */
+#missionBrief{position:fixed;inset:0;z-index:40;display:grid;place-items:center;pointer-events:auto;background:radial-gradient(circle at 50% 42%,rgba(20,29,33,.96),rgba(3,7,10,.995) 68%);color:#e8ece6;opacity:0;transition:opacity .55s ease;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;text-shadow:none}
+#missionBrief.show{opacity:1}#missionBrief.depart{opacity:0;pointer-events:none}
+#missionBrief .briefFrame{width:min(640px,84vw);padding:32px 38px 28px;border-top:1px solid rgba(228,235,224,.38);border-bottom:1px solid rgba(228,235,224,.2);background:linear-gradient(90deg,transparent,rgba(8,15,19,.7) 12%,rgba(8,15,19,.7) 88%,transparent)}
+#missionBrief .briefProgram{font-size:8px;letter-spacing:.32em;color:#aeb9b4;opacity:.62}
+#missionBrief .briefRule{height:1px;margin:14px 0 23px;background:linear-gradient(90deg,#d8ded655,transparent 78%)}
+#missionBrief .briefKicker{font-size:10px;letter-spacing:.34em;color:#cfb47a;margin-bottom:10px}
+#missionBrief .briefTitle{font-size:24px;letter-spacing:.24em;font-weight:700;color:#f2f3ec;margin-bottom:23px}
+#missionBrief .briefAlert{font-size:12px;letter-spacing:.16em;color:#e4c58c;margin-bottom:7px}
+#missionBrief .briefIntel{font-size:9px;letter-spacing:.13em;color:#aab4b2;opacity:.78;margin-bottom:27px}
+#missionBrief .briefObjective{font-size:8px;letter-spacing:.3em;color:#78898a;margin-bottom:10px}
+#missionBrief .briefOrders{display:grid;gap:7px;padding-left:15px;border-left:1px solid rgba(214,225,218,.24);font-size:10px;letter-spacing:.13em;color:#dfe4dc}
+#missionBrief .briefOrders span::before{content:'—';margin-right:10px;color:#a9956b;opacity:.75}
+#missionBrief button{margin-top:29px;padding:10px 0 8px;border:0;border-top:1px solid rgba(217,226,218,.28);border-bottom:1px solid rgba(217,226,218,.12);width:100%;background:transparent;color:#d9c08d;font:700 10px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.18em;text-align:left;cursor:pointer}
+#missionBrief button:hover{color:#fff0be;border-top-color:rgba(255,240,190,.48)}
+#missionBrief button b{color:#eef2ea;font-weight:800}
+@media(max-width:700px){#missionBrief .briefFrame{width:88vw;padding:24px 22px 22px}#missionBrief .briefTitle{font-size:18px;letter-spacing:.16em}#missionBrief .briefOrders{font-size:9px;gap:8px}#missionBrief .briefAlert{font-size:10px}}
