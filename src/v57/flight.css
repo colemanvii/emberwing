@@ -69,31 +69,31 @@ html,body{background:#263342;touch-action:none;overscroll-behavior:none}
 /* V42 — quiet aircraft heading tape. North is world -Z, east is +X. */
 #headingTape{
  position:fixed;z-index:22;top:14px;left:50%;transform:translateX(-50%);
- width:min(520px,66vw);height:58px;pointer-events:none;overflow:visible;
+ width:min(360px,54vw);height:50px;pointer-events:none;overflow:visible;
  opacity:0;transition:opacity .35s ease;
  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
  color:rgba(230,235,228,.78);text-shadow:0 1px 3px rgba(0,0,0,.72);
 }
 #headingTape::before{
- content:"";position:absolute;left:8%;right:8%;top:19px;height:1px;
- background:linear-gradient(90deg,transparent,rgba(225,231,225,.18) 14%,rgba(225,231,225,.28) 50%,rgba(225,231,225,.18) 86%,transparent);
+ content:"";position:absolute;left:12%;right:12%;top:19px;height:1px;
+ background:linear-gradient(90deg,transparent,rgba(225,231,225,.15) 18%,rgba(225,231,225,.34) 50%,rgba(225,231,225,.15) 82%,transparent);
 }
 .headingTrack{position:absolute;inset:0;overflow:hidden;mask-image:linear-gradient(90deg,transparent 0,#000 11%,#000 89%,transparent 100%)}
 .headingTick{
  position:absolute;top:18px;width:1px;height:6px;background:rgba(225,231,225,.28);
  transform:translateX(-50%);font-size:9px;letter-spacing:.7px;white-space:nowrap;
 }
-.headingTick.major{height:9px;background:rgba(225,231,225,.42)}
-.headingTick.cardinal{height:12px;background:rgba(235,239,231,.6)}
+.headingTick.major{height:7px;background:rgba(225,231,225,.3)}
+.headingTick.cardinal{height:10px;background:rgba(235,239,231,.5)}
 .headingTick span{position:absolute;top:13px;left:50%;transform:translateX(-50%);color:rgba(225,231,225,.62)}
-.headingTick.cardinal span{font-size:10px;color:rgba(241,237,220,.9);font-weight:700}
+.headingTick.cardinal span{font-size:9px;color:rgba(241,237,220,.82);font-weight:700;letter-spacing:.14em}
 .headingCaret{
  position:absolute;top:14px;left:50%;width:0;height:0;transform:translateX(-50%);
  border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid rgba(239,205,139,.88);
 }
 .headingReadout{
- position:absolute;top:40px;left:50%;transform:translateX(-50%);
- font-size:9px;letter-spacing:1.25px;color:rgba(233,229,211,.82);
+ position:absolute;top:36px;left:50%;transform:translateX(-50%);
+ font-size:8px;letter-spacing:1.4px;color:rgba(233,229,211,.7);
 }
 .headingObjective,.headingThreat{
  position:absolute;top:2px;transform:translateX(-50%);font-size:8px;letter-spacing:.9px;white-space:nowrap;
