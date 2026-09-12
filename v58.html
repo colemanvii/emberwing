@@ -37,7 +37,7 @@ flight.addEventListener('load',()=>{
  try{
   const doc=flight.contentDocument;
   const quietCompass=doc.createElement('style');
-  quietCompass.textContent='#headingTape{top:18px!important;right:20px!important;left:auto!important;transform:none!important;width:64px!important;height:22px!important;border:1px solid rgba(235,239,231,.12)!important;border-radius:999px!important;background:rgba(5,12,15,.22)!important}#headingTape::before,.headingTrack,.headingCaret,.headingObjective,.headingThreat{display:none!important}.headingReadout{position:static!important;transform:none!important;height:100%!important;display:grid!important;place-items:center!important;font-size:8px!important;letter-spacing:.12em!important;color:rgba(241,237,220,.7)!important}';
+  quietCompass.textContent='#headingTape,#score,#coach{display:none!important}#mark::after{display:none!important}#mark{opacity:.72!important}#readout{opacity:.68!important}';
   doc.head.appendChild(quietCompass);
   doc.querySelector('#briefDeploy')?.click();
   const hint=doc.querySelector('#hint');
