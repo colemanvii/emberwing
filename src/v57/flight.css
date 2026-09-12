@@ -1,4 +1,4 @@
-html,body{background:#263342;touch-action:none;overscroll-behavior:none}
+html,body{background:#6b5b48;touch-action:none;overscroll-behavior:none}
 #hud{text-shadow:0 1px 4px #0009}#grade{background:radial-gradient(ellipse at 50% 45%,transparent 45%,#08101922 100%)}
 #frame,#program{display:none}#mark:after{content:'FLIGHT ARTICLE 057 / PRICE OF VISIBILITY';opacity:.5;color:inherit}
 #mark,#readout{font-size:9px;letter-spacing:.13em}#score{font-size:9px}#objective{top:13%;font-size:8px;opacity:.7}
