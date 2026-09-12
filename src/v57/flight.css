@@ -117,6 +117,16 @@ html,body{background:#263342;touch-action:none;overscroll-behavior:none}
  .headingObjective,.headingThreat{font-size:7px}
 }
 
+/* V58 — the landscape leads. Navigation is one quiet bearing, not a second HUD. */
+#headingTape{
+ top:18px;right:20px;left:auto;transform:none;width:64px;height:22px;
+ border:1px solid rgba(235,239,231,.12);border-radius:999px;
+ background:rgba(5,12,15,.22);text-shadow:0 1px 3px rgba(0,0,0,.6);
+}
+#headingTape::before,.headingTrack,.headingCaret,.headingObjective,.headingThreat{display:none!important}
+.headingReadout{position:static;transform:none;height:100%;display:grid;place-items:center;font-size:8px;letter-spacing:.12em;color:rgba(241,237,220,.7)}
+@media(max-width:700px){#headingTape{top:12px;right:12px;left:auto;width:58px;height:20px}}
+
 
 /* V43 — tactical pressure stays peripheral. The world remains primary. */
 #hud.sam-search #grade{
