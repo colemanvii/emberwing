@@ -1,9 +1,9 @@
-# Emberwing V58 — Enter the Valley
+# Emberwing V58 — Direct Flight
 
-V58 replaces the opening mission document with a focused Haven-style entry portal.
+V58 opens directly into the V57 mission and adds a restrained desktop control strip.
 
-- One unmistakable action: **Enter Scenario**
-- The mission expressed in one sentence and a three-point route
-- A restrained glass terminal, breathing navigation field, and launch transition
-- Enter, Space, click, and touch all remain supported
-- Flight, combat, terrain, mission logic, and V57 visibility geometry are unchanged
+- No entry or briefing screen
+- Plain controls at the bottom: arrows, Space, X, and Shift
+- A brief Mission Control transmission delivers the objective after launch
+- Touch devices retain the existing mobile controls
+- Flight, combat, terrain, mission logic, and V57 visibility geometry remain unchanged
