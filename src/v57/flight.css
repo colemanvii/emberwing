@@ -133,6 +133,22 @@ html,body{background:#263342;touch-action:none;overscroll-behavior:none}
 #mark{opacity:.72}
 #readout{opacity:.68}
 
+/* V62 — one native startup sequence. */
+#missionBrief{background:rgba(3,7,9,.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#missionBrief .briefFrame{width:min(390px,calc(100vw - 40px));padding:0;border:0;background:none;box-shadow:none;text-align:center}
+#missionBrief .briefKicker{margin:0 0 12px;font-size:7px;letter-spacing:.26em;color:rgba(226,199,121,.72)}
+#missionBrief .briefTitle{margin:0;font:500 22px ui-sans-serif,system-ui,-apple-system,sans-serif;letter-spacing:.035em;color:#f3f4ef;text-shadow:0 2px 22px rgba(0,0,0,.55)}
+#missionBrief .briefOrders{margin-top:14px;padding:0;border:0;display:flex;justify-content:center;gap:7px;font-size:8px;letter-spacing:.1em;color:rgba(235,239,231,.64)}
+#missionBrief .briefOrders span+span::before{content:'·';margin-right:7px;color:rgba(226,199,121,.55)}
+#missionBrief .briefOrders span::before{content:none}
+#missionBrief button{display:block;width:auto;margin:28px auto 0;padding:9px 14px;border:1px solid rgba(235,239,231,.16);border-radius:999px;background:rgba(5,12,15,.28);color:rgba(245,246,239,.82);font-size:8px;letter-spacing:.14em;text-align:center}
+#realmCard{display:none!important}
+#headingTape{display:block!important;top:12px;left:50%;right:auto;transform:translateX(-50%);width:min(240px,34vw);height:38px;border:0;border-radius:0;background:none}
+#headingTape::before{display:block!important;left:8%;right:8%;top:15px;background:linear-gradient(90deg,transparent,rgba(235,239,231,.13) 20%,rgba(235,239,231,.3) 50%,rgba(235,239,231,.13) 80%,transparent)}
+.headingTrack{display:block!important;opacity:.65}.headingTick{top:14px;height:4px}.headingTick.major{height:6px}.headingTick.cardinal{height:7px}.headingTick span{top:9px;font-size:7px;color:rgba(241,237,220,.58)}.headingCaret{display:block!important;top:10px;border-left-width:3px;border-right-width:3px;border-top-width:5px}.headingReadout{position:absolute;display:block;top:29px;left:50%;height:auto;transform:translateX(-50%);font-size:7px;color:rgba(241,237,220,.55)}.headingObjective,.headingThreat{display:none!important}
+#score,#coach{display:none!important}#mark::after{display:none!important}
+#hint{left:50%;right:auto;bottom:18px;transform:translateX(-50%);padding:9px 15px;border:1px solid rgba(231,237,230,.12);border-radius:999px;background:rgba(5,12,15,.46);opacity:.7;font-size:8px;letter-spacing:.12em;white-space:nowrap}
+
 
 /* V43 — tactical pressure stays peripheral. The world remains primary. */
 #hud.sam-search #grade{
