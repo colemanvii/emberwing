@@ -2016,9 +2016,9 @@ function v42BearingDeg(pos){
 function v42CompassLabel(deg){
  const card={0:'N',45:'NE',90:'E',135:'SE',180:'S',225:'SW',270:'W',315:'NW'};
  if(card[deg]!==undefined)return card[deg];
- return deg%30===0?String(deg).padStart(3,'0'):'';
+ return '';
 }
-for(let deg=0;deg<360;deg+=5){
+for(let deg=0;deg<360;deg+=15){
  const tick=document.createElement('div');tick.className='headingTick';
  if(deg%10===0)tick.classList.add('major');
  if(deg%45===0)tick.classList.add('cardinal');
@@ -2049,7 +2049,7 @@ function updateHeadingTape(){
  if(missionBriefActive||crashed||missionComplete){headingTape.style.opacity='0';return;}
  headingTape.style.opacity='1';
  const hdg=v42HeadingDeg(),pxPerDeg=3.25;
- v42.readout.textContent='HDG '+String(Math.round(hdg)%360).padStart(3,'0');
+ v42.readout.textContent=String(Math.round(hdg)%360).padStart(3,'0')+'°';
  for(const tick of v42.ticks){
   const deg=Number(tick.dataset.deg),delta=v42DeltaDeg(deg,hdg);
   if(Math.abs(delta)>75){tick.style.display='none';continue;}
