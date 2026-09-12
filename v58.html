@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Emberwing V58 — Enter the Valley</title>
+<link rel="stylesheet" href="src/v58/portal.css">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#030709}
+#flight{position:fixed;inset:0;width:100%;height:100%;border:0;opacity:.34;filter:saturate(.7);transition:opacity .7s ease,filter .7s ease}
+body.live #flight{opacity:1;filter:none}
+</style>
+</head>
+<body>
+<iframe id="flight" src="v57.html" title="Emberwing flight scenario" allow="autoplay; fullscreen"></iframe>
+<div id="missionBrief" class="show">
+ <main class="portalShell" aria-labelledby="portalTitle">
+  <header class="portalTop">
+   <div class="portalBrand"><span class="portalMark"></span>EMBERWING</div>
+   <div class="portalStatus">SCENARIO READY</div>
+  </header>
+  <div class="portalEyebrow">OPERATION DISTANT THUNDER</div>
+  <h1 class="portalTitle" id="portalTitle">Enter the valley.<br>Stop the launch.</h1>
+  <p class="portalMission">Cross the ridge, stay below the radar, and destroy the hostile launch vehicle. <strong>Get out through the northern pass.</strong></p>
+  <div class="portalRoute" aria-label="Mission route: South Ridge to launch site to North Pass">
+   <span class="routeNode">SOUTH RIDGE</span><span class="routeLine"></span><span class="routeNode hot">LAUNCH SITE</span><span class="routeLine"></span><span class="routeNode">NORTH PASS</span>
+  </div>
+  <button class="portalEnter" id="briefDeploy" type="button" aria-label="Enter scenario">
+   <span class="enterAction"><span class="enterGlyph">→</span>ENTER SCENARIO</span><span class="enterKey">PRESS ENTER</span>
+  </button>
+  <footer class="portalFoot"><span>EW-01 / CLEARED HOT</span><span>FLIGHT ARTICLE 058</span></footer>
+ </main>
+</div>
+<script>
+const portal=document.querySelector('#missionBrief');
+const flight=document.querySelector('#flight');
+let entering=false;
+function enterScenario(){
+ if(entering)return;entering=true;
+ portal.classList.add('ignite');
+ document.querySelector('.portalStatus').textContent='LAUNCH AUTHORIZED';
+ try{flight.contentDocument.querySelector('#briefDeploy').click()}catch(e){}
+ setTimeout(()=>{document.body.classList.add('live');portal.classList.add('depart');flight.focus()},420);
+ setTimeout(()=>portal.remove(),1100);
+}
+document.querySelector('#briefDeploy').addEventListener('click',enterScenario);
+addEventListener('keydown',e=>{if(e.code==='Enter'||e.code==='Space'){e.preventDefault();enterScenario()}});
+</script>
+</body>
+</html>
