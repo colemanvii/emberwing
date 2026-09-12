@@ -127,6 +127,12 @@ html,body{background:#263342;touch-action:none;overscroll-behavior:none}
 .headingReadout{position:static;transform:none;height:100%;display:grid;place-items:center;font-size:8px;letter-spacing:.12em;color:rgba(241,237,220,.7)}
 @media(max-width:700px){#headingTape{top:12px;right:12px;left:auto;width:58px;height:20px}}
 
+/* V59 — one visual hierarchy: aircraft, target, essential telemetry. */
+#headingTape,#score,#coach{display:none!important}
+#mark::after{display:none!important}
+#mark{opacity:.72}
+#readout{opacity:.68}
+
 
 /* V43 — tactical pressure stays peripheral. The world remains primary. */
 #hud.sam-search #grade{
