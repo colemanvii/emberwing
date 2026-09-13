@@ -141,7 +141,7 @@ function samCandidate(){
  let best=null,bestScore=Infinity;
  for(const s of sam.sites){
   if(s.disabled)continue;
-  const range=s.position.distanceTo(ship.position),maxRange=mission.destroyed?1550:1900;
+  const range=s.position.distanceTo(ship.position),maxRange=s.range||(mission.destroyed?1550:1900);
   if(range>maxRange||!samLineClear(s))continue;
   // Very low flight is difficult to track but not invisible over open ground.
   // Above ~160 units AGL, ground-clutter benefit is mostly gone.

@@ -831,7 +831,7 @@ function samCandidate(){
  let best=null,bestScore=Infinity;
  for(const s of sam.sites){
   if(s.disabled)continue;
-  const range=s.position.distanceTo(ship.position),maxRange=mission.destroyed?1550:1900;
+  const range=s.position.distanceTo(ship.position),maxRange=s.range||(mission.destroyed?1550:1900);
   if(range>maxRange||!samLineClear(s))continue;
   // Very low flight is difficult to track but not invisible over open ground.
   // Above ~160 units AGL, ground-clutter benefit is mostly gone.
@@ -1147,9 +1147,14 @@ const airGeometry=geometry;
 geometry=function(){
  const air=enemyAlive?airGeometry():{state:0,hard:false,d:99999,onscreen:false};
  const ground=mission.destroyed?{state:0,hard:false,d:99999,onscreen:false}:projectedGeometry(rocket.position,1350);
- const next=ground.state&&(!air.state||ground.d<air.d)?'ground':'air';
+ let next=ground.state&&(!air.state||ground.d<air.d)?'ground':'air',best=next==='ground'?ground:air;
+ for(const site of sam.sites){
+  if(site.disabled)continue;
+  const candidate=projectedGeometry(site.position,1350);
+  if(candidate.state&&(!best.state||candidate.d<best.d)){next='sam:'+site.index;best=candidate;}
+ }
  if(next!==mission.selected){lockState=lockTimer=lastLock=0;mission.selected=next;}
- return next==='ground'?ground:air;
+ return best;
 };
 function updateTargeting(dt){
  if(!seeker){lockState=lockTimer=lastLock=0;capture.hidden=true;reticle.className='';silence();return;}
@@ -1163,22 +1168,34 @@ function updateTargeting(dt){
 }
 function updateGuidance(){
  // Only a requested weapon designation gets a bracket. No permanent objective marker.
- const pos=mission.selected==='ground'?rocket.position:enemyAlive?enemy.position:null;
+ const site=selectedSam();
+ const pos=site&&!site.disabled?site.position:mission.selected==='ground'?rocket.position:mission.selected==='air'&&enemyAlive?enemy.position:null;
  if(!seeker||!pos||!projectedGeometry(pos,1350).onscreen){targetUI.hidden=true;return;}
  const p=pos.clone().project(camera);targetUI.hidden=false;targetUI.style.opacity='.75';
  targetUI.style.left=(p.x*.5+.5)*innerWidth+'px';targetUI.style.top=(-p.y*.5+.5)*innerHeight+'px';
  targetUI.className=lockState===2?'lock':'';
 }
+function selectedSam(){return mission.selected.startsWith('sam:')?sam.sites[Number(mission.selected.slice(4))]:null;}
 const airFireMissile=fireMissile;
 fireMissile=function(){
- if(mission.selected!=='ground'){airFireMissile();return;}
- if(crashed||mission.destroyed||missile||missileRearm>0||lockState!==2)return;
+ if(mission.selected==='air'){airFireMissile();return;}
+ const site=selectedSam();
+ if(crashed||(site?site.disabled:mission.destroyed)||missile||missileRearm>0||lockState!==2)return;
  const mesh=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.16,.2,2.4,8),new THREE.MeshStandardMaterial({color:0xe8ded0,metalness:.35,roughness:.45})),flame=new THREE.Mesh(new THREE.ConeGeometry(.14,1.4,8),new THREE.MeshBasicMaterial({color:0xff7b31}));
  body.rotation.x=Math.PI/2;flame.rotation.x=-Math.PI/2;flame.position.z=1.7;flame.visible=false;mesh.add(body,flame);
  mesh.position.copy(ship.position).add(new THREE.Vector3(5,-.2,-1.5).applyQuaternion(ship.quaternion));mesh.quaternion.copy(ship.quaternion);scene.add(mesh);
- missile={mesh,flame,v:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).multiplyScalar(speed*.9).addScaledVector(worldUp,-16),life:6,guided:false,age:0,trailClock:0,ignited:false,igniteAt:.09,strikeTarget:true};
+ missile={mesh,flame,v:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).multiplyScalar(speed*.9).addScaledVector(worldUp,-16),life:6,guided:false,age:0,trailClock:0,ignited:false,igniteAt:.09,strikeTarget:true,site,targetPos:(site?site.position:rocket.position).clone()};
  missileRearm=1.2;setSeeker(false);chirp(175,.075,.045);
 };
+function disableSam(site){
+ if(site.disabled)return;
+ site.disabled=true;site.light.visible=false;
+ site.group.rotation.z=.12;
+ site.group.traverse(o=>{if(o.isMesh&&o.material){o.material=o.material.clone();o.material.color?.multiplyScalar(.28);}});
+ if(sam.site===site){sam.site=null;sam.lock=0;sam.stage=0;}
+ spawnImpactFX(site.position.clone(),true);v44MakeFire(site.position.clone(),.65,.45);
+ lockState=lockTimer=lastLock=0;setSeeker(false);
+}
 function segmentDistance(a,b,p){const d=b.clone().sub(a),u=THREE.MathUtils.clamp(p.clone().sub(a).dot(d)/Math.max(.001,d.lengthSq()),0,1);return a.clone().addScaledVector(d,u).distanceTo(p);}
 function destroyTarget(){
  if(mission.destroyed)return;
@@ -1202,11 +1219,11 @@ updateWeapons=function(dt){
  airWeapons(dt);
  if(!strike)return;
  missile=strike;strike.life-=dt;strike.age+=dt;strike.trailClock-=dt;
- if(strike.age>=strike.igniteAt){strike.ignited=true;strike.flame.visible=true;const aim=rocket.position.clone().sub(strike.mesh.position).normalize().multiplyScalar(305);strike.v.lerp(aim,1-Math.exp(-dt*5.6));}
+ if(strike.age>=strike.igniteAt){strike.ignited=true;strike.flame.visible=true;const aim=strike.targetPos.clone().sub(strike.mesh.position).normalize().multiplyScalar(305);strike.v.lerp(aim,1-Math.exp(-dt*5.6));}
  const before=strike.mesh.position.clone();strike.mesh.position.addScaledVector(strike.v,dt);strike.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),strike.v.clone().normalize());
  if(strike.trailClock<=0){spawnMissileTrail(strike.mesh.position,strike.v);strike.trailClock=.04;}
- const hit=!mission.destroyed&&segmentDistance(before,strike.mesh.position,rocket.position)<14&&lineClear(before,rocket.position,0);
- if(hit){removeMissile();destroyTarget();}
+ const hit=(strike.site?!strike.site.disabled:!mission.destroyed)&&segmentDistance(before,strike.mesh.position,strike.targetPos)<14&&lineClear(before,strike.targetPos,0);
+ if(hit){removeMissile();if(strike.site)disableSam(strike.site);else destroyTarget();}
  else if(strike.life<=0||!lineClear(before,strike.mesh.position,0)||strike.mesh.position.y<terrainHeight(strike.mesh.position.x,strike.mesh.position.z)+2){hostileMissileBurst(strike.mesh.position.clone());removeMissile();}
 };
 // Bandit kills have no mission authority; the pilot can press through with every defender alive.
@@ -1262,8 +1279,8 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Early shelf, mid-valley shoulder, terminal defense, northern pursuit battery.
- const specs=[[valleyCenter(200)-650,200],[valleyCenter(-3500)+640,-3500],[450,-6500],[-700,-9200]];
- sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));sam.cooldown=5;sam.smokeClock=0;seatServiceRoad();
+ const specs=[[valleyCenter(1750)-520,1750],[valleyCenter(-3500)+640,-3500],[450,-6500],[-700,-9200]];
+ sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));sam.sites[0].range=1000;sam.cooldown=2;sam.smokeClock=0;seatServiceRoad();
  rebuildTerrain(0,Math.round(LEVEL.startZ/620)*620);positionDistantRidges(0,Math.round(LEVEL.startZ/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
  camera.position.set(x,ship.position.y+5.3,LEVEL.startZ+12);resetCameraFrame();
