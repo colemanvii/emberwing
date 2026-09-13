@@ -1,48 +1,31 @@
 # Emberwing
 
-A tiny third-person arcade flight game built around one idea: **easy to fly, difficult to stop playing.**
+A cinematic flight mission across a long desert valley.
 
-## PLAY NOW
+[Play Emberwing](https://colemanvii.github.io/emberwing/play.html)
 
-**V38 — Distant Thunder (desktop and touch):** https://colemanvii.github.io/emberwing/play.html
+**Destroy the target. Avoid bandits and SAMs. Exit north.**
 
-Continuous mountain landscapes, a rebuilt storm sea and atmosphere, stable full-bank camera, and unified touch controls. See [release notes and verification](RELEASE-V38.md).
-
-## Earlier builds
-
-**V34 — Black Program spectacle build:** https://colemanvii.github.io/emberwing/v34.html
-
-**Historical V10 playtest:** https://colemanvii.github.io/emberwing/v10.html
-
-**Experimental V11 — Identity + Spectacle + Flight Briefing:** https://colemanvii.github.io/emberwing/play.html
-
-**Direct V11 build:** https://colemanvii.github.io/emberwing/v11.html
-
-**Stable flight core:** https://colemanvii.github.io/emberwing/v3.html
-
-V3 is the protected standalone flight/combat core: the accepted flight loop, HUD 3333, monk-mode visual treatment, Haven pulse, two-biome mission, enemy roles, and current combat systems are baked into one file.
-
-V10 is the current feel baseline over that pinned V3 core: calmer turbo, a more hittable Rookie, stronger gun readability, and restrained impact/kill punctuation. Its handling and difficulty tuning are protected.
-
-V11 is an additive identity-and-spectacle pass over the V10 feel baseline: distinct bandit visual signatures, a contact-arrival cue between kills, and lightweight hero landscape compositions. It does not alter the protected V10 flight model or role progression.
-
-`play.html` now launches V38; the direct V11 link above remains available. The missile interaction is intentionally explicit: hold X to uncage and track the seeker, then release X once locked to fire.
+The briefing waits for you. Descend into the valley, penetrate to the launch installation, attack by cannon or guided missile, and survive to the northern opening. There are no checkpoint gates, required fighter kills, or escape timers.
 
 ## Controls
 
-- **Arrow keys** — pitch and bank
-- **Space** — cannon
-- **Hold X** — uncage and track with the missile seeker
-- **Release X** — fire when locked
-- **Hold Z** — afterburner
-- **Double-tap ↑** — turbo burst
-- **Shift** — legacy afterburner
-- **R** — restart
+- Arrow keys: pitch and bank (up pitches down; down pulls up)
+- Space: cannon
+- Hold X: track; release X when locked: fire missile
+- Hold Z or Shift: afterburner
+- Double-tap up: turbo burst
+- R: restart at the briefing
+- Touch: left joystick, FIRE, TRACK, BOOST, RESET
 
-## Current philosophy
+## Development
 
-Beautiful and fun.
+Run `node scripts/build-level1.mjs`, then serve the repository root with any static web server.
 
-Find → pursue → close → firing solution → chaos → separation → reacquire → kill.
+Both `index.html` and `play.html` are generated from `src/level1/shell.html`. The canonical runtime consists of `core.js` (preserved flight, rendering, audio and air combat), `assets.js` (installation, SAMs and destruction effects), and `mission.js` (geography, mission, targeting, instruments and lifecycle). `game.js` is their generated bundle. Build fingerprints prevent new entry pages from loading stale presentation assets.
 
-No accounts. No progression trees. No currencies. No lore bloat. Make the flying, fighting, atmosphere, and replay loop exceptional.
+Three.js 0.180.0 is bundled in `vendor/` with its MIT license. Launch has no external CDN dependency.
+
+Historical numbered pages remain archived experiments. They are not inputs to the current build. Local V58–V61 experiments in the original checkout were preserved in place during this consolidation.
+
+See [consolidation and verification](docs/LEVEL1-CONSOLIDATION.md) for baseline selection, distances, testing and limitations.
