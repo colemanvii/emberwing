@@ -134,7 +134,8 @@ function destroyTarget(){
  if(mission.destroyed)return;
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
- announce('TARGET DESTROYED');sam.cooldown=Math.max(sam.cooldown,2.4);lockState=lockTimer=0;setSeeker(false);
+ announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,1.4);lockState=lockTimer=0;setSeeker(false);
+ if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,136);resetEnemyAttack(1.4);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
