@@ -649,20 +649,20 @@ updateEnemy=function(dt){
  if(duel.state==='break'&&duel.age>1.65)duelState('extend');
  if(duel.state==='press'&&(duel.age>4.5||(duel.age>1.8&&(range>540||behind<-.25))))duelState('extend');
  const intent=duel.intent,right=duel.right.crossVectors(pf,worldUp).normalize();
- let targetSpeed=enemyRole==='ROOKIE'?150:enemyRole==='ACE'?176:162,turn=enemyRole==='ROOKIE'?.9:1.12;
+ let targetSpeed=enemyRole==='ROOKIE'?CRUISE_SPEED:enemyRole==='ACE'?TURBO_SPEED-18:CRUISE_SPEED+10,turn=enemyRole==='ROOKIE'?.9:1.12;
  if(duel.state==='extend'){
-  intent.copy(duel.course);targetSpeed+=28;
+  intent.copy(duel.course);targetSpeed+=26;
  }else if(duel.state==='break'){
   right.crossVectors(duel.course,worldUp).normalize();
   intent.copy(duel.course).multiplyScalar(.2).addScaledVector(right,duel.side);
-  targetSpeed=enemyRole==='ROOKIE'?138:145;turn=1.45;
+  targetSpeed=enemyRole==='ROOKIE'?CRUISE_SPEED-18:CRUISE_SPEED-10;turn=1.45;
  }else{
   // A lateral offset creates an oblique merge; fade it near contact so passes stay close.
   const offset=duel.state==='engage'?duel.side*Math.min(95,range*.23):0;
   duel.aim.copy(ship.position).addScaledVector(pf,Math.min(range/(targetSpeed+speed),.65)*speed).addScaledVector(right,offset);
   intent.copy(duel.aim).sub(enemy.position);
-  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=178;
-  if(duel.state==='press'){targetSpeed=Math.min(188,Math.max(150,speed+(range>160?14:-6)));turn=1.25;}
+  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=CRUISE_SPEED+18;
+  if(duel.state==='press'){targetSpeed=Math.min(TURBO_SPEED-10,Math.max(CRUISE_SPEED-8,speed+(range>160?14:-6)));turn=1.25;}
  }
  const clearance=enemyRole==='SKIMMER'?42:enemyRole==='CLIMBER'?90:62;
  // Stay in the player's altitude band; a climber's modest high-side pass is bounded.
@@ -1210,7 +1210,7 @@ function destroyTarget(){
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
  announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,.8);lockState=lockTimer=0;setSeeker(false);
- if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,176);resetEnemyAttack(1.0);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
+ if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,CRUISE_SPEED+12);resetEnemyAttack(1.0);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -1243,7 +1243,7 @@ function spawnDefender(escape=false){
  const z=escape?-6500:-500,x=valleyCenter(z)+(escape?650:420);
  enemy.position.set(x,terrainHeight(x,z)+150,z);
  const direction=ship.position.clone().addScaledVector(heading(),160).sub(enemy.position).normalize();
- enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=escape?144:136;
+ enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=escape?CRUISE_SPEED+16:CRUISE_SPEED+2;
  enemyDetected=true;enemyTime=0;resetEnemyAttack(escape?1.25:2.5);lastEnemy.copy(enemy.position);
 }
 function updateMission(dt){
