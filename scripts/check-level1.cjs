@@ -70,7 +70,7 @@ window.scenario={
    assert.equal(reset.missile,null);
    assert.equal(reset.smoke,0);
    assert.equal(reset.fire,0);
-   assert.ok(reset.sams>0);
+   assert.equal(reset.sams,5);
    assert.equal(reset.time,0);
   }
 
