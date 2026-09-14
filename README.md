@@ -13,7 +13,7 @@ The briefing waits for you. Descend into the valley, penetrate to the launch ins
 - Arrow keys: pitch and bank (up pitches down; down pulls up)
 - Space: cannon
 - Hold X: track; release X when locked: fire missile
-- Hold Z or Shift: afterburner
+- Hold Shift: turbo
 - Double-tap up: turbo burst
 - R: restart at the briefing
 - Touch: left joystick, FIRE, TRACK, BOOST, RESET
@@ -26,6 +26,6 @@ Both `index.html` and `play.html` are generated from `src/level1/shell.html`. Th
 
 Three.js 0.180.0 is bundled in `vendor/` with its MIT license. Launch has no external CDN dependency.
 
-Historical numbered pages remain archived experiments. They are not inputs to the current build. Local V58–V61 experiments in the original checkout were preserved in place during this consolidation.
+Historical numbered pages and release notes live under `archive/`. They are preserved for reference and are not inputs to the current build. Local V58–V61 experiments in the original checkout were preserved in place during this consolidation.
 
 See [consolidation and verification](docs/LEVEL1-CONSOLIDATION.md) for baseline selection, distances, testing and limitations.
