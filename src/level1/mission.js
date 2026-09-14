@@ -191,8 +191,8 @@ function destroyTarget(){
  if(mission.destroyed)return;
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
- announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,.8);lockState=lockTimer=0;setSeeker(false);
- if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,CRUISE_SPEED+12);resetEnemyAttack(1.0);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
+ announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,.35);lockState=lockTimer=0;setSeeker(false);
+ if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED-12);resetEnemyAttack(.45);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -223,12 +223,27 @@ explode=function(){airKill();missionCompleteTimer=0;respawn=999999;};
 function spawnDefender(escape=false){
  const spec=escape?activeVariant().escape:activeVariant().bandit;
  spawnEnemy(!escape);
+ // Defenders are strike-path interrupters, not chase bait. Spawn them off-axis and aim through
+ // the player's future flight path so the first merge demands a bank/pull decision.
+ enemyRole=escape?'ACE':'CLIMBER';
  const z=spec.z,x=valleyCenter(z)+spec.side;
  enemy.position.set(x,terrainHeight(x,z)+spec.alt,z);
- const direction=ship.position.clone().addScaledVector(heading(),160).sub(enemy.position).normalize();
- enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=escape?CRUISE_SPEED+16:CRUISE_SPEED+2;
- enemyDetected=true;enemyTime=0;resetEnemyAttack(spec.delay);lastEnemy.copy(enemy.position);
+ const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?260:330);
+ const direction=crossingPoint.sub(enemy.position).normalize();
+ enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
+ duel.speed=escape?TURBO_SPEED-10:CRUISE_SPEED+18;
+ enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.55:1.15));lastEnemy.copy(enemy.position);
 }
+// Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
+// but widen the firing solution enough that an oblique crossing pass is a real threat.
+enemyFireSolution=function(){
+ if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<1.15||duel.state==='extend'||duel.state==='break')return false;
+ const aim=ship.position.clone().sub(enemy.position),range=aim.length();
+ if(range<65||range>(mission.destroyed?590:540))return false;
+ const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();
+ const cone=mission.destroyed?.88:.91;
+ return forward.dot(aim.multiplyScalar(1/Math.max(range,.001)))>cone&&enemyLOS();
+};
 function updateMission(dt){
  if(crashed||missionComplete)return;
  const variant=activeVariant();
