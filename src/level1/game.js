@@ -793,7 +793,7 @@ function launchSam(site){samLaunchBurst(site);
  const initial=ship.position.clone().addScaledVector(worldUp,125).sub(start).normalize();
  m.position.copy(start);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),initial);scene.add(m);
  sam.missile={mesh:m,v:initial.multiplyScalar(196),life:7.2,trail:0,warn:0,near:false};
- sam.lock=0;sam.stage=0;sam.site=null;sam.cooldown=mission.destroyed?6.0:6.2;
+ sam.lock=0;sam.stage=0;sam.site=null;sam.cooldown=mission.destroyed?4.8:5.2;
  announce('SAM LAUNCH — '+clockBearing(start)+" O'CLOCK");
  flashScreen(.1);chirp(1060,.07,.045);chirp(1450,.11,.04,.07);
 }
@@ -859,7 +859,7 @@ function updateSamNetwork(dt){
   return;
  }
  sam.site=c.site;
- const baseLock=mission.destroyed?2.3:(c.site.index===0?1.55:2.2);
+ const baseLock=mission.destroyed?1.9:(c.site.index===0?1.45:1.95);
  sam.lock=Math.min(1,sam.lock+dt/baseLock*c.exposure);
  if(sam.stage===0){
   sam.stage=1;
@@ -1209,8 +1209,8 @@ function destroyTarget(){
  if(mission.destroyed)return;
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
- announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,1.4);lockState=lockTimer=0;setSeeker(false);
- if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,136);resetEnemyAttack(1.4);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
+ announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,.8);lockState=lockTimer=0;setSeeker(false);
+ if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,142);resetEnemyAttack(1.0);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -1243,14 +1243,14 @@ function spawnDefender(escape=false){
  const z=escape?-7600:-500,x=valleyCenter(z)+(escape?650:420);
  enemy.position.set(x,terrainHeight(x,z)+150,z);
  const direction=ship.position.clone().addScaledVector(heading(),160).sub(enemy.position).normalize();
- enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=escape?140:132;
- enemyDetected=true;enemyTime=0;resetEnemyAttack(escape?1.8:3.2);lastEnemy.copy(enemy.position);
+ enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=escape?144:136;
+ enemyDetected=true;enemyTime=0;resetEnemyAttack(escape?1.25:2.5);lastEnemy.copy(enemy.position);
 }
 function updateMission(dt){
  if(crashed||missionComplete)return;
  // Invisible spatial activation only paces opponents; nothing gates the target or route.
  if(ship.position.z<=LEVEL.entryZ)mission.penetrated=true;
- if(!mission.bandit&&ship.position.z<500){mission.bandit=true;spawnDefender();}
+ if(!mission.bandit&&ship.position.z<700){mission.bandit=true;spawnDefender();}
  if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-6800&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
   missionComplete=true;mission.phase='complete';finalTime=missionElapsed;releaseInputs();removeSamMissile();removeHostileMissile();
