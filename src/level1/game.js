@@ -1353,7 +1353,12 @@ reset=function(){
  Object.assign(mission,{phase:'briefing',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
- const x=valleyCenter(LEVEL.startZ);ship.position.set(x,terrainHeight(x,LEVEL.startZ)+65,LEVEL.startZ);ship.quaternion.identity();
+ const x=valleyCenter(LEVEL.startZ),entryAimZ=650,entryAimX=valleyCenter(entryAimZ);
+ ship.position.set(x,terrainHeight(x,LEVEL.startZ)+65,LEVEL.startZ);
+ // Spawn already aligned with the opening dogleg. A hands-off player should enter the valley,
+ // not be pointed at the eastern escarpment and forced into an emergency first input.
+ const entryForward=new THREE.Vector3(entryAimX-x,0,entryAimZ-LEVEL.startZ).normalize();
+ ship.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),entryForward);
  launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1);
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
