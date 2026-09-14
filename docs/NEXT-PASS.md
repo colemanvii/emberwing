@@ -391,3 +391,25 @@ It preserves the strongest authored geography:
 while cutting the distance that currently produces the 36-second and 22-second dead legs.
 
 Astra should treat these coordinates as a first playable experiment, then tune by feel.
+
+
+## Pressure prototype — second tuning pass
+
+After the first compressed-route prototype, the mission felt noticeably quicker but still too passive. The second prototype increases **hostile pressure without adding HUD systems or new enemy types**.
+
+Current pressure changes:
+
+- SAM network expanded from 4 to **5 physical sites**
+- added a mid-route SAM envelope around **Z -3650** to close the largest remaining threat gap
+- SAM coverage now overlaps through ingress, approach, terminal area, and escape
+- SAM launch cooldowns tightened modestly to roughly **6 seconds**
+- post-strike SAM lock time reduced so extraction pressure can arrive before the shortened exit
+- first bandit activation moved slightly earlier
+- defender pursuit speed increased modestly
+- destroying the launch site now immediately re-engages the surviving bandit
+- if the first bandit is already dead, an escape defender can enter immediately instead of waiting deep into extraction
+- no new enemy type, countermeasure system, meter, tutorial, or HUD clutter was added
+
+Human flight test should now answer one question:
+
+**Does the valley feel actively hostile without becoming noisy or unfair?**
