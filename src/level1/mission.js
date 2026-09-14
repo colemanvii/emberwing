@@ -1,5 +1,5 @@
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
-const LEVEL={startZ:4000,entryZ:2600,targetX:-300,targetZ:-7200,exitZ:-11000};
+const LEVEL={startZ:3100,entryZ:2600,targetX:-300,targetZ:-7200,exitZ:-11000};
 const mission={phase:'briefing',destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0};
 const sam={sites:[],missile:null,lock:0,stage:0,cooldown:5,site:null,lastCue:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
@@ -156,7 +156,7 @@ const airKill=explode;
 explode=function(){airKill();missionCompleteTimer=0;respawn=999999;};
 function spawnDefender(escape=false){
  spawnEnemy(!escape);
- const x=escape?valleyCenter(-8900)+650:valleyCenter(-2900)+650,z=escape?-8900:-2900;
+ const x=escape?valleyCenter(-8900)+650:valleyCenter(0)+420,z=escape?-8900:0;
  enemy.position.set(x,terrainHeight(x,z)+150,z);
  const direction=ship.position.clone().addScaledVector(heading(),160).sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=126;
@@ -165,7 +165,7 @@ function spawnDefender(escape=false){
 function updateMission(dt){
  if(crashed||missionComplete)return;
  // Invisible spatial activation only paces opponents; nothing gates the target or route.
- if(!mission.bandit&&ship.position.z<-1500){mission.bandit=true;spawnDefender();}
+ if(!mission.bandit&&ship.position.z<1200){mission.bandit=true;spawnDefender();}
  if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-8100&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
   missionComplete=true;mission.phase='complete';finalTime=missionElapsed;releaseInputs();removeSamMissile();removeHostileMissile();
@@ -199,13 +199,13 @@ reset=function(){
  baseReset();
  Object.assign(mission,{phase:'briefing',destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0});
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
- const x=valleyCenter(LEVEL.startZ);ship.position.set(x,terrainHeight(x,LEVEL.startZ)+110,LEVEL.startZ);ship.quaternion.identity();
+ const x=valleyCenter(LEVEL.startZ);ship.position.set(x,terrainHeight(x,LEVEL.startZ)+65,LEVEL.startZ);ship.quaternion.identity();
  launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1);
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Early shelf, mid-valley shoulder, terminal defense, northern pursuit battery.
- const specs=[[valleyCenter(1750)-520,1750],[valleyCenter(-3500)+640,-3500],[450,-6500],[-700,-9200]];
- sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));sam.sites[0].range=1000;sam.cooldown=2;sam.smokeClock=0;seatServiceRoad();
+ const specs=[[valleyCenter(1900)+190,1900],[valleyCenter(-1300)-240,-1300],[450,-6500],[-700,-9200]];
+ sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));sam.sites[0].range=1250;sam.cooldown=3;sam.smokeClock=0;seatServiceRoad();
  rebuildTerrain(0,Math.round(LEVEL.startZ/620)*620);positionDistantRidges(0,Math.round(LEVEL.startZ/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
  camera.position.set(x,ship.position.y+5.3,LEVEL.startZ+12);resetCameraFrame();
@@ -224,4 +224,4 @@ function loop(){
 reset();requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 // Read-only diagnostics support repeatable browser verification without an alternate simulation.
-window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,sams:sam.sites.map(s=>s.position.toArray()),samMissile:!!sam.missile,geometry:projectedGeometry(rocket.position,1350)}),height:terrainHeight,center:valleyCenter});
+window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,sams:sam.sites.map(s=>s.position.toArray()),samMissile:!!sam.missile,samTracking:sam.stage,samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,geometry:projectedGeometry(rocket.position,1350)}),height:terrainHeight,center:valleyCenter});

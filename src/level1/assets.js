@@ -108,7 +108,7 @@ function launchSam(site){samLaunchBurst(site);
  flashScreen(.1);chirp(1060,.07,.045);chirp(1450,.11,.04,.07);
 }
 function updateSamMissile(dt){
- if(sam.missile){sam.smokeClock-=dt;if(sam.smokeClock<=0){spawnV43SamSmoke(sam.missile.mesh.position,sam.missile.v);sam.smokeClock=.1;}}
+ if(sam.missile){sam.smokeClock-=dt;if(sam.smokeClock<=0){spawnV43SamSmoke(sam.missile.mesh.position,sam.missile.v);sam.smokeClock=.07;}}
  const h=sam.missile;if(!h)return;
  h.life-=dt;h.trail-=dt;h.warn-=dt;
  if(h.warn<=0){chirp(960,.04,.024);h.warn=.43;}
@@ -169,7 +169,7 @@ function updateSamNetwork(dt){
   return;
  }
  sam.site=c.site;
- const baseLock=mission.destroyed?4.5:2.55;
+ const baseLock=mission.destroyed?4.5:(c.site.index===0?1.65:2.55);
  sam.lock=Math.min(1,sam.lock+dt/baseLock*c.exposure);
  if(sam.stage===0){
   sam.stage=1;
@@ -188,9 +188,9 @@ const effects={samTrail:[],launchFx:[],launchFxActive:false,launchFxAge:0};
 const samTrailGeo=new THREE.IcosahedronGeometry(1,1);
 
 function spawnV43SamSmoke(pos,velocity){
- const mat=new THREE.MeshBasicMaterial({color:0xd9d7ce,transparent:true,opacity:.38,depthWrite:false,fog:true});
- const mesh=new THREE.Mesh(samTrailGeo,mat);mesh.position.copy(pos);mesh.scale.setScalar(1.7+Math.random()*.9);scene.add(mesh);
- const life=3.2+Math.random()*1.15;
+ const mat=new THREE.MeshBasicMaterial({color:0xd9d7ce,transparent:true,opacity:.52,depthWrite:false,fog:true});
+ const mesh=new THREE.Mesh(samTrailGeo,mat);mesh.position.copy(pos);mesh.scale.setScalar(2.4+Math.random()*.9);scene.add(mesh);
+ const life=4.2+Math.random()*1.15;
  effects.samTrail.push({mesh,life,maxLife:life,v:velocity.clone().multiplyScalar(.012).add(new THREE.Vector3((Math.random()-.5)*.7,.7+Math.random()*.8,(Math.random()-.5)*.7))});
 }
 
@@ -199,7 +199,7 @@ function updateV43SamSmoke(dt){
   const p=effects.samTrail[i];p.life-=dt;p.mesh.position.addScaledVector(p.v,dt);
   p.v.multiplyScalar(Math.exp(-dt*.55));p.v.y+=dt*.2;
   const age=1-p.life/p.maxLife,scale=1+age*2.7;p.mesh.scale.multiplyScalar(1+dt*.31);
-  p.mesh.material.opacity=.38*Math.pow(Math.max(0,p.life/p.maxLife),1.25);
+  p.mesh.material.opacity=.52*Math.pow(Math.max(0,p.life/p.maxLife),1.25);
   if(p.life<=0){scene.remove(p.mesh);p.mesh.material.dispose();effects.samTrail.splice(i,1);}
  }
 }
