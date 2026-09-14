@@ -269,3 +269,91 @@ Before publishing the tempo pass, answer yes to all:
 - Is the mission shorter / denser without becoming chaotic?
 - Does the PB/timer create replay desire rather than HUD clutter?
 - Is the clean visual field preserved?
+
+
+## Precomputed candidate pacing map
+
+This is a **starting geometry/timing hypothesis for Astra**, not a mandate. It is designed to save tuning time by aligning the route with the 55–65 second target before playtesting.
+
+### Current axial pacing
+
+Current key Z positions:
+
+- Start: 3100
+- Valley entry: 2600
+- SAM 1: 1900
+- Bandit activation: 1200
+- SAM 2: -1300
+- Headland: -4950
+- SAM 3: -6500
+- Target: -7200
+- SAM 4: -9200
+- Exit: -11000
+
+At ~155 units/s, straight-line axial timing is approximately:
+
+- entry: 3.2 s
+- SAM 1: 7.7 s
+- bandit: 12.3 s
+- SAM 2: 28.4 s
+- headland: 51.9 s
+- target: 66.5 s
+- exit: 91.0 s
+
+That matches the observed ~90-second run surprisingly closely. The route geometry itself is therefore a major cause of the current pacing.
+
+### Candidate compressed map
+
+A strong first tuning candidate:
+
+- Start: **1500**
+- Valley entry: **1200**
+- SAM 1: **700**
+- Bandit activation: **300**
+- SAM 2: **-1800**
+- Keep headland near **-4950**
+- SAM 3: **-5900**
+- Target: **-6500**
+- Escape pressure / SAM 4: **-7200**
+- Exit: **-8400**
+
+At ~155 units/s, idealized axial timings become roughly:
+
+- entry: 1.9 s
+- SAM 1: 5.2 s
+- bandit: 7.7 s
+- SAM 2: 21.3 s
+- headland: 41.6 s
+- SAM 3: 47.7 s
+- target: 51.6 s
+- escape pressure: 56.1 s
+- exit: 63.9 s
+
+At ~190 units/s turbo, idealized axial exit time is ~52.1 s.
+
+This is close to the desired relationship:
+
+- normal clean run: ~60–70 s after maneuvering / combat
+- optimized run with tactical turbo: ~50–60 s
+
+### Important terrain note
+
+If exit moves northward from -11000 to around -8400, the current northern opening also needs to move with it. The existing opening transition begins much farther north (roughly -9600 to -11700).
+
+Do not extract the player while the valley still visually looks closed.
+
+Compress the opening geography so the world visibly releases into the north shortly after the target and escape-pressure beat.
+
+### Why this candidate is useful
+
+It preserves the strongest authored geography:
+
+- early valley
+- long sight lines
+- the headland reveal
+- terminal basin
+- launch site
+
+while cutting the distance that currently produces the 36-second and 22-second dead legs.
+
+Astra should treat these coordinates as a first playable experiment, then tune by feel.
