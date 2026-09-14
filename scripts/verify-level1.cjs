@@ -1,14 +1,17 @@
 // Browser pilot: only normal keyboard inputs affect play. Telemetry is read-only.
-const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'/Users/colecalfee/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require('playwright');
 const fs=require('fs'),path=require('path');
-const output=process.env.OUTPUT||path.resolve(__dirname,'../review/level1');fs.mkdirSync(output,{recursive:true});
+const {startStaticServer}=require('./static-server.cjs');
+const output=process.env.OUTPUT||path.resolve(__dirname,'../.artifacts/level1');fs.mkdirSync(output,{recursive:true});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 (async()=>{
- const browser=await chromium.launch({executablePath:process.env.CHROME||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--no-sandbox']});
+ const local=process.env.URL?null:await startStaticServer();
+ const launch={headless:true,args:['--no-sandbox']};if(process.env.CHROME)launch.executablePath=process.env.CHROME;
+ const browser=await chromium.launch(launch);
  const page=await browser.newPage({viewport:{width:1360,height:860}}),errors=[],samples=[],captured=new Set(),held=new Set();
  page.on('pageerror',e=>{errors.push(e.message);console.log('ERROR',e.message)});
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
- await page.goto(process.env.URL||'http://127.0.0.1:8892/play.html');await page.waitForFunction(()=>window.emberwing);
+ await page.goto(process.env.URL||(local.url+'/play.html'));await page.waitForFunction(()=>window.emberwing);
  const before=await page.evaluate(()=>emberwing.snapshot());await page.waitForTimeout(2000);const after=await page.evaluate(()=>emberwing.snapshot());
  if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Simulation moved during briefing');
  await page.screenshot({path:path.join(output,'briefing.png')});await page.click('#deploy');
@@ -34,7 +37,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const next=new Set();
   if(bank<desiredBank-.045)next.add('ArrowRight');else if(bank>desiredBank+.045)next.add('ArrowLeft');
   if(pitch<desiredPitch-.016)next.add('ArrowDown');else if(pitch>desiredPitch+.016)next.add('ArrowUp');
-  if(z<-1200&&(z>-5700||s.destroyed))next.add('KeyZ');
+  if(z<-1200&&(z>-5700||s.destroyed))next.add('Shift');
   if(!s.destroyed&&s.geometry.state&&s.selected!=='ground'&&!s.seeker)next.add('KeyX');
   if(!s.destroyed&&s.geometry.state&&!s.missile&&s.elapsed-lastShot>2){
    if(s.lock===2&&s.selected==='ground'){lastShot=s.elapsed;}
@@ -45,6 +48,6 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  await keys(new Set());
  fs.writeFileSync(path.join(output,'flight-log.json'),JSON.stringify({errors,samples},null,2));
  await page.keyboard.press('r');await page.waitForTimeout(500);console.log('RESET',await page.evaluate(()=>emberwing.snapshot()));
- await browser.close();
+ await browser.close();if(local)await local.close();
  if(errors.length||!samples.at(-1)?.complete)process.exitCode=1;
-})();
+})().catch(error=>{console.error(error);process.exitCode=1;});
