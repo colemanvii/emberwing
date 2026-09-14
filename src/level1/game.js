@@ -16,7 +16,7 @@ const ship=makeShip(),enemy=makeShip(true);scene.add(ship,enemy);for(const m of 
 function updateWorld(){if(worldIndex){snow.position.copy(ship.position);snow.rotation.x+=.00015;snow.rotation.y+=.0003}if(Math.abs(ship.position.x-tcx)>620||Math.abs(ship.position.z-tcz)>620){const nx=Math.round(ship.position.x/620)*620,nz=Math.round(ship.position.z/620)*620;rebuildTerrain(nx,nz);positionDistantRidges(nx,nz)}const cityActive=!worldIndex;for(const m of scenery){const dx=m.position.x-ship.position.x,dz=m.position.z-ship.position.z,d2=dx*dx+dz*dz;if(m.userData.city){if(!cityActive){m.visible=false;continue}m.visible=true;if(d2>1250*1250)place(m);continue}if(d2>1750*1750)place(m)}if(worldIndex===2){const now=performance.now();if(now>tempestFlashAt){tempestFlashAt=now+3200+Math.random()*6200;sun.intensity=13;flashScreen(.16);chirp(48,.22,.035);setTimeout(()=>{if(worldIndex===2)sun.intensity=3.1},95)}}}
 const hud=document.getElementById('hud'),capture=document.getElementById('capture'),reticle=document.getElementById('reticle'),targetUI=document.getElementById('target'),flash=document.getElementById('flash'),crashUI=document.getElementById('crash'),completeUI=document.getElementById('complete');
 function flashScreen(v=.16){flash.style.transition='none';flash.style.opacity=v;requestAnimationFrame(()=>{flash.style.transition='opacity .18s';flash.style.opacity='0'})}function confirmHit(lethal=false){const base=lockState===2?.82:1,peak=lethal?1.38:1.22;reticle.animate([{transform:`translate(-50%,-50%) scale(${base})`,filter:'brightness(1)'},{transform:`translate(-50%,-50%) scale(${base*peak})`,filter:'brightness(2.8) drop-shadow(0 0 8px #fff)'},{transform:`translate(-50%,-50%) scale(${base})`,filter:'brightness(1)'}],{duration:lethal?170:105,easing:'ease-out'})}function formatTime(t){const m=Math.floor(t/60),s=t-m*60;return`${String(m).padStart(2,'0')}:${s.toFixed(1).padStart(4,'0')}`}function loadBest(){try{const v=parseFloat(localStorage.getItem('emberwingBest'));return Number.isFinite(v)?v:Infinity}catch{return Infinity}}function saveBest(t){try{localStorage.setItem('emberwingBest',String(t))}catch{}}function gradeFor(t){return t<145?'S':t<190?'A':t<250?'B':'C'}
-const FEET_PER_UNIT=6,MISSION_KILLS=3,CRUISE_SPEED=155,TURBO_SPEED=190;let worldIndex=0,worldTravel=0,speed=CRUISE_SPEED,burner=0,pitchRate=0,rollRate=0,crashed=false,missionComplete=false,missionCompleteTimer=0,kills=0,enemyAlive=true,firstTarget=true,enemyTime=0,enemyVel=new THREE.Vector3(),lastEnemy=new THREE.Vector3(),enemyCourse=new THREE.Vector3(0,0,-1),respawn=0,seeker=false,lockState=0,lockTimer=0,lastLock=0,missile=null,missileRearm=0,audioCtx=null,lockOsc=null,lockGain=null,pulseClock=0,rangeFeet=0,displayRangeFeet=0,closureFps=0,lastRangeWorld=0,enemyHP=3,enemyMaxHP=3,gunClock=0,gunKick=0,gunSalvo=0,lastGunHit=-1,speedFXClock=0,hitKick=0,smokeClock=0,dangerCooldown=0,groundNear=false,obstacleNear=false,enemyNear=false,camBank=0,camTargetBias=0,camClosureFov=0,propulsionLatch=false,lastForwardTap=0,turboBurst=0,missionElapsed=0,citySplit=0,alpineSplit=0,finalTime=0,bestTime=loadBest(),enemyRole='ROOKIE',killSlow=0,enemyAttackState=0,enemyAttackTimer=0,enemyBurstClock=0,enemyBurstShots=0,enemyTailTimer=0,enemyCounter=0,enemyManeuverCooldown=0,enemyReaimTimer=0,enemyLockReacted=false,playerHP=3,playerInvuln=0,hostileNearCooldown=0,guideX=innerWidth*.5,guideY=innerHeight*.42,guideSide=1;const keys={},tracers=[],combatFX=[];
+const FEET_PER_UNIT=6,MISSION_KILLS=3,CRUISE_SPEED=168,TURBO_SPEED=208;let worldIndex=0,worldTravel=0,speed=CRUISE_SPEED,burner=0,pitchRate=0,rollRate=0,crashed=false,missionComplete=false,missionCompleteTimer=0,kills=0,enemyAlive=true,firstTarget=true,enemyTime=0,enemyVel=new THREE.Vector3(),lastEnemy=new THREE.Vector3(),enemyCourse=new THREE.Vector3(0,0,-1),respawn=0,seeker=false,lockState=0,lockTimer=0,lastLock=0,missile=null,missileRearm=0,audioCtx=null,lockOsc=null,lockGain=null,pulseClock=0,rangeFeet=0,displayRangeFeet=0,closureFps=0,lastRangeWorld=0,enemyHP=3,enemyMaxHP=3,gunClock=0,gunKick=0,gunSalvo=0,lastGunHit=-1,speedFXClock=0,hitKick=0,smokeClock=0,dangerCooldown=0,groundNear=false,obstacleNear=false,enemyNear=false,camBank=0,camTargetBias=0,camClosureFov=0,propulsionLatch=false,lastForwardTap=0,turboBurst=0,missionElapsed=0,citySplit=0,alpineSplit=0,finalTime=0,bestTime=loadBest(),enemyRole='ROOKIE',killSlow=0,enemyAttackState=0,enemyAttackTimer=0,enemyBurstClock=0,enemyBurstShots=0,enemyTailTimer=0,enemyCounter=0,enemyManeuverCooldown=0,enemyReaimTimer=0,enemyLockReacted=false,playerHP=3,playerInvuln=0,hostileNearCooldown=0,guideX=innerWidth*.5,guideY=innerHeight*.42,guideSide=1;const keys={},tracers=[],combatFX=[];
 let hostileMissile=null,hostileLock=0,hostileLockStage=0,hostileLaunchDelay=0,hostileMissileCooldown=4;const updateWorldBase=updateWorld;updateWorld=function(){updateWorldBase();if(worldIndex)updateAlpineSnow()};const aroundPointBase=aroundPoint;aroundPoint=function(m,minR,maxR,avoidLane=false){if(!avoidLane||!worldIndex)return aroundPointBase(m,minR,maxR,avoidLane);const f=heading().clone(),r=tmpR.crossVectors(f,worldUp).normalize(),lane=210;for(let tries=0;tries<12;tries++){const a=Math.random()*Math.PI*2,d=minR+Math.sqrt(Math.random())*(maxR-minR),dx=Math.cos(a)*d,dz=Math.sin(a)*d,along=dx*f.x+dz*f.z,side=dx*r.x+dz*r.z;if(along>0&&along<1000&&Math.abs(side)<lane)continue;const x=ship.position.x+dx,z=ship.position.z+dz;m.position.set(x,terrainHeight(x,z)+m.userData.raise,z);return}const side=(Math.random()<.5?-1:1)*lane*1.35,x=ship.position.x-f.x*minR+r.x*side,z=ship.position.z-f.z*minR+r.z*side;m.position.set(x,terrainHeight(x,z)+m.userData.raise,z)}
 function setWorldTheme(alpine){tempestTerrain=false;ground.material.roughness=.98;ground.material.metalness=0;alpineTerrain=alpine;worldIndex=alpine?1:0;haze.setHex(alpine?0xaec5cf:0xb8745d);scene.background=haze;scene.fog.color.copy(haze);scene.fog.density=alpine?.00112:.00094;c1.setHex(alpine?0x2e4658:0x43282d);c2.setHex(alpine?0x5f7b8c:0x8f4639);c3.setHex(alpine?0xa7bac3:0xc86a43);c4.setHex(alpine?0xf3f4ed:0xf3c282);rockMat.color.setHex(alpine?0x455b68:0x5a3433);sandMat.color.setHex(alpine?0x748995:0xb47756);cityDarkMat.color.setHex(alpine?0x526775:0x70463d);cityGlassMat.color.setHex(alpine?0x1d3442:0x29343b);peakDarkMat.color.setHex(alpine?0x334a5b:0x3b252a);peakMat.color.setHex(alpine?0x647d8d:0x744036);peakLightMat.color.setHex(alpine?0xdce5e6:0xc27b52);farRidgeMat.color.setHex(alpine?0x7892a0:0x76514d);sky.material.uniforms.top.value.setHex(alpine?0x344f67:0x20172f);sky.material.uniforms.hor.value.setHex(alpine?0x91aebb:0xbb684f);sky.material.uniforms.low.value.setHex(alpine?0xe6eef1:0xf2aa68);sky.material.uniforms.sunDir.value.set(alpine?-.46:-.58,alpine?.22:.17,alpine?-.86:-.79).normalize();sky.material.uniforms.sunCol.value.setHex(alpine?0xffe6b8:0xffd19b);hemi.color.setHex(alpine?0xe8f5ff:0xffd6bd);hemi.groundColor.setHex(alpine?0x263a4a:0x241a22);hemi.intensity=alpine?2.05:1.85;sun.color.setHex(alpine?0xffdfae:0xffbd76);sun.intensity=alpine?5.7:6.4;snow.material.color.setHex(0xffffff);snow.visible=alpine;if(alpine)snowStamp=performance.now();speedMat.color.setHex(alpine?0xffffff:0xffe6b8);;;document.body.classList.toggle('alpine',alpine)}
 const setWorldThemeIdentity=setWorldTheme;setWorldTheme=function(alpine){setWorldThemeIdentity(alpine);;}
@@ -649,20 +649,20 @@ updateEnemy=function(dt){
  if(duel.state==='break'&&duel.age>1.65)duelState('extend');
  if(duel.state==='press'&&(duel.age>4.5||(duel.age>1.8&&(range>540||behind<-.25))))duelState('extend');
  const intent=duel.intent,right=duel.right.crossVectors(pf,worldUp).normalize();
- let targetSpeed=enemyRole==='ROOKIE'?110:enemyRole==='ACE'?130:120,turn=enemyRole==='ROOKIE'?.9:1.12;
+ let targetSpeed=enemyRole==='ROOKIE'?150:enemyRole==='ACE'?176:162,turn=enemyRole==='ROOKIE'?.9:1.12;
  if(duel.state==='extend'){
-  intent.copy(duel.course);targetSpeed+=22;
+  intent.copy(duel.course);targetSpeed+=28;
  }else if(duel.state==='break'){
   right.crossVectors(duel.course,worldUp).normalize();
   intent.copy(duel.course).multiplyScalar(.2).addScaledVector(right,duel.side);
-  targetSpeed=enemyRole==='ROOKIE'?101:98;turn=1.45;
+  targetSpeed=enemyRole==='ROOKIE'?138:145;turn=1.45;
  }else{
   // A lateral offset creates an oblique merge; fade it near contact so passes stay close.
   const offset=duel.state==='engage'?duel.side*Math.min(95,range*.23):0;
   duel.aim.copy(ship.position).addScaledVector(pf,Math.min(range/(targetSpeed+speed),.65)*speed).addScaledVector(right,offset);
   intent.copy(duel.aim).sub(enemy.position);
-  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=126;
-  if(duel.state==='press'){targetSpeed=Math.min(134,Math.max(100,speed+(range>160?7:-8)));turn=1.25;}
+  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=178;
+  if(duel.state==='press'){targetSpeed=Math.min(188,Math.max(150,speed+(range>160?14:-6)));turn=1.25;}
  }
  const clearance=enemyRole==='SKIMMER'?42:enemyRole==='CLIMBER'?90:62;
  // Stay in the player's altitude band; a climber's modest high-side pass is bounded.
@@ -1074,7 +1074,7 @@ function updateLaunchVapor(){
 }
 
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
-const LEVEL={startZ:1500,entryZ:1200,targetX:-300,targetZ:-6500,exitZ:-8400};
+const LEVEL={startZ:1300,entryZ:1050,targetX:-300,targetZ:-5700,exitZ:-7200};
 const mission={phase:'briefing',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0};
 const sam={sites:[],missile:null,lock:0,stage:0,cooldown:5,site:null,lastCue:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
@@ -1085,8 +1085,8 @@ terrainHeight=function(x,z){
  if(worldIndex!==0)return inheritedTerrain(x,z);
  const center=valleyCenter(z),d=Math.abs(x-center);
  const entry=THREE.MathUtils.smoothstep(z,1800,3800);
- const basin=1-THREE.MathUtils.smoothstep(Math.abs(z+7100),850,1900);
- const opening=1-THREE.MathUtils.smoothstep(z,-8600,-7200);
+ const basin=1-THREE.MathUtils.smoothstep(Math.abs(z+6200),850,1900);
+ const opening=1-THREE.MathUtils.smoothstep(z,-7500,-6200);
  const half=420+basin*340+opening*1100;
  const floor=-38+entry*205+noiseLand(x*.002,z*.0018)*13+5*Math.sin(z/570);
  const wall=THREE.MathUtils.smoothstep(d,half,half+780);
@@ -1210,7 +1210,7 @@ function destroyTarget(){
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
  announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,.8);lockState=lockTimer=0;setSeeker(false);
- if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,142);resetEnemyAttack(1.0);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
+ if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,176);resetEnemyAttack(1.0);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -1240,7 +1240,7 @@ const airKill=explode;
 explode=function(){airKill();missionCompleteTimer=0;respawn=999999;};
 function spawnDefender(escape=false){
  spawnEnemy(!escape);
- const z=escape?-7600:-500,x=valleyCenter(z)+(escape?650:420);
+ const z=escape?-6500:-500,x=valleyCenter(z)+(escape?650:420);
  enemy.position.set(x,terrainHeight(x,z)+150,z);
  const direction=ship.position.clone().addScaledVector(heading(),160).sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=escape?144:136;
@@ -1251,7 +1251,7 @@ function updateMission(dt){
  // Invisible spatial activation only paces opponents; nothing gates the target or route.
  if(ship.position.z<=LEVEL.entryZ)mission.penetrated=true;
  if(!mission.bandit&&ship.position.z<700){mission.bandit=true;spawnDefender();}
- if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-6800&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
+ if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-5900&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
   missionComplete=true;mission.phase='complete';finalTime=missionElapsed;releaseInputs();removeSamMissile();removeHostileMissile();
   const previousBest=bestTime,newBest=finalTime<previousBest;
@@ -1273,7 +1273,7 @@ const serviceRoad=new THREE.Mesh(new THREE.BufferGeometry(),roadMaterial);scene.
 function seatServiceRoad(){
  const positions=[],indices=[];
  for(let i=0;i<=60;i++){
-  const z=-5200-i*34,t=i/60,x=THREE.MathUtils.lerp(valleyCenter(-5200)-55,LEVEL.targetX+105,t);
+  const roadStart=LEVEL.targetZ+500,z=roadStart-i*34,t=i/60,x=THREE.MathUtils.lerp(valleyCenter(roadStart)-55,LEVEL.targetX+105,t);
   for(const side of [-1,1]){const sx=x+side*4;positions.push(sx,terrainHeight(sx,z)+.55,z);}
   if(i<60){const a=i*2;indices.push(a,a+1,a+2,a+1,a+3,a+2);}
  }
@@ -1293,7 +1293,7 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(700)+190,700],[valleyCenter(-1700)-240,-1700],[valleyCenter(-3650)+260,-3650],[450,-5550],[-700,-7200]];
+ const specs=[[valleyCenter(550)+190,550],[valleyCenter(-1200)-240,-1200],[valleyCenter(-3000)+260,-3000],[450,-5000],[-700,-6300]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  [1250,1600,1700,1750,1700].forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=2.6;sam.smokeClock=0;seatServiceRoad();
