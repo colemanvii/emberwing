@@ -126,12 +126,13 @@ function updateSamMissile(dt){
  const u=THREE.MathUtils.clamp(toShip.dot(travel)/Math.max(.001,travel.lengthSq()),0,1),closest=previous.clone().addScaledVector(travel,u);
  const hit=closest.distanceToSquared(ship.position)<64;
  if(!h.near&&!hit&&closest.distanceToSquared(ship.position)<420){h.near=true;hostileNearMiss();}
- const blocked=h.mesh.position.y<=terrainHeight(h.mesh.position.x,h.mesh.position.z)+4;
- if(hit){
+ const sceneryHit=scenerySegmentHit(previous,h.mesh.position,1.5,2,false);
+ const blocked=h.mesh.position.y<=terrainHeight(h.mesh.position.x,h.mesh.position.z)+4||!!sceneryHit;
+ if(hit&&!blocked){
   const p=h.mesh.position.clone();removeSamMissile();hostileMissileBurst(p);hitKick=Math.max(hitKick,1);flashScreen(.3);chirp(58,.15,.06);hitPlayer();return;
  }
  if(blocked||h.life<=0){
-  const p=h.mesh.position.clone();removeSamMissile();hostileMissileBurst(p);
+  const p=sceneryHit||h.mesh.position.clone();removeSamMissile();hostileMissileBurst(p);
   announce(blocked?'SAM DEFEATED — TERRAIN MASK':'SAM EVADED');chirp(430,.06,.032);chirp(690,.075,.024,.05);
  }
 }
@@ -143,9 +144,9 @@ function samCandidate(){
   if(s.disabled)continue;
   const range=s.position.distanceTo(ship.position),maxRange=s.range||(mission.destroyed?1550:1900);
   if(range>maxRange||!samLineClear(s))continue;
-  // Very low flight is difficult to track but not invisible over open ground.
+  // Low flight helps, but open ground is still exposed; actual cover must break line of sight.
   // Above ~160 units AGL, ground-clutter benefit is mostly gone.
-  const clutter=.16+.84*THREE.MathUtils.smoothstep(agl,18,165);
+  const clutter=.28+.72*THREE.MathUtils.smoothstep(agl,18,165);
   const rangeQuality=THREE.MathUtils.clamp(1-(range/maxRange)*.34,.62,1);
   const exposure=clutter*rangeQuality;
   const score=range/Math.max(.18,exposure);
