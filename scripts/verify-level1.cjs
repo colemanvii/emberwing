@@ -29,7 +29,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const bank=Math.atan2(-2*(qx*qy+qw*qz),1-2*(qx*qx+qz*qz)),pitch=Math.asin(clamp(s.forward[1],-1,1)),yaw=Math.atan2(s.forward[0],-s.forward[2]);
   let targetX=s.center;
   // Follow the natural westward dogleg around the eastern escarpment without treating it like a binary lane choice.
-  if(z<1180&&z>-260)targetX=s.center-215;
+  if(z<1180&&z>-260)targetX=s.center-120;
   if(z<-4400&&z>-5850&&!s.destroyed)targetX=s.target[0];
   let altitude=z>3500?110:50;
   let desiredY=s.aheadFloor+altitude;
