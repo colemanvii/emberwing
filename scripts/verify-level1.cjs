@@ -22,12 +22,14 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const s=await page.evaluate(()=>{const s=emberwing.snapshot(),z=s.position[2];return {...s,center:emberwing.center(z-550),aheadFloor:emberwing.height(s.position[0],z-220)}});
   if(s.elapsed-lastLog>5){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,destroyed:s.destroyed}));}
   const z=s.position[2];
-  for(const [name,threshold] of [['approach',1200],['descent',1000],['valley',550],['first-sam',150],['bandit',-500],['bend',-4200],['reveal',-4800],['attack',-5350],['escape',-6200]])if(z<threshold&&!captured.has(name)){captured.add(name);await page.screenshot({path:path.join(output,name+'.png')});}
+  for(const [name,threshold] of [['approach',1200],['fork',900],['valley',550],['fork-exit',-150],['bandit',-500],['throat',-1900],['bend',-4200],['reveal',-4800],['attack',-5350],['escape',-6200]])if(z<threshold&&!captured.has(name)){captured.add(name);await page.screenshot({path:path.join(output,name+'.png')});}
   if(s.destroyed&&!captured.has('destruction')){captured.add('destruction');await page.screenshot({path:path.join(output,'destruction.png')});}
   if(s.crashed||s.complete){await page.screenshot({path:path.join(output,s.complete?'extracted.png':'crash.png')});console.log('TERMINAL',JSON.stringify(s));samples.push(s);break;}
   const [x,y]=s.position,[qx,qy,qz,qw]=s.quaternion;
   const bank=Math.atan2(-2*(qx*qy+qw*qz),1-2*(qx*qx+qz*qz)),pitch=Math.asin(clamp(s.forward[1],-1,1)),yaw=Math.atan2(s.forward[0],-s.forward[2]);
   let targetX=s.center;
+  // Take the broad western shoulder around the authored opening massif; center-line flight is intentionally blocked.
+  if(z<1240&&z>-300)targetX=s.center-265;
   if(z<-4400&&z>-5850&&!s.destroyed)targetX=s.target[0];
   let altitude=z>3500?110:50;
   let desiredY=s.aheadFloor+altitude;
