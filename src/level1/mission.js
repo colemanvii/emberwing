@@ -28,11 +28,11 @@ terrainHeight=function(x,z){
 
  // 1. THE FORK — a monumental central massif splits the opening valley into two readable lines.
  // Straight/center flight is no longer viable; the player must commit around one shoulder within the first few seconds.
- const forkMassif=465*terrainLobe(x,z,valleyCenter(500)+15,500,205,700,3.2);
- const forkCrown=185*terrainLobe(x,z,valleyCenter(430)+30,430,125,390,3.5);
+ const forkMassif=470*terrainLobe(x,z,valleyCenter(300)+15,300,205,500,4.5);
+ const forkCrown=190*terrainLobe(x,z,valleyCenter(260)+30,260,125,300,5);
  // Unequal roots keep both sides flyable while making the western line broader and the eastern line more exposed.
- const forkWestRoot=95*terrainLobe(x,z,valleyCenter(360)-330,360,300,760);
- const forkEastRoot=145*terrainLobe(x,z,valleyCenter(330)+345,330,325,820);
+ const forkWestRoot=85*terrainLobe(x,z,valleyCenter(220)-330,220,285,620,4.5);
+ const forkEastRoot=135*terrainLobe(x,z,valleyCenter(200)+345,200,310,660,4.5);
 
  // 2. THE NARROW THROAT — the base walls close in here; asymmetric buttresses make the compression legible at speed.
  const throatWest=120*terrainLobe(x,z,valleyCenter(-2150)-350,-2150,330,760);
