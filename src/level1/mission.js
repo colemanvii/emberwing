@@ -1,5 +1,5 @@
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
-const LEVEL={startZ:1500,entryZ:1200,targetX:-300,targetZ:-6500,exitZ:-8400};
+const LEVEL={startZ:1300,entryZ:1050,targetX:-300,targetZ:-5700,exitZ:-7200};
 const mission={phase:'briefing',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0};
 const sam={sites:[],missile:null,lock:0,stage:0,cooldown:5,site:null,lastCue:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
@@ -10,8 +10,8 @@ terrainHeight=function(x,z){
  if(worldIndex!==0)return inheritedTerrain(x,z);
  const center=valleyCenter(z),d=Math.abs(x-center);
  const entry=THREE.MathUtils.smoothstep(z,1800,3800);
- const basin=1-THREE.MathUtils.smoothstep(Math.abs(z+7100),850,1900);
- const opening=1-THREE.MathUtils.smoothstep(z,-8600,-7200);
+ const basin=1-THREE.MathUtils.smoothstep(Math.abs(z+6200),850,1900);
+ const opening=1-THREE.MathUtils.smoothstep(z,-7500,-6200);
  const half=420+basin*340+opening*1100;
  const floor=-38+entry*205+noiseLand(x*.002,z*.0018)*13+5*Math.sin(z/570);
  const wall=THREE.MathUtils.smoothstep(d,half,half+780);
@@ -135,7 +135,7 @@ function destroyTarget(){
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
  announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,.8);lockState=lockTimer=0;setSeeker(false);
- if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,142);resetEnemyAttack(1.0);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
+ if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,176);resetEnemyAttack(1.0);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -165,7 +165,7 @@ const airKill=explode;
 explode=function(){airKill();missionCompleteTimer=0;respawn=999999;};
 function spawnDefender(escape=false){
  spawnEnemy(!escape);
- const z=escape?-7600:-500,x=valleyCenter(z)+(escape?650:420);
+ const z=escape?-6500:-500,x=valleyCenter(z)+(escape?650:420);
  enemy.position.set(x,terrainHeight(x,z)+150,z);
  const direction=ship.position.clone().addScaledVector(heading(),160).sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=escape?144:136;
@@ -176,7 +176,7 @@ function updateMission(dt){
  // Invisible spatial activation only paces opponents; nothing gates the target or route.
  if(ship.position.z<=LEVEL.entryZ)mission.penetrated=true;
  if(!mission.bandit&&ship.position.z<700){mission.bandit=true;spawnDefender();}
- if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-6800&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
+ if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-5900&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
   missionComplete=true;mission.phase='complete';finalTime=missionElapsed;releaseInputs();removeSamMissile();removeHostileMissile();
   const previousBest=bestTime,newBest=finalTime<previousBest;
@@ -198,7 +198,7 @@ const serviceRoad=new THREE.Mesh(new THREE.BufferGeometry(),roadMaterial);scene.
 function seatServiceRoad(){
  const positions=[],indices=[];
  for(let i=0;i<=60;i++){
-  const z=-5200-i*34,t=i/60,x=THREE.MathUtils.lerp(valleyCenter(-5200)-55,LEVEL.targetX+105,t);
+  const roadStart=LEVEL.targetZ+500,z=roadStart-i*34,t=i/60,x=THREE.MathUtils.lerp(valleyCenter(roadStart)-55,LEVEL.targetX+105,t);
   for(const side of [-1,1]){const sx=x+side*4;positions.push(sx,terrainHeight(sx,z)+.55,z);}
   if(i<60){const a=i*2;indices.push(a,a+1,a+2,a+1,a+3,a+2);}
  }
@@ -218,7 +218,7 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(700)+190,700],[valleyCenter(-1700)-240,-1700],[valleyCenter(-3650)+260,-3650],[450,-5550],[-700,-7200]];
+ const specs=[[valleyCenter(550)+190,550],[valleyCenter(-1200)-240,-1200],[valleyCenter(-3000)+260,-3000],[450,-5000],[-700,-6300]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  [1250,1600,1700,1750,1700].forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=2.6;sam.smokeClock=0;seatServiceRoad();
