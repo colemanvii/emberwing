@@ -1,9 +1,9 @@
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
-const LEVEL={startZ:3100,entryZ:2600,targetX:-300,targetZ:-7200,exitZ:-11000};
+const LEVEL={startZ:1500,entryZ:1200,targetX:-300,targetZ:-6500,exitZ:-8400};
 const mission={phase:'briefing',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0};
 const sam={sites:[],missile:null,lock:0,stage:0,cooldown:5,site:null,lastCue:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
-const compass=document.getElementById('compass'),health=document.getElementById('health');
+const compass=document.getElementById('compass'),health=document.getElementById('health'),runTimeUI=document.getElementById('runTime'),runBestUI=document.getElementById('runBest');
 const valleyCenter=z=>-320*Math.sin((2600-z)/1800)*THREE.MathUtils.smoothstep(4000-z,0,1800)-560*Math.exp(-Math.pow((z+4900)/1100,2));
 const inheritedTerrain=terrainHeight;
 terrainHeight=function(x,z){
@@ -11,7 +11,7 @@ terrainHeight=function(x,z){
  const center=valleyCenter(z),d=Math.abs(x-center);
  const entry=THREE.MathUtils.smoothstep(z,1800,3800);
  const basin=1-THREE.MathUtils.smoothstep(Math.abs(z+7100),850,1900);
- const opening=1-THREE.MathUtils.smoothstep(z,-11700,-9600);
+ const opening=1-THREE.MathUtils.smoothstep(z,-8600,-7200);
  const half=420+basin*340+opening*1100;
  const floor=-38+entry*205+noiseLand(x*.002,z*.0018)*13+5*Math.sin(z/570);
  const wall=THREE.MathUtils.smoothstep(d,half,half+780);
@@ -64,6 +64,8 @@ function updateInstruments(){
  const f=heading(),headingDeg=THREE.MathUtils.radToDeg(Math.atan2(f.x,-f.z));
  for(const {mark,deg} of compassMarks){const delta=((deg-headingDeg+540)%360)-180;mark.hidden=Math.abs(delta)>66;mark.style.transform=`translateX(${delta*1.7}px)`;}
  radio.hidden=missionElapsed>mission.messageUntil;
+ runTimeUI.textContent=formatTime(missionElapsed);
+ const hasBest=Number.isFinite(bestTime);runBestUI.hidden=!hasBest;if(hasBest)runBestUI.textContent='BEST '+formatTime(bestTime);
  health.textContent='▰'.repeat(playerHP)+'▱'.repeat(3-playerHP);
  health.setAttribute('aria-label',`Hull ${playerHP} of 3`);
 }
@@ -132,7 +134,7 @@ function destroyTarget(){
  if(mission.destroyed)return;
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
- announce('TARGET DESTROYED');sam.cooldown=Math.max(sam.cooldown,3.5);lockState=lockTimer=0;setSeeker(false);
+ announce('TARGET DESTROYED');sam.cooldown=Math.max(sam.cooldown,2.4);lockState=lockTimer=0;setSeeker(false);
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -162,7 +164,7 @@ const airKill=explode;
 explode=function(){airKill();missionCompleteTimer=0;respawn=999999;};
 function spawnDefender(escape=false){
  spawnEnemy(!escape);
- const x=escape?valleyCenter(-8900)+650:valleyCenter(0)+420,z=escape?-8900:0;
+ const z=escape?-7600:-500,x=valleyCenter(z)+(escape?650:420);
  enemy.position.set(x,terrainHeight(x,z)+150,z);
  const direction=ship.position.clone().addScaledVector(heading(),160).sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=126;
@@ -172,8 +174,8 @@ function updateMission(dt){
  if(crashed||missionComplete)return;
  // Invisible spatial activation only paces opponents; nothing gates the target or route.
  if(ship.position.z<=LEVEL.entryZ)mission.penetrated=true;
- if(!mission.bandit&&ship.position.z<1200){mission.bandit=true;spawnDefender();}
- if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-8100&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
+ if(!mission.bandit&&ship.position.z<300){mission.bandit=true;spawnDefender();}
+ if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-6800&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
   missionComplete=true;mission.phase='complete';finalTime=missionElapsed;releaseInputs();removeSamMissile();removeHostileMissile();
   const previousBest=bestTime,newBest=finalTime<previousBest;
@@ -215,8 +217,8 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Early shelf, mid-valley shoulder, terminal defense, northern pursuit battery.
- const specs=[[valleyCenter(1900)+190,1900],[valleyCenter(-1300)-240,-1300],[450,-6500],[-700,-9200]];
- sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));sam.sites[0].range=1250;sam.cooldown=3;sam.smokeClock=0;seatServiceRoad();
+ const specs=[[valleyCenter(700)+190,700],[valleyCenter(-1800)-240,-1800],[450,-5900],[-700,-7200]];
+ sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));sam.sites[0].range=1250;sam.sites[3].range=1700;sam.cooldown=3;sam.smokeClock=0;seatServiceRoad();
  rebuildTerrain(0,Math.round(LEVEL.startZ/620)*620);positionDistantRidges(0,Math.round(LEVEL.startZ/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
  camera.position.set(x,ship.position.y+5.3,LEVEL.startZ+12);resetCameraFrame();
