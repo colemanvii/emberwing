@@ -649,20 +649,20 @@ updateEnemy=function(dt){
  if(duel.state==='break'&&duel.age>1.65)duelState('extend');
  if(duel.state==='press'&&(duel.age>4.5||(duel.age>1.8&&(range>540||behind<-.25))))duelState('extend');
  const intent=duel.intent,right=duel.right.crossVectors(pf,worldUp).normalize();
- let targetSpeed=enemyRole==='ROOKIE'?150:enemyRole==='ACE'?176:162,turn=enemyRole==='ROOKIE'?.9:1.12;
+ let targetSpeed=enemyRole==='ROOKIE'?CRUISE_SPEED:enemyRole==='ACE'?TURBO_SPEED-18:CRUISE_SPEED+10,turn=enemyRole==='ROOKIE'?.9:1.12;
  if(duel.state==='extend'){
-  intent.copy(duel.course);targetSpeed+=28;
+  intent.copy(duel.course);targetSpeed+=26;
  }else if(duel.state==='break'){
   right.crossVectors(duel.course,worldUp).normalize();
   intent.copy(duel.course).multiplyScalar(.2).addScaledVector(right,duel.side);
-  targetSpeed=enemyRole==='ROOKIE'?138:145;turn=1.45;
+  targetSpeed=enemyRole==='ROOKIE'?CRUISE_SPEED-18:CRUISE_SPEED-10;turn=1.45;
  }else{
   // A lateral offset creates an oblique merge; fade it near contact so passes stay close.
   const offset=duel.state==='engage'?duel.side*Math.min(95,range*.23):0;
   duel.aim.copy(ship.position).addScaledVector(pf,Math.min(range/(targetSpeed+speed),.65)*speed).addScaledVector(right,offset);
   intent.copy(duel.aim).sub(enemy.position);
-  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=178;
-  if(duel.state==='press'){targetSpeed=Math.min(188,Math.max(150,speed+(range>160?14:-6)));turn=1.25;}
+  if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=CRUISE_SPEED+18;
+  if(duel.state==='press'){targetSpeed=Math.min(TURBO_SPEED-10,Math.max(CRUISE_SPEED-8,speed+(range>160?14:-6)));turn=1.25;}
  }
  const clearance=enemyRole==='SKIMMER'?42:enemyRole==='CLIMBER'?90:62;
  // Stay in the player's altitude band; a climber's modest high-side pass is bounded.
