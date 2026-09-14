@@ -168,14 +168,14 @@ function spawnDefender(escape=false){
  const z=escape?-7600:-500,x=valleyCenter(z)+(escape?650:420);
  enemy.position.set(x,terrainHeight(x,z)+150,z);
  const direction=ship.position.clone().addScaledVector(heading(),160).sub(enemy.position).normalize();
- enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=126;
- enemyDetected=true;enemyTime=0;resetEnemyAttack(5);lastEnemy.copy(enemy.position);
+ enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=escape?140:132;
+ enemyDetected=true;enemyTime=0;resetEnemyAttack(escape?1.8:3.2);lastEnemy.copy(enemy.position);
 }
 function updateMission(dt){
  if(crashed||missionComplete)return;
  // Invisible spatial activation only paces opponents; nothing gates the target or route.
  if(ship.position.z<=LEVEL.entryZ)mission.penetrated=true;
- if(!mission.bandit&&ship.position.z<300){mission.bandit=true;spawnDefender();}
+ if(!mission.bandit&&ship.position.z<500){mission.bandit=true;spawnDefender();}
  if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-6800&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
   missionComplete=true;mission.phase='complete';finalTime=missionElapsed;releaseInputs();removeSamMissile();removeHostileMissile();
