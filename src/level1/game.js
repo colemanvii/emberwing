@@ -1251,8 +1251,12 @@ function updateMission(dt){
  if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-8100&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
   missionComplete=true;mission.phase='complete';finalTime=missionElapsed;releaseInputs();removeSamMissile();removeHostileMissile();
+  const previousBest=bestTime,newBest=finalTime<previousBest;
+  if(newBest){bestTime=finalTime;saveBest(finalTime);}
+  const delta=Number.isFinite(previousBest)&&!newBest?finalTime-previousBest:null;
+  const bestLine=newBest?`NEW BEST · ${formatTime(bestTime)}`:`PB ${formatTime(bestTime)}${delta!==null?` · +${delta.toFixed(1)}`:''}`;
   audioCtx?.suspend();document.body.dataset.state='complete';completeUI.style.display='grid';
-  completeUI.innerHTML=`<div><small>EMBERWING / LEVEL 01</small><h1>EXTRACTED</h1><p>Target destroyed. Aircraft recovered.</p><small>${formatTime(finalTime)} · HULL ${playerHP}/3</small><button id="again">FLY AGAIN</button></div>`;
+  completeUI.innerHTML=`<div><small>EMBERWING / LEVEL 01</small><h1>EXTRACTED</h1><div class="runTime">${formatTime(finalTime)}</div><small class="${newBest?'best new':'best'}">${bestLine}</small><p>Target destroyed. Aircraft recovered.</p><small>HULL ${playerHP}/3</small><button id="again">FLY AGAIN</button></div>`;
   document.getElementById('again').addEventListener('click',reset);chirp(330,.12,.03);chirp(660,.18,.035,.1);
  }
 }
@@ -1292,6 +1296,7 @@ reset=function(){
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
  camera.position.set(x,ship.position.y+5.3,LEVEL.startZ+12);resetCameraFrame();
  releaseInputs();audioCtx?.suspend();briefing.hidden=false;document.body.dataset.state='briefing';radio.hidden=true;targetUI.hidden=true;capture.hidden=true;
+ updateWorld();updateCamera(1/60);renderer.render(scene,camera);
  updateObjectives();deploy.disabled=false;deploy.textContent='BEGIN MISSION';deploy.focus();
 };
 const clock=new THREE.Clock();
