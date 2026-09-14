@@ -26,7 +26,9 @@ Both `index.html` and `play.html` are generated from `src/level1/shell.html`. Th
 
 Three.js 0.180.0 is bundled in `vendor/` with its MIT license. Launch has no external CDN dependency.
 
-Historical numbered pages and release notes live under `archive/`. They are preserved for reference and are not inputs to the current build. Local V58–V61 experiments in the original checkout were preserved in place during this consolidation.
+Historical numbered pages, release notes, legacy build scripts, and retired workflows live under `archive/`. They are preserved for reference and are not inputs to the current build.
+
+The live `scripts/` directory contains only the canonical Level 1 build and verification tools.
 
 ## Project guardrails
 
