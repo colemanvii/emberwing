@@ -4,22 +4,48 @@ const mission={phase:'briefing',penetrated:false,destroyed:false,hp:8,lastSalvo:
 const sam={sites:[],missile:null,lock:0,stage:0,cooldown:5,site:null,lastCue:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
 const compass=document.getElementById('compass'),health=document.getElementById('health'),runTimeUI=document.getElementById('runTime'),runBestUI=document.getElementById('runBest');
-const valleyCenter=z=>-320*Math.sin((2600-z)/1800)*THREE.MathUtils.smoothstep(4000-z,0,1800)-560*Math.exp(-Math.pow((z+4900)/1100,2));
+const terrainPulse=(v,c,r,p=4)=>Math.exp(-Math.pow(Math.abs((v-c)/r),p));
+const terrainLobe=(x,z,cx,cz,rx,rz,p=4)=>Math.exp(-Math.pow(Math.abs((x-cx)/rx),p)-Math.pow(Math.abs((z-cz)/rz),p));
+const valleyCenter=z=>{
+ const inherited=-320*Math.sin((2600-z)/1800)*THREE.MathUtils.smoothstep(4000-z,0,1800)-560*Math.exp(-Math.pow((z+4900)/1100,2));
+ // Three restrained bends give the valley a readable authored line without turning it into a rail.
+ return inherited-110*terrainPulse(z,350,950)-180*terrainPulse(z,-4900,1100)+120*terrainPulse(z,-6500,820);
+};
 const inheritedTerrain=terrainHeight;
 terrainHeight=function(x,z){
  if(worldIndex!==0)return inheritedTerrain(x,z);
  const center=valleyCenter(z),d=Math.abs(x-center);
  const entry=THREE.MathUtils.smoothstep(z,1800,3800);
- const basin=1-THREE.MathUtils.smoothstep(Math.abs(z+6200),850,1900);
- const opening=1-THREE.MathUtils.smoothstep(z,-7500,-6200);
- const half=420+basin*340+opening*1100;
- const floor=-38+entry*205+noiseLand(x*.002,z*.0018)*13+5*Math.sin(z/570);
- const wall=THREE.MathUtils.smoothstep(d,half,half+780);
- const ridge=330+260*noiseLand(x*.0012,z*.0009)+60*Math.sin(z/620);
- const foothills=THREE.MathUtils.smoothstep(d,half*.78,half+150)*32;
- // A broad headland hides the terminal basin until the western bend opens.
- const headland=360*Math.exp(-Math.pow((x-240)/270,4)-Math.pow((z+4950)/610,4));
- return floor+foothills+wall*ridge*(1-opening*.8)+headland;
+ const throat=terrainPulse(z,-2150,720);
+ const basin=terrainPulse(z,-5650,1050);
+ // Hold the valley closed through the escape beat, then release it quickly into northern air.
+ const opening=1-THREE.MathUtils.smoothstep(z,-7350,-6500);
+ const half=440-throat*150+basin*245+opening*1080;
+ const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
+ const wall=THREE.MathUtils.smoothstep(d,half,half+720);
+ const ridge=345+245*noiseLand(x*.0012,z*.0009)+55*Math.sin(z/620)+throat*105;
+ const foothills=THREE.MathUtils.smoothstep(d,half*.76,half+135)*(30+throat*24);
+
+ // 1. THE RIDGE CHOICE — an eastern shoulder reaches into the opening valley.
+ // The first battery sits on this mass: the western line can stay masked, while center/high flight remains exposed.
+ const ridgeChoice=315*terrainLobe(x,z,valleyCenter(430)+285,430,330,690);
+ const ridgeChoiceRoot=135*terrainLobe(x,z,valleyCenter(250)+520,250,470,980);
+
+ // 2. THE NARROW THROAT — the base walls close in here; asymmetric buttresses make the compression legible at speed.
+ const throatWest=120*terrainLobe(x,z,valleyCenter(-2150)-350,-2150,330,760);
+ const throatEast=165*terrainLobe(x,z,valleyCenter(-2250)+365,-2250,350,700);
+
+ // 3. THE BASIN REVEAL — a single monumental headland conceals the launch basin until the route bends around it.
+ // Its short north/south falloff keeps the target floor itself open and attackable once revealed.
+ const headland=520*terrainLobe(x,z,valleyCenter(-5050)+225,-5050,390,500);
+ const basinRim=125*terrainLobe(x,z,valleyCenter(-5750)+690,-5750,520,820);
+
+ // 4. THE NORTH BREAKOUT — a low western spine creates a trustworthy covered escape line before the walls fall away.
+ // It is broad and overflyable, so it reads as a tactical option rather than a mandatory tunnel.
+ const breakoutSpine=255*terrainLobe(x,z,valleyCenter(-6420)-320,-6420,330,760);
+ const breakoutGate=105*terrainLobe(x,z,valleyCenter(-6800)+610,-6800,520,650);
+
+ return floor+foothills+wall*ridge*(1-opening*.84)+ridgeChoice+ridgeChoiceRoot+throatWest+throatEast+headland+basinRim+breakoutSpine+breakoutGate;
 };
 function lineClear(a,b,clearance=3){
  const steps=Math.max(10,Math.ceil(a.distanceTo(b)/40));
