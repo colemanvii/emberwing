@@ -1075,7 +1075,7 @@ function updateLaunchVapor(){
 
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
 const LEVEL={startZ:3100,entryZ:2600,targetX:-300,targetZ:-7200,exitZ:-11000};
-const mission={phase:'briefing',destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0};
+const mission={phase:'briefing',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0};
 const sam={sites:[],missile:null,lock:0,stage:0,cooldown:5,site:null,lastCue:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
 const compass=document.getElementById('compass'),health=document.getElementById('health');
@@ -1129,7 +1129,13 @@ function startMission(){
 deploy.addEventListener('click',startMission);
 const compassMarks=[];
 for(let deg=0;deg<360;deg+=30){const mark=document.createElement('span');mark.textContent=({0:'N',90:'E',180:'S',270:'W'})[deg]||'·';mark.dataset.north=deg===0?'true':'false';compass.appendChild(mark);compassMarks.push({mark,deg});}
+const objectiveItems=[...document.querySelectorAll('#objectives li')];
+function updateObjectives(){
+ const completed=[mission.penetrated,mission.destroyed,missionComplete];
+ objectiveItems.forEach((item,i)=>{const done=String(completed[i]);if(item.dataset.done!==done){item.dataset.done=done;item.setAttribute('aria-label',item.textContent.replace('✓','').trim()+(completed[i]?' — complete':' — pending'));}});
+}
 function updateInstruments(){
+ updateObjectives();
  const f=heading(),headingDeg=THREE.MathUtils.radToDeg(Math.atan2(f.x,-f.z));
  for(const {mark,deg} of compassMarks){const delta=((deg-headingDeg+540)%360)-180;mark.hidden=Math.abs(delta)>66;mark.style.transform=`translateX(${delta*1.7}px)`;}
  radio.hidden=missionElapsed>mission.messageUntil;
@@ -1240,6 +1246,7 @@ function spawnDefender(escape=false){
 function updateMission(dt){
  if(crashed||missionComplete)return;
  // Invisible spatial activation only paces opponents; nothing gates the target or route.
+ if(ship.position.z<=LEVEL.entryZ)mission.penetrated=true;
  if(!mission.bandit&&ship.position.z<1200){mission.bandit=true;spawnDefender();}
  if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<-8100&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
@@ -1272,7 +1279,7 @@ reset=function(){
  for(const p of effects.samTrail){scene.remove(p.mesh);p.mesh.material.dispose();}effects.samTrail.length=0;
  for(const fx of effects.launchFx){scene.remove(fx.mesh);if(fx.light)scene.remove(fx.light);fx.mesh.geometry.dispose();fx.mesh.material.dispose();}effects.launchFx.length=0;
  baseReset();
- Object.assign(mission,{phase:'briefing',destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0});
+ Object.assign(mission,{phase:'briefing',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0});
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
  const x=valleyCenter(LEVEL.startZ);ship.position.set(x,terrainHeight(x,LEVEL.startZ)+65,LEVEL.startZ);ship.quaternion.identity();
  launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1);
@@ -1285,7 +1292,7 @@ reset=function(){
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
  camera.position.set(x,ship.position.y+5.3,LEVEL.startZ+12);resetCameraFrame();
  releaseInputs();audioCtx?.suspend();briefing.hidden=false;document.body.dataset.state='briefing';radio.hidden=true;targetUI.hidden=true;capture.hidden=true;
- deploy.disabled=false;deploy.textContent='BEGIN MISSION';deploy.focus();
+ updateObjectives();deploy.disabled=false;deploy.textContent='BEGIN MISSION';deploy.focus();
 };
 const clock=new THREE.Clock();
 function loop(){
