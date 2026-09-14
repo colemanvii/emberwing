@@ -1084,8 +1084,9 @@ const terrainPulse=(v,c,r,p=4)=>Math.exp(-Math.pow(Math.abs((v-c)/r),p));
 const terrainLobe=(x,z,cx,cz,rx,rz,p=4)=>Math.exp(-Math.pow(Math.abs((x-cx)/rx),p)-Math.pow(Math.abs((z-cz)/rz),p));
 const valleyCenter=z=>{
  const inherited=-320*Math.sin((2600-z)/1800)*THREE.MathUtils.smoothstep(4000-z,0,1800)-560*Math.exp(-Math.pow((z+4900)/1100,2));
- // Three restrained bends give the valley a readable authored line without turning it into a rail.
- return inherited-110*terrainPulse(z,350,950)-180*terrainPulse(z,-4900,1100)+120*terrainPulse(z,-6500,820);
+ // Three authored bends give the valley a readable natural line without turning it into a rail.
+ // The opening bend now sweeps west around the eastern escarpment instead of splitting into game-like lanes.
+ return inherited-205*terrainPulse(z,260,900)-180*terrainPulse(z,-4900,1100)+120*terrainPulse(z,-6500,820);
 };
 const inheritedTerrain=terrainHeight;
 terrainHeight=function(x,z){
@@ -1102,13 +1103,13 @@ terrainHeight=function(x,z){
  const ridge=345+245*noiseLand(x*.0012,z*.0009)+55*Math.sin(z/620)+throat*105;
  const foothills=THREE.MathUtils.smoothstep(d,half*.76,half+135)*(30+throat*24);
 
- // 1. THE FORK — a monumental central massif splits the opening valley into two readable lines.
- // Straight/center flight is no longer viable; the player must commit around one shoulder within the first few seconds.
- const forkMassif=470*terrainLobe(x,z,valleyCenter(300)+15,300,205,500,4.5);
- const forkCrown=190*terrainLobe(x,z,valleyCenter(260)+30,260,125,300,5);
- // Unequal roots keep both sides flyable while making the western line broader and the eastern line more exposed.
- const forkWestRoot=85*terrainLobe(x,z,valleyCenter(220)-330,220,285,620,4.5);
- const forkEastRoot=135*terrainLobe(x,z,valleyCenter(200)+345,200,310,660,4.5);
+ // 1. THE EASTERN ESCARPMENT — one monumental ridge shoulder grows naturally out of the valley wall.
+ // It bends the route west and creates a readable masking edge without presenting two videogame lanes.
+ const escarpment=365*terrainLobe(x,z,valleyCenter(250)+420,250,460,930,3.2);
+ const escarpmentCrown=245*terrainLobe(x,z,valleyCenter(180)+300,180,245,560,3.6);
+ const escarpmentToe=105*terrainLobe(x,z,valleyCenter(20)+170,20,270,680,3.8);
+ // A low western shelf gives the bend depth and scale but stays clearly overflyable.
+ const westernShelf=70*terrainLobe(x,z,valleyCenter(160)-470,160,420,880,3.4);
 
  // 2. THE NARROW THROAT — the base walls close in here; asymmetric buttresses make the compression legible at speed.
  const throatWest=120*terrainLobe(x,z,valleyCenter(-2150)-350,-2150,330,760);
@@ -1124,7 +1125,7 @@ terrainHeight=function(x,z){
  const breakoutSpine=255*terrainLobe(x,z,valleyCenter(-6420)-320,-6420,330,760);
  const breakoutGate=105*terrainLobe(x,z,valleyCenter(-6800)+610,-6800,520,650);
 
- return floor+foothills+wall*ridge*(1-opening*.84)+forkMassif+forkCrown+forkWestRoot+forkEastRoot+throatWest+throatEast+headland+basinRim+breakoutSpine+breakoutGate;
+ return floor+foothills+wall*ridge*(1-opening*.84)+escarpment+escarpmentCrown+escarpmentToe+westernShelf+throatWest+throatEast+headland+basinRim+breakoutSpine+breakoutGate;
 };
 function lineClear(a,b,clearance=3){
  const steps=Math.max(10,Math.ceil(a.distanceTo(b)/40));
