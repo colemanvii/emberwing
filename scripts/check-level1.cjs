@@ -21,6 +21,7 @@ const {startStaticServer}=require('./static-server.cjs');
     body:await response.text()+`
 window.scenario={
   exitZ:LEVEL.exitZ,
+  variants(){return MISSION_VARIANTS.map(v=>({id:v.id,sam:[...v.sam],bandit:{...v.bandit},escape:{...v.escape},cooldown:v.cooldown}));},
   boundary(destroyed,z,dt=1){
     reset();mission.phase='test';mission.destroyed=destroyed;ship.position.set(2000,800,z);updateMission(dt);
     return {complete:missionComplete,phase:mission.phase};
@@ -65,6 +66,15 @@ window.scenario={
   const frozen=await page.evaluate(()=>emberwing.snapshot());
   await page.waitForTimeout(600);
   assert.deepEqual(await page.evaluate(()=>emberwing.snapshot()),frozen);
+
+  const variants=await page.evaluate(()=>scenario.variants());
+  assert.equal(variants.length,4,'Level 1 should ship four curated pressure patterns');
+  assert.equal(new Set(variants.map(v=>v.id)).size,4,'Pressure pattern IDs must be unique');
+  for(const v of variants){
+   assert.equal(v.sam.length,5,'Every pressure pattern must preserve the five-SAM network');
+   assert.ok(v.sam.every(range=>range>=1000&&range<=2000),'SAM range variation must remain bounded');
+   assert.ok(v.bandit.trigger>v.escape.trigger,'Ingress defender must activate before escape pressure');
+  }
 
   const exitZ=await page.evaluate(()=>scenario.exitZ);
   assert.equal((await page.evaluate(()=>scenario.boundary(false,scenario.exitZ-1000,10000))).complete,false,'Exit without strike');
