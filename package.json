@@ -1,0 +1,22 @@
+{
+  "name": "emberwing",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A cinematic browser flight-strike mission.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node scripts/static-server.cjs",
+    "build": "node scripts/build-level1.mjs",
+    "check": "node scripts/check-level1.cjs",
+    "test": "npm run check",
+    "verify": "node scripts/verify-level1.cjs",
+    "ci": "npm run build && npm run check",
+    "setup:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
