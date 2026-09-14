@@ -28,4 +28,8 @@ Three.js 0.180.0 is bundled in `vendor/` with its MIT license. Launch has no ext
 
 Historical numbered pages and release notes live under `archive/`. They are preserved for reference and are not inputs to the current build. Local V58–V61 experiments in the original checkout were preserved in place during this consolidation.
 
-See [consolidation and verification](docs/LEVEL1-CONSOLIDATION.md) for baseline selection, distances, testing and limitations.
+## Project guardrails
+
+- [Design constitution](docs/EMBERWING-DESIGN.md)
+- [QA checklist](docs/QA-CHECKLIST.md)
+- [Consolidation and verification](docs/LEVEL1-CONSOLIDATION.md)
