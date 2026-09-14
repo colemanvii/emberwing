@@ -1,5 +1,39 @@
 # Next Pass — Tempo, Timer, Replayability
 
+
+## Prototype status — first tempo pass implemented
+
+A first conservative tempo prototype is now live on `main` and is **awaiting human flight testing**. Treat these values as a playable hypothesis, not final tuning.
+
+Current prototype:
+
+- normal cruise: **155**
+- turbo: **190**
+- start Z: **1500**
+- valley entry: **1200**
+- SAM 1: **700**
+- bandit trigger: **300**, with the defender spawned farther ahead at **-500** to avoid pop-in
+- SAM 2: **-1800**
+- headland remains near **-4950**
+- SAM 3: **-5900**
+- target: **-6500**
+- extraction SAM: **-7200**
+- exit: **-8400**
+- northern opening compressed to roughly **-7200 → -8600**
+- live flight timer added opposite the objective stack
+- local PB / NEW BEST extraction result preserved
+- post-strike SAM cooldown shortened modestly so the escape leg can develop pressure
+- an escape defender can appear after **-6800** when the earlier bandit is no longer alive
+
+The generated build and fast browser checks pass in CI.
+
+**Next decision must come from actually flying this version.** Do not add more systems before judging:
+- whether 155 feels fast enough without turbo
+- whether 190 still feels meaningfully faster
+- whether the headland reveal survives the compression
+- whether the new extraction is pressured but not noisy
+- whether the whole mission now feels closer to the desired ~55–65 second rhythm
+
 ## Current diagnosis
 
 The game is visually cleaner and prettier, but the full run is still too slow and boring.
