@@ -1,6 +1,36 @@
 # Next Pass — Tempo, Timer, Replayability
 
 
+## Current live tempo prototype — 40–50 second target
+
+After human flight testing of the 155 / 190 build, the mission still felt too slow despite stronger pressure. The current main branch therefore takes one more conservative tempo step while preserving the same mission and five-site threat network.
+
+Current values:
+
+- normal cruise: **168**
+- turbo: **208**
+- start Z: **1300**
+- valley entry: **1050**
+- first SAM: **550**
+- first bandit trigger: **700**, defender still staged ahead at **-500**
+- SAM 2: **-1200**
+- SAM 3: **-3000**
+- headland remains near **-4950**
+- terminal SAM: **-5000**
+- target: **-5700**
+- escape SAM: **-6300**
+- exit: **-7200**
+- northern opening begins around **-6200** and releases by roughly **-7500**
+- terminal basin shifted north to stay aligned with the compressed strike area
+- escape defender stages around **-6500**
+- bandit steering speeds are now coupled to cruise / turbo so the fighter does not become irrelevant when player speed rises
+
+Idealized straight-line timing is about **50.6 s at cruise** and **40.9 s at full turbo** before maneuvering, combat, or strike setup. The intent is a real-world run in the **40–50 second** neighborhood, with most of that time spent under consequence rather than transit.
+
+This is a **tempo prototype**, not a replacement for the pending Astra mission-director work. The next human test should judge whether the mission now feels like one continuous attack rather than travel between encounters.
+
+
+
 ## Prototype status — first tempo pass implemented
 
 A first conservative tempo prototype is now live on `main` and is **awaiting human flight testing**. Treat these values as a playable hypothesis, not final tuning.
