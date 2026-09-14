@@ -127,11 +127,14 @@ terrainHeight=function(x,z){
 // Recompose existing buildings as one grounded installation. Buildings stay
 // at their world positions instead of recycling through the dogfight corridor.
 for(let i=scenery.length-1;i>=0;i--){const m=scenery[i];if(!m.userData.city){scene.remove(m);scenery.splice(i,1);}}
-for(const m of scenery.splice(24))scene.remove(m);
+// Keep one small off-axis installation as a scale cue, but leave the authored
+// flight floor and north breakout visually empty. The landscape, not prop noise,
+// should carry the route.
+for(const m of scenery.splice(14))scene.remove(m);
 const cityPositions=scenery.map((m,i)=>{
-  const hangar=i<8,row=hangar?Math.floor(i/4):Math.floor((i-8)/8),col=hangar?i%4:(i-8)%8;
-  const x=hangar?610+col*76:620+col*38,z=hangar?-7100-row*130:-7445-row*52;
-  m.scale.set(hangar?1.65:.7,hangar?.42:.6,hangar?1.25:.75);
+  const hangar=i<6,row=hangar?Math.floor(i/3):Math.floor((i-6)/4),col=hangar?i%3:(i-6)%4;
+  const x=hangar?850+col*92:835+col*54,z=hangar?-7520-row*118:-7770-row*62;
+  m.scale.set(hangar?1.55:.64,hangar?.4:.56,hangar?1.2:.7);
   m.userData.raise*=m.scale.y;m.userData.collisionH*=m.scale.y;m.userData.collisionR*=Math.max(m.scale.x,m.scale.z);
   return [x,z];
 });
