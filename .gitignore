@@ -1,4 +1,7 @@
-.review-v38.html
 node_modules/
-
-.review-v38-baseline.html
+.artifacts/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
