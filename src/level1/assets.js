@@ -103,7 +103,7 @@ function launchSam(site){samLaunchBurst(site);
  const initial=ship.position.clone().addScaledVector(worldUp,125).sub(start).normalize();
  m.position.copy(start);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),initial);scene.add(m);
  sam.missile={mesh:m,v:initial.multiplyScalar(196),life:7.2,trail:0,warn:0,near:false};
- sam.lock=0;sam.stage=0;sam.site=null;sam.cooldown=mission.destroyed?9.5:7.3;
+ sam.lock=0;sam.stage=0;sam.site=null;sam.cooldown=mission.destroyed?6.0:6.2;
  announce('SAM LAUNCH — '+clockBearing(start)+" O'CLOCK");
  flashScreen(.1);chirp(1060,.07,.045);chirp(1450,.11,.04,.07);
 }
@@ -169,7 +169,7 @@ function updateSamNetwork(dt){
   return;
  }
  sam.site=c.site;
- const baseLock=mission.destroyed?4.5:(c.site.index===0?1.65:2.55);
+ const baseLock=mission.destroyed?2.3:(c.site.index===0?1.55:2.2);
  sam.lock=Math.min(1,sam.lock+dt/baseLock*c.exposure);
  if(sam.stage===0){
   sam.stage=1;
