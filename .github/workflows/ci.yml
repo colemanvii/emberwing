@@ -48,3 +48,8 @@ jobs:
 
       - name: Run fast browser checks
         run: npm test
+
+      - name: Fly two complete verification runs
+        run: |
+          OUTPUT=.artifacts/level1-run-a npm run verify
+          OUTPUT=.artifacts/level1-run-b npm run verify
