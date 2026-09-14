@@ -26,7 +26,24 @@ function lineClear(a,b,clearance=3){
  for(let i=1;i<steps;i++){const t=i/steps,x=THREE.MathUtils.lerp(a.x,b.x,t),z=THREE.MathUtils.lerp(a.z,b.z,t);if(terrainHeight(x,z)+clearance>THREE.MathUtils.lerp(a.y,b.y,t))return false;}
  return true;
 }
-samLineClear=site=>lineClear(site.position,ship.position,8);
+function scenerySegmentHit(a,b,padding=0,verticalPad=0,majorOnly=false){
+ const dx=b.x-a.x,dz=b.z-a.z,len2=dx*dx+dz*dz;
+ if(len2<.001)return null;
+ for(const m of scenery){
+  if(!m.visible||!m.userData.collisionR)continue;
+  const r0=m.userData.collisionR||0,h0=m.userData.collisionH||8;
+  if(majorOnly&&!m.userData.mountain&&r0<18&&h0<28)continue;
+  const u=THREE.MathUtils.clamp(((m.position.x-a.x)*dx+(m.position.z-a.z)*dz)/len2,0,1);
+  if(u<=.025||u>=.975)continue;
+  const x=a.x+dx*u,z=a.z+dz*u,r=r0+padding;
+  if((x-m.position.x)**2+(z-m.position.z)**2>r*r)continue;
+  const y=THREE.MathUtils.lerp(a.y,b.y,u);
+  if(Math.abs(y-m.position.y)>h0+verticalPad)continue;
+  return new THREE.Vector3(x,y,z);
+ }
+ return null;
+}
+samLineClear=site=>lineClear(site.position,ship.position,8)&&!scenerySegmentHit(site.position,ship.position,5,8,true);
 function clockBearing(pos){const p=pos.clone().sub(ship.position).applyQuaternion(ship.quaternion.clone().invert());return ((Math.round(Math.atan2(p.x,-p.z)*6/Math.PI)+12)%12)||12;}
 function announce(text){
  if(mission.phase!=='flight')return;
