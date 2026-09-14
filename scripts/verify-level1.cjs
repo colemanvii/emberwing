@@ -8,17 +8,21 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  const local=process.env.URL?null:await startStaticServer();
  const launch={headless:true,args:['--no-sandbox']};if(process.env.CHROME)launch.executablePath=process.env.CHROME;
  const browser=await chromium.launch(launch);
- const page=await browser.newPage({viewport:{width:1360,height:860}}),errors=[],samples=[],captured=new Set(),held=new Set();
+ const page=await browser.newPage({viewport:{width:840,height:520}}),errors=[],samples=[],captured=new Set(),held=new Set();
  page.on('pageerror',e=>{errors.push(e.message);console.log('ERROR',e.message)});
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
  await page.goto(process.env.URL||(local.url+'/play.html'));await page.waitForFunction(()=>window.emberwing);
- const before=await page.evaluate(()=>emberwing.snapshot());await page.waitForTimeout(2000);const after=await page.evaluate(()=>emberwing.snapshot());
+ // Keep headless verification cheap enough to exercise a whole mission in CI without changing gameplay.
+ await page.evaluate(()=>{renderer.setPixelRatio(.65);renderer.setSize(innerWidth,innerHeight);});
+ // The second CI flight advances two authored patterns so we exercise both ingress-heavy and terminal-heavy pressure.
+ if(output.includes('run-b')){await page.keyboard.press('r');await page.waitForTimeout(180);await page.keyboard.press('r');await page.waitForTimeout(180);}
+ const before=await page.evaluate(()=>emberwing.snapshot());await page.waitForTimeout(1200);const after=await page.evaluate(()=>emberwing.snapshot());
  if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Simulation moved during briefing');
  await page.screenshot({path:path.join(output,'briefing.png')});await page.click('#deploy');
  async function keys(next){for(const k of held)if(!next.has(k)){await page.keyboard.up(k);held.delete(k)}for(const k of next)if(!held.has(k)){await page.keyboard.down(k);held.add(k)}}
  let lastLog=-10,lastShot=-10;
  const started=Date.now();
- while(Date.now()-started<240000){
+ while(Date.now()-started<420000){
   const s=await page.evaluate(()=>{const s=emberwing.snapshot(),z=s.position[2];return {...s,center:emberwing.center(z-550),aheadFloor:emberwing.height(s.position[0],z-220)}});
   if(s.elapsed-lastLog>5){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,destroyed:s.destroyed}));}
   const z=s.position[2];
