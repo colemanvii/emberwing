@@ -52,6 +52,11 @@ window.scenario={
   replay(){
     reset();
     return {phase:mission.phase,missile:sam.missile,smoke:effects.samTrail.length,fire:firestorm.fires.length,sams:sam.sites.length,time:missionElapsed};
+  },
+  entrySafe(){
+    reset();mission.phase='test';crashed=false;
+    for(let i=0;i<240&&!crashed;i++){updateFlight(1/60);updateWorld();}
+    return {crashed,position:ship.position.toArray(),altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z)};
   }
 };`
    });
@@ -66,6 +71,10 @@ window.scenario={
   const frozen=await page.evaluate(()=>emberwing.snapshot());
   await page.waitForTimeout(600);
   assert.deepEqual(await page.evaluate(()=>emberwing.snapshot()),frozen);
+
+  const entry=await page.evaluate(()=>scenario.entrySafe());
+  assert.equal(entry.crashed,false,'Level 1 spawn must survive four seconds hands-off');
+  assert.ok(entry.altitude>8,'Opening line must retain safe terrain clearance');
 
   const variants=await page.evaluate(()=>scenario.variants());
   assert.equal(variants.length,4,'Level 1 should ship four curated pressure patterns');
