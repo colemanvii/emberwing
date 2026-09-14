@@ -1102,10 +1102,13 @@ terrainHeight=function(x,z){
  const ridge=345+245*noiseLand(x*.0012,z*.0009)+55*Math.sin(z/620)+throat*105;
  const foothills=THREE.MathUtils.smoothstep(d,half*.76,half+135)*(30+throat*24);
 
- // 1. THE RIDGE CHOICE — an eastern shoulder reaches into the opening valley.
- // The first battery sits on this mass: the western line can stay masked, while center/high flight remains exposed.
- const ridgeChoice=315*terrainLobe(x,z,valleyCenter(430)+285,430,330,690);
- const ridgeChoiceRoot=135*terrainLobe(x,z,valleyCenter(250)+520,250,470,980);
+ // 1. THE FORK — a monumental central massif splits the opening valley into two readable lines.
+ // Straight/center flight is no longer viable; the player must commit around one shoulder within the first few seconds.
+ const forkMassif=465*terrainLobe(x,z,valleyCenter(500)+15,500,205,700,3.2);
+ const forkCrown=185*terrainLobe(x,z,valleyCenter(430)+30,430,125,390,3.5);
+ // Unequal roots keep both sides flyable while making the western line broader and the eastern line more exposed.
+ const forkWestRoot=95*terrainLobe(x,z,valleyCenter(360)-330,360,300,760);
+ const forkEastRoot=145*terrainLobe(x,z,valleyCenter(330)+345,330,325,820);
 
  // 2. THE NARROW THROAT — the base walls close in here; asymmetric buttresses make the compression legible at speed.
  const throatWest=120*terrainLobe(x,z,valleyCenter(-2150)-350,-2150,330,760);
@@ -1121,7 +1124,7 @@ terrainHeight=function(x,z){
  const breakoutSpine=255*terrainLobe(x,z,valleyCenter(-6420)-320,-6420,330,760);
  const breakoutGate=105*terrainLobe(x,z,valleyCenter(-6800)+610,-6800,520,650);
 
- return floor+foothills+wall*ridge*(1-opening*.84)+ridgeChoice+ridgeChoiceRoot+throatWest+throatEast+headland+basinRim+breakoutSpine+breakoutGate;
+ return floor+foothills+wall*ridge*(1-opening*.84)+forkMassif+forkCrown+forkWestRoot+forkEastRoot+throatWest+throatEast+headland+basinRim+breakoutSpine+breakoutGate;
 };
 function lineClear(a,b,clearance=3){
  const steps=Math.max(10,Math.ceil(a.distanceTo(b)/40));
