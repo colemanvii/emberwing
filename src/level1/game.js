@@ -796,7 +796,7 @@ function launchSam(site){samLaunchBurst(site);
  const initial=ship.position.clone().addScaledVector(worldUp,125).sub(start).normalize();
  m.position.copy(start);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),initial);scene.add(m);
  sam.missile={mesh:m,v:initial.multiplyScalar(196),life:7.2,trail:0,warn:0,near:false};
- sam.lock=0;sam.stage=0;sam.site=null;sam.cooldown=mission.destroyed?4.8:5.2;
+ sam.lock=0;sam.stage=0;sam.site=null;sam.cooldown=mission.destroyed?3.15:3.65;
  announce('SAM LAUNCH — '+clockBearing(start)+" O'CLOCK");
  flashScreen(.1);chirp(1060,.07,.045);chirp(1450,.11,.04,.07);
 }
@@ -811,7 +811,7 @@ function updateSamMissile(dt){
  const defensive=THREE.MathUtils.clamp((bank-.45)/.55,0,1)*((keys.ArrowUp||keys.ArrowDown)?1:.35)*(burner>.45?1:.72);
  const lead=ship.position.clone().addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion),speed*.11);
  const desired=lead.sub(h.mesh.position).normalize().multiplyScalar(mission.destroyed?214:226);
- const turnRate=(mission.destroyed?1.45:1.9)*(1-defensive*.42);
+ const turnRate=(mission.destroyed?1.62:2.08)*(1-defensive*.34);
  h.v.lerp(desired,1-Math.exp(-dt*turnRate));
  h.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),h.v.clone().normalize());
  h.mesh.position.addScaledVector(h.v,dt);
@@ -839,7 +839,7 @@ function samCandidate(){
   if(range>maxRange||!samLineClear(s))continue;
   // Low flight helps, but open ground is still exposed; actual cover must break line of sight.
   // Above ~160 units AGL, ground-clutter benefit is mostly gone.
-  const clutter=.28+.72*THREE.MathUtils.smoothstep(agl,18,165);
+  const clutter=.38+.62*THREE.MathUtils.smoothstep(agl,18,165);
   const rangeQuality=THREE.MathUtils.clamp(1-(range/maxRange)*.34,.62,1);
   const exposure=clutter*rangeQuality;
   const score=range/Math.max(.18,exposure);
@@ -858,12 +858,12 @@ function updateSamNetwork(dt){
    announce('RADAR TRACK BROKEN — TERRAIN MASK');
    sam.lastCue=missionElapsed;
   }
-  sam.lock=Math.max(0,sam.lock-dt*2.15);
+  sam.lock=Math.max(0,sam.lock-dt*1.55);
   if(sam.lock<=.02){sam.stage=0;sam.site=null;}
   return;
  }
  sam.site=c.site;
- const baseLock=mission.destroyed?1.9:(c.site.index===0?1.45:1.95);
+ const baseLock=mission.destroyed?1.55:(c.site.index===0?1.18:1.62);
  sam.lock=Math.min(1,sam.lock+dt/baseLock*c.exposure);
  if(sam.stage===0){
   sam.stage=1;
@@ -1270,8 +1270,8 @@ function destroyTarget(){
  if(mission.destroyed)return;
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
- announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,.8);lockState=lockTimer=0;setSeeker(false);
- if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,CRUISE_SPEED+12);resetEnemyAttack(1.0);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
+ announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,.35);lockState=lockTimer=0;setSeeker(false);
+ if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED-12);resetEnemyAttack(.45);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -1302,12 +1302,27 @@ explode=function(){airKill();missionCompleteTimer=0;respawn=999999;};
 function spawnDefender(escape=false){
  const spec=escape?activeVariant().escape:activeVariant().bandit;
  spawnEnemy(!escape);
+ // Defenders are strike-path interrupters, not chase bait. Spawn them off-axis and aim through
+ // the player's future flight path so the first merge demands a bank/pull decision.
+ enemyRole=escape?'ACE':'CLIMBER';
  const z=spec.z,x=valleyCenter(z)+spec.side;
  enemy.position.set(x,terrainHeight(x,z)+spec.alt,z);
- const direction=ship.position.clone().addScaledVector(heading(),160).sub(enemy.position).normalize();
- enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');duel.speed=escape?CRUISE_SPEED+16:CRUISE_SPEED+2;
- enemyDetected=true;enemyTime=0;resetEnemyAttack(spec.delay);lastEnemy.copy(enemy.position);
+ const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?260:330);
+ const direction=crossingPoint.sub(enemy.position).normalize();
+ enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
+ duel.speed=escape?TURBO_SPEED-10:CRUISE_SPEED+18;
+ enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.55:1.15));lastEnemy.copy(enemy.position);
 }
+// Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
+// but widen the firing solution enough that an oblique crossing pass is a real threat.
+enemyFireSolution=function(){
+ if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<1.15||duel.state==='extend'||duel.state==='break')return false;
+ const aim=ship.position.clone().sub(enemy.position),range=aim.length();
+ if(range<65||range>(mission.destroyed?590:540))return false;
+ const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();
+ const cone=mission.destroyed?.88:.91;
+ return forward.dot(aim.multiplyScalar(1/Math.max(range,.001)))>cone&&enemyLOS();
+};
 function updateMission(dt){
  if(crashed||missionComplete)return;
  const variant=activeVariant();
