@@ -39,8 +39,8 @@ window.scenario={
     reset();mission.phase='test';
     const blocker=scenery.find(m=>m.userData.collisionR),position=blocker.position.clone(),visible=blocker.visible;
     const radius=blocker.userData.collisionR,height=blocker.userData.collisionH,mountain=blocker.userData.mountain;
-    const site={position:new THREE.Vector3(0,600,0)};ship.position.set(0,600,500);
-    blocker.visible=true;blocker.position.set(0,600,250);blocker.userData.collisionR=80;blocker.userData.collisionH=80;blocker.userData.mountain=true;
+    const site={position:new THREE.Vector3(0,1200,0)};ship.position.set(0,1200,500);
+    blocker.visible=true;blocker.position.set(0,1200,250);blocker.userData.collisionR=80;blocker.userData.collisionH=80;blocker.userData.mountain=true;
     const blocked=!samLineClear(site),impact=!!scenerySegmentHit(site.position,ship.position,0,0,false);
     blocker.position.set(500,600,250);
     const clear=samLineClear(site);
