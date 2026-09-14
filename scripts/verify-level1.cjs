@@ -34,12 +34,22 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let altitude=z>3500?110:50;
   let desiredY=s.aheadFloor+altitude;
   if(z<-4800&&!s.destroyed)desiredY=s.target[1]+100;
+  const missileBreak=s.samMissile;
+  const banditBreak=s.banditRange!==null&&s.banditRange<245;
+  if(missileBreak||banditBreak){
+   const banditX=s.banditPosition?.[0]??x;
+   const away=banditX>=x?-1:1;
+   const weave=Math.floor(s.elapsed*1.35)%2?1:-1;
+   targetX=s.center+(missileBreak?away:weave)*210;
+   desiredY=Math.max(desiredY,s.aheadFloor+(missileBreak?78:66));
+  }
   let desiredPitch=clamp((desiredY-y)/480,-.21,.18);
-  const desiredYaw=Math.atan2(targetX-x,600),yawError=Math.atan2(Math.sin(desiredYaw-yaw),Math.cos(desiredYaw-yaw)),desiredBank=clamp(yawError*1.8,-.5,.5);
+  if(missileBreak)desiredPitch=Math.max(desiredPitch,.14);
+  const desiredYaw=Math.atan2(targetX-x,600),yawError=Math.atan2(Math.sin(desiredYaw-yaw),Math.cos(desiredYaw-yaw)),desiredBank=clamp(yawError*1.8,-.58,.58);
   const next=new Set();
   if(bank<desiredBank-.045)next.add('ArrowRight');else if(bank>desiredBank+.045)next.add('ArrowLeft');
   if(pitch<desiredPitch-.016)next.add('ArrowDown');else if(pitch>desiredPitch+.016)next.add('ArrowUp');
-  if((z<-1900&&z>-3500)||(s.destroyed&&z<-5900))next.add('Shift');
+  if(missileBreak||banditBreak||(z<-1900&&z>-3500)||(s.destroyed&&z<-5900))next.add('Shift');
   if(!s.destroyed&&s.geometry.state&&s.selected!=='ground'&&!s.seeker)next.add('KeyX');
   if(!s.destroyed&&s.geometry.state&&!s.missile&&s.elapsed-lastShot>2){
    if(s.lock===2&&s.selected==='ground'){lastShot=s.elapsed;}
