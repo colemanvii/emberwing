@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101311"><title>Emberwing — Valley Strike</title><link rel="icon" href="data:,"><link rel="stylesheet" href="src/level1/flight.css"><link rel="stylesheet" href="src/level1/touch.css"></head>
-<body data-state="briefing">
+<body data-state="flight">
 <section id="briefing" aria-label="Mission briefing"><div class="brief">
 <p class="eyebrow">EMBERWING // EW-01</p>
 <h1>VALLEY STRIKE</h1>
 <p class="orders">DESTROY LAUNCH SITE · EXIT NORTH</p>
-<button id="deploy" disabled>PREPARING AIRCRAFT</button>
-<p class="controls desktop">ARROWS FLY · SPACE CANNON · HOLD X MISSILE · SHIFT TURBO<br>R RESTART</p>
-<p class="controls mobile">LEFT THUMB FLY · FIRE CANNON · HOLD TRACK / RELEASE MISSILE · BOOST TURBO</p>
+<button id="deploy" hidden disabled>BEGIN MISSION</button>
+<p class="controls desktop">ARROWS FLY · SPACE CANNON · HOLD X MISSILE · SHIFT TURBO</p>
+<p class="controls mobile">LEFT THUMB FLY · FIRE CANNON · TRACK / RELEASE MISSILE · BOOST</p>
 <p id="loadError" hidden>Aircraft could not load. Reload to try again.</p>
 </div></section>
 <div id="hud"><ol id="objectives" aria-label="Mission progress"><li><span aria-hidden="true">✓</span>Penetrate Valley</li><li><span aria-hidden="true">✓</span>Destroy Launch Site</li><li><span aria-hidden="true">✓</span>Escape North</li></ol><div id="runClock" aria-label="Run timer"><span id="runTime">00:00.0</span><small id="runBest" hidden></small></div><div id="grade"></div><div id="flash"></div><div id="compass" aria-label="Heading"><i></i></div><div id="reticle"></div><div id="capture" hidden></div><div id="target" hidden></div><div id="radio" role="status" hidden></div><div id="health" aria-label="Hull"></div><div id="crash">FLIGHT TERMINATED</div><div id="complete"></div></div>
