@@ -1113,7 +1113,7 @@ terrainHeight=function(x,z){
 
  // 3. THE BASIN REVEAL — a single monumental headland conceals the launch basin until the route bends around it.
  // Its short north/south falloff keeps the target floor itself open and attackable once revealed.
- const headland=520*terrainLobe(x,z,valleyCenter(-5050)+225,-5050,390,500);
+ const headland=520*terrainLobe(x,z,valleyCenter(-5050)+225,-5050,410,300);
  const basinRim=125*terrainLobe(x,z,valleyCenter(-5750)+690,-5750,520,820);
 
  // 4. THE NORTH BREAKOUT — a low western spine creates a trustworthy covered escape line before the walls fall away.
