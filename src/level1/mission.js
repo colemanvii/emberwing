@@ -217,9 +217,11 @@ reset=function(){
  launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1);
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
- // Early shelf, mid-valley shoulder, terminal defense, northern pursuit battery.
- const specs=[[valleyCenter(700)+190,700],[valleyCenter(-1800)-240,-1800],[450,-5900],[-700,-7200]];
- sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));sam.sites[0].range=1250;sam.sites[3].range=1700;sam.cooldown=3;sam.smokeClock=0;seatServiceRoad();
+ // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
+ const specs=[[valleyCenter(700)+190,700],[valleyCenter(-1700)-240,-1700],[valleyCenter(-3650)+260,-3650],[450,-5550],[-700,-7200]];
+ sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
+ [1250,1600,1700,1750,1700].forEach((range,i)=>sam.sites[i].range=range);
+ sam.cooldown=2.6;sam.smokeClock=0;seatServiceRoad();
  rebuildTerrain(0,Math.round(LEVEL.startZ/620)*620);positionDistantRidges(0,Math.round(LEVEL.startZ/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
  camera.position.set(x,ship.position.y+5.3,LEVEL.startZ+12);resetCameraFrame();
