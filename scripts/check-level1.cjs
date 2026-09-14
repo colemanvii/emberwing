@@ -35,6 +35,17 @@ window.scenario={
     reset();mission.phase='test';ship.position.set(240,terrainHeight(240,-4000)+60,-4000);
     return projectedGeometry(rocket.position,20000);
   },
+  samCover(){
+    reset();mission.phase='test';
+    const blocker=scenery.find(m=>m.userData.mountain),position=blocker.position.clone(),visible=blocker.visible;
+    const site={position:new THREE.Vector3(0,600,0)};ship.position.set(0,600,500);
+    blocker.visible=true;blocker.position.set(0,600,250);
+    const blocked=!samLineClear(site),impact=!!scenerySegmentHit(site.position,ship.position,0,0,false);
+    blocker.position.set(500,600,250);
+    const clear=samLineClear(site);
+    blocker.position.copy(position);blocker.visible=visible;
+    return {blocked,impact,clear};
+  },
   replay(){
     reset();
     return {phase:mission.phase,missile:sam.missile,smoke:effects.samTrail.length,fire:firestorm.fires.length,sams:sam.sites.length,time:missionElapsed};
@@ -63,6 +74,10 @@ window.scenario={
   assert.equal(cannon.destroyed,true);
   assert.equal(cannon.bandit,true);
   assert.equal((await page.evaluate(()=>scenario.missileBlocked())).onscreen,false);
+  const samCover=await page.evaluate(()=>scenario.samCover());
+  assert.equal(samCover.blocked,true,'Major scenery must break SAM line of sight');
+  assert.equal(samCover.impact,true,'Physical scenery must register a missile-impact segment');
+  assert.equal(samCover.clear,true,'SAM line of sight must recover when cover is removed');
 
   for(let i=0;i<3;i++){
    const reset=await page.evaluate(()=>scenario.replay());
@@ -75,7 +90,7 @@ window.scenario={
   }
 
   assert.deepEqual(errors,[]);
-  console.log(`PASS: frozen briefing, mission boundary at ${exitZ}, strike authority, concealment, and replay cleanup.`);
+  console.log(`PASS: frozen briefing, mission boundary at ${exitZ}, strike authority, physical SAM cover, concealment, and replay cleanup.`);
  }finally{
   if(browser)await browser.close();
   if(local)await local.close();
