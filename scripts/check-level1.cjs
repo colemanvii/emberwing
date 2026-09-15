@@ -80,6 +80,10 @@ window.scenario={
   assert.equal(entry.crashed,false,'Level 1 spawn must survive four seconds hands-off');
   assert.ok(entry.altitude>8,'Opening line must retain safe terrain clearance');
 
+  const strikeAxis=await page.evaluate(()=>[-3000,-4100,-4900,-5700,-6300,-6900].map(z=>emberwing.center(z)));
+  assert.ok(Math.max(...strikeAxis)-Math.min(...strikeAxis)<220,'Terminal route must read as one coherent strike axis');
+  assert.ok(strikeAxis.slice(3).every(x=>x<-150),'Post-strike corridor must not swing back east');
+
   const variants=await page.evaluate(()=>scenario.variants());
   assert.equal(variants.length,4,'Level 1 should ship four curated pressure patterns');
   assert.equal(new Set(variants.map(v=>v.id)).size,4,'Pressure pattern IDs must be unique');
