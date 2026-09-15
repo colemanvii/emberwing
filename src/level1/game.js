@@ -801,7 +801,7 @@ function launchSam(site){samLaunchBurst(site);
  const initial=ship.position.clone().addScaledVector(worldUp,125).sub(start).normalize();
  m.position.copy(start);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),initial);scene.add(m);
  sam.missile={mesh:m,v:initial.multiplyScalar(196),life:7.2,trail:0,warn:0,near:false};
- sam.lock=0;sam.stage=0;sam.site=null;sam.cooldown=mission.destroyed?3.15:3.65;
+ sam.lock=0;sam.stage=0;sam.site=null;sam.cooldown=mission.destroyed?2.70:3.05;
  announce('SAM LAUNCH — '+clockBearing(start)+" O'CLOCK");
  flashScreen(.1);chirp(1060,.07,.045);chirp(1450,.11,.04,.07);
 }
@@ -844,7 +844,7 @@ function samCandidate(){
   if(range>maxRange||!samLineClear(s))continue;
   // Low flight helps, but open ground is still exposed; actual cover must break line of sight.
   // Above ~160 units AGL, ground-clutter benefit is mostly gone.
-  const clutter=.38+.62*THREE.MathUtils.smoothstep(agl,18,165);
+  const clutter=.28+.72*THREE.MathUtils.smoothstep(agl,24,105);
   const rangeQuality=THREE.MathUtils.clamp(1-(range/maxRange)*.34,.62,1);
   const exposure=clutter*rangeQuality;
   const score=range/Math.max(.18,exposure);
@@ -868,7 +868,7 @@ function updateSamNetwork(dt){
   return;
  }
  sam.site=c.site;
- const baseLock=mission.destroyed?1.55:(c.site.index===0?1.18:1.62);
+ const baseLock=mission.destroyed?1.35:(c.site.index===0?1.08:(c.site.index>=3?1.12:1.40));
  sam.lock=Math.min(1,sam.lock+dt/baseLock*c.exposure);
  if(sam.stage===0){
   sam.stage=1;
@@ -1087,10 +1087,10 @@ const LEVEL={startZ:1300,entryZ:1050,targetX:-300,targetZ:-5700,exitZ:-7200};
 // Four authored pressure patterns reuse the same geography and five physical batteries.
 // They change where the mission leans hardest without adding random enemies or procedural chaos.
 const MISSION_VARIANTS=Object.freeze([
- {id:'RIDGE',sam:[1250,1600,1700,1750,1700],cooldown:2.6,bandit:{trigger:150,z:-500,side:420,alt:150,delay:2.5},escape:{trigger:-5900,z:-6500,side:650,alt:150,delay:1.25}},
- {id:'THROAT',sam:[1180,1725,1800,1680,1600],cooldown:2.9,bandit:{trigger:-100,z:-950,side:-520,alt:165,delay:2.7},escape:{trigger:-6000,z:-6620,side:520,alt:155,delay:1.35}},
- {id:'TERMINAL',sam:[1120,1500,1740,1920,1840],cooldown:3.0,bandit:{trigger:-250,z:-1350,side:560,alt:170,delay:2.9},escape:{trigger:-5850,z:-6400,side:-620,alt:160,delay:1.2}},
- {id:'CROSSWIND',sam:[1320,1540,1620,1800,1760],cooldown:2.8,bandit:{trigger:50,z:-700,side:-460,alt:145,delay:2.6},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
+ {id:'RIDGE',sam:[1250,1600,1700,2050,2100],cooldown:2.6,bandit:{trigger:150,z:-500,side:420,alt:150,delay:2.5},escape:{trigger:-5900,z:-6500,side:650,alt:150,delay:1.25}},
+ {id:'THROAT',sam:[1180,1725,1800,2000,2050],cooldown:2.9,bandit:{trigger:-100,z:-950,side:-520,alt:165,delay:2.7},escape:{trigger:-6000,z:-6620,side:520,alt:155,delay:1.35}},
+ {id:'TERMINAL',sam:[1120,1500,1740,2150,2200],cooldown:3.0,bandit:{trigger:-250,z:-1350,side:560,alt:170,delay:2.9},escape:{trigger:-5850,z:-6400,side:-620,alt:160,delay:1.2}},
+ {id:'CROSSWIND',sam:[1320,1540,1620,2100,2150],cooldown:2.8,bandit:{trigger:50,z:-700,side:-460,alt:145,delay:2.6},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
 ]);
 let missionRun=-1;
 const mission={phase:'flight',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
@@ -1175,7 +1175,7 @@ function scenerySegmentHit(a,b,padding=0,verticalPad=0,majorOnly=false){
  }
  return null;
 }
-samLineClear=site=>lineClear(site.position,ship.position,8)&&!scenerySegmentHit(site.position,ship.position,5,8,true);
+samLineClear=site=>lineClear(site.position,ship.position,6)&&!scenerySegmentHit(site.position,ship.position,5,8,true);
 function clockBearing(pos){const p=pos.clone().sub(ship.position).applyQuaternion(ship.quaternion.clone().invert());return ((Math.round(Math.atan2(p.x,-p.z)*6/Math.PI)+12)%12)||12;}
 function announce(text){
  if(mission.phase!=='flight')return;
