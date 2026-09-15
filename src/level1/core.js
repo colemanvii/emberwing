@@ -553,13 +553,13 @@ const tempestCameraBase=deployTempest;deployTempest=function(){tempestCameraBase
 
 // One simulation for touch and keyboard. Pointer capture prevents stuck guns
 // when a thumb slides off a button; cancellation and blur release every input.
-const touchState={x:0,y:0,active:false};
+const touchState={x:0,y:0,active:false};let touchPitchInput=0,touchRollInput=0;
 const touchUI=document.createElement('div');touchUI.id='touchControls';
 touchUI.innerHTML='<div id="stick" aria-label="Flight joystick"><span id="stickDot"></span></div><button id="touchFire" aria-label="Cannon">FIRE</button><button id="touchMissile" aria-label="Hold to lock, release to fire missile">TRACK</button><button id="touchBoost" aria-label="Afterburner">BOOST</button><button id="touchReset" aria-label="Restart">RESET</button>';
 document.body.appendChild(touchUI);
 const stick=document.getElementById('stick'),stickDot=document.getElementById('stickDot');let stickPointer=null;
-function releaseTouch(){touchState.active=false;touchState.x=touchState.y=0;stickPointer=null;stickDot.style.transform='';for(const k of ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyZ','KeyX'])keys[k]=false;if(seeker)setSeeker(false);for(const b of touchUI.querySelectorAll('button'))b.classList.remove('active');}
-function moveStick(e){const r=stick.getBoundingClientRect();touchState.x=THREE.MathUtils.clamp((e.clientX-r.left-r.width/2)/45,-1,1);touchState.y=THREE.MathUtils.clamp((e.clientY-r.top-r.height/2)/45,-1,1);stickDot.style.transform=`translate(${touchState.x*35}px,${touchState.y*35}px)`;}
+function releaseTouch(){touchState.active=false;touchState.x=touchState.y=0;touchPitchInput=touchRollInput=0;stickPointer=null;stickDot.style.transform='';for(const k of ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyZ','KeyX'])keys[k]=false;if(seeker)setSeeker(false);for(const b of touchUI.querySelectorAll('button'))b.classList.remove('active');}
+function moveStick(e){const r=stick.getBoundingClientRect();touchState.x=THREE.MathUtils.clamp((e.clientX-r.left-r.width/2)/55,-1,1);touchState.y=THREE.MathUtils.clamp((e.clientY-r.top-r.height/2)/55,-1,1);stickDot.style.transform=`translate(${touchState.x*35}px,${touchState.y*35}px)`;}
 stick.addEventListener('pointerdown',e=>{audio();stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);touchState.active=true;moveStick(e);});
 stick.addEventListener('pointermove',e=>{if(e.pointerId===stickPointer)moveStick(e);});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(type,()=>{touchState.active=false;touchState.x=touchState.y=0;stickPointer=null;stickDot.style.transform='';for(const k of ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'])keys[k]=false;});
@@ -570,7 +570,8 @@ for(const [id,code] of [['touchFire','Space'],['touchMissile','KeyX'],['touchBoo
   for(const type of ['pointercancel','lostpointercapture'])b.addEventListener(type,()=>{if(held){held=false;keys[code]=false;if(code==='KeyX'&&seeker)setSeeker(false);}b.classList.remove('active');});
 }
 addEventListener('blur',releaseTouch);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseTouch();});
-function updateTouchFlight(){if(!touchState.active)return;keys.ArrowLeft=touchState.x<-.18;keys.ArrowRight=touchState.x>.18;keys.ArrowUp=touchState.y<-.18;keys.ArrowDown=touchState.y>.18;}
+function touchAxis(v,max){const a=Math.abs(v),dead=.18;if(a<=dead)return 0;const n=(a-dead)/(1-dead);return Math.sign(v)*Math.pow(n,1.6)*max;}
+function updateTouchFlight(){if(!touchState.active)return;keys.ArrowLeft=keys.ArrowRight=keys.ArrowUp=keys.ArrowDown=false;}
 let metricsSeconds=0,metricsFrames=0,flightFps=0;
 function updateFlightMetrics(dt){metricsSeconds+=dt;metricsFrames++;if(metricsSeconds>1){flightFps=metricsFrames/metricsSeconds;metricsSeconds=metricsFrames=0;}}
 
@@ -581,7 +582,11 @@ const flightLocalRate=new THREE.Vector3(),flightStep=new THREE.Quaternion(),flig
 updateFlight=function(dt){
  if(crashed||missionComplete||missionCompleteTimer>0)return;
  turboBurst=Math.max(0,turboBurst-dt);
- const pi=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),ri=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),ab=keys.KeyZ||keys.ShiftLeft||keys.ShiftRight||turboBurst>0;
+ const keyPi=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),keyRi=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);
+ const targetTouchPitch=touchState.active?touchAxis(-touchState.y,.66):0,targetTouchRoll=touchState.active?touchAxis(touchState.x,.62):0;
+ touchPitchInput=THREE.MathUtils.lerp(touchPitchInput,targetTouchPitch,1-Math.exp(-dt/.11));
+ touchRollInput=THREE.MathUtils.lerp(touchRollInput,targetTouchRoll,1-Math.exp(-dt/.10));
+ const pi=touchState.active?touchPitchInput:keyPi,ri=touchState.active?touchRollInput:keyRi,ab=keys.KeyZ||keys.ShiftLeft||keys.ShiftRight||turboBurst>0;
  burner=THREE.MathUtils.lerp(burner,ab?1:0,1-Math.exp(-dt/(ab?.1:.2)));
  speed=THREE.MathUtils.lerp(speed,CRUISE_SPEED-Math.abs(pi)*10+burner*(TURBO_SPEED-CRUISE_SPEED),1-Math.exp(-dt/.14));
  ;;
