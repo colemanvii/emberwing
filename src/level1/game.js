@@ -49,7 +49,7 @@ function fireMissile(){if(crashed||missionComplete||missionCompleteTimer>0||!ene
 function removeHostileMissile(){if(!hostileMissile)return;hostileMissile.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))for(const m of o.material)m.dispose();else o.material.dispose()}});scene.remove(hostileMissile.mesh);hostileMissile=null}
 function resetHostileThreat(delay=4){removeHostileMissile();hostileLock=0;hostileLockStage=0;hostileLaunchDelay=0;hostileMissileCooldown=delay}
 function hostileMissileBurst(pos){for(let i=0;i<12;i++){const mesh=new THREE.Mesh(new THREE.SphereGeometry(.14+Math.random()*.24,5,4),new THREE.MeshBasicMaterial({color:i%3?0xff5738:0xffffff,transparent:true,opacity:.92,blending:THREE.AdditiveBlending,depthWrite:false}));mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*2.4,(Math.random()-.5)*2.4,(Math.random()-.5)*2.4));scene.add(mesh);const v=new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize().multiplyScalar(18+Math.random()*25),life=.28+Math.random()*.18;combatFX.push({mesh,v,life,maxLife:life,smoke:false})}}
-function hostileLockSolution(){if(!worldIndex||enemyRole!=='ACE'||!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<2.2)return false;const toShip=ship.position.clone().sub(enemy.position),range=toShip.length();if(range<130||range>680)return false;const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();return forward.dot(toShip.multiplyScalar(1/Math.max(range,.001)))>.72&&enemyLOS()}
+function hostileLockSolution(){if((worldIndex===0&&!mission.detected)||enemyRole!=='ACE'||!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<1.15)return false;const toShip=ship.position.clone().sub(enemy.position),range=toShip.length();if(range<130||range>680)return false;const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();return forward.dot(toShip.multiplyScalar(1/Math.max(range,.001)))>.72&&enemyLOS()}
 function playerBreakingLock(){const up=worldUp.clone().applyQuaternion(ship.quaternion),bank=Math.abs(Math.atan2(up.x,up.y)),pulling=keys.ArrowUp||keys.ArrowDown;return bank>.52&&(pulling||burner>.52)}
 function launchHostileMissile(){const m=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.17,.22,2.7,8),new THREE.MeshStandardMaterial({color:0x2b3036,metalness:.55,roughness:.38})),tip=new THREE.Mesh(new THREE.ConeGeometry(.2,.7,8),new THREE.MeshBasicMaterial({color:0xff4b32})),flame=new THREE.Mesh(new THREE.ConeGeometry(.18,1.8,8),new THREE.MeshBasicMaterial({color:0xff3b24,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false}));body.rotation.x=Math.PI/2;tip.rotation.x=-Math.PI/2;tip.position.z=-1.7;flame.rotation.x=-Math.PI/2;flame.position.z=2.1;m.add(body,tip,flame);const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();m.position.copy(enemy.position).addScaledVector(forward,5.4);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),forward);scene.add(m);hostileMissile={mesh:m,v:forward.multiplyScalar(205),life:5.4,age:0,trailClock:0,warnClock:0,near:false};hostileLock=0;hostileLockStage=0;hostileLaunchDelay=0;hostileMissileCooldown=8.5;announce('MISSILE INBOUND — BREAK');flashScreen(.12);chirp(1120,.08,.045);chirp(1480,.12,.04,.09)}
 function updateHostileMissileFlight(dt){const h=hostileMissile;h.life-=dt;h.age+=dt;h.trailClock-=dt;h.warnClock-=dt;if(h.warnClock<=0){chirp(980,.045,.026);h.warnClock=.38}if(h.trailClock<=0){spawnMissileTrail(h.mesh.position,h.v);h.trailClock=.035}const previous=h.mesh.position.clone(),shipForward=new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).normalize(),lead=ship.position.clone().addScaledVector(shipForward,speed*.12),desired=lead.sub(h.mesh.position).normalize().multiplyScalar(228),turn=1-Math.exp(-dt*2.15);h.v.lerp(desired,turn);h.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),h.v.clone().normalize());h.mesh.position.addScaledVector(h.v,dt);const travel=h.mesh.position.clone().sub(previous),toShip=ship.position.clone().sub(previous),u=THREE.MathUtils.clamp(toShip.dot(travel)/Math.max(travel.lengthSq(),.001),0,1),closest=previous.clone().addScaledVector(travel,u),hit=closest.distanceToSquared(ship.position)<49;if(!h.near&&!hit&&closest.distanceToSquared(ship.position)<400){h.near=true;hostileNearMiss()}let blocked=h.mesh.position.y<=terrainHeight(h.mesh.position.x,h.mesh.position.z)+1;for(const m of scenery){if(blocked||!m.visible)continue;const dx=h.mesh.position.x-m.position.x,dz=h.mesh.position.z-m.position.z,r=(m.userData.collisionR||0)+1;if(dx*dx+dz*dz<r*r&&Math.abs(h.mesh.position.y-m.position.y)<(m.userData.collisionH||8)+1)blocked=true}if(hit){const p=h.mesh.position.clone();removeHostileMissile();hostileMissileBurst(p);hitKick=Math.max(hitKick,1);flashScreen(.34);chirp(58,.15,.06);hitPlayer();return}if(blocked||h.life<=0){const p=h.mesh.position.clone();removeHostileMissile();hostileMissileBurst(p);announce(blocked?'MISSILE DEFEATED':'MISSILE EVADED');chirp(430,.07,.035);chirp(690,.08,.025,.06)}}
@@ -1093,7 +1093,7 @@ const MISSION_VARIANTS=Object.freeze([
  {id:'CROSSWIND',sam:[1320,1540,1620,2100,2150],cooldown:2.8,bandit:{trigger:220,z:-520,side:-320,alt:110,delay:.55},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
 ]);
 let missionRun=-1;
-const mission={phase:'flight',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
+const mission={phase:'flight',penetrated:false,detected:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
 function activeVariant(){return MISSION_VARIANTS[Math.max(0,mission.variant)%MISSION_VARIANTS.length];}
 const sam={sites:[],missile:null,lock:0,stage:0,cooldown:5,site:null,lastCue:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
@@ -1317,7 +1317,7 @@ function spawnDefender(escape=false){
  spawnEnemy(!escape);
  // Defenders are strike-path interrupters, not chase bait. Spawn them off-axis and aim through
  // the player's future flight path so the first merge demands a bank/pull decision.
- enemyRole=escape?'ACE':'CLIMBER';
+ enemyRole=(escape||mission.detected)?'ACE':'CLIMBER';
  const z=spec.z,x=valleyCenter(z)+spec.side;
  enemy.position.set(x,terrainHeight(x,z)+spec.alt,z);
  const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?300:500);
@@ -1341,7 +1341,13 @@ function updateMission(dt){
  const variant=activeVariant();
  // Invisible spatial activation only paces opponents; nothing gates the target or route.
  if(ship.position.z<=LEVEL.entryZ)mission.penetrated=true;
- if(!mission.bandit&&ship.position.z<variant.bandit.trigger){mission.bandit=true;spawnDefender();}
+ // Detection is the escalation event. Stay masked and the ingress stays quiet; let a SAM
+ // establish a real track and the air-defense picture changes immediately.
+ if(!mission.detected&&(sam.stage>=2||!!sam.missile)){
+  mission.detected=true;
+  if(!mission.bandit){mission.bandit=true;spawnDefender();}
+  else if(enemyAlive){enemyRole='ACE';duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED-8);resetEnemyAttack(.25);resetHostileThreat(.7);}
+ }
  if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<variant.escape.trigger&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
   missionComplete=true;mission.phase='complete';finalTime=missionElapsed;releaseInputs();removeSamMissile();removeHostileMissile();
@@ -1378,7 +1384,7 @@ reset=function(){
  for(const fx of effects.launchFx){scene.remove(fx.mesh);if(fx.light)scene.remove(fx.light);fx.mesh.geometry.dispose();fx.mesh.material.dispose();}effects.launchFx.length=0;
  baseReset();
  missionRun=(missionRun+1)%MISSION_VARIANTS.length;
- Object.assign(mission,{phase:'flight',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
+ Object.assign(mission,{phase:'flight',penetrated:false,detected:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
  const x=valleyCenter(LEVEL.startZ),entryAimZ=650,entryAimX=valleyCenter(entryAimZ);
