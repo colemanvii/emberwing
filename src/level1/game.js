@@ -1093,7 +1093,7 @@ const MISSION_VARIANTS=Object.freeze([
  {id:'CROSSWIND',sam:[1320,1540,1620,2100,2150],cooldown:2.8,bandit:{trigger:220,z:-520,side:-320,alt:110,delay:.55},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
 ]);
 let missionRun=-1;
-const mission={phase:'flight',penetrated:false,detected:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
+const mission={phase:'flight',penetrated:false,detected:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
 function activeVariant(){return MISSION_VARIANTS[Math.max(0,mission.variant)%MISSION_VARIANTS.length];}
 const sam={sites:[],missile:null,lock:0,stage:0,cooldown:5,site:null,lastCue:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
@@ -1326,6 +1326,17 @@ function spawnDefender(escape=false){
  duel.speed=escape?TURBO_SPEED-8:CRUISE_SPEED+30;
  enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.45:.65));lastEnemy.copy(enemy.position);
 }
+function spawnSecondDefender(){
+ const first=activeVariant().bandit;
+ spawnEnemy(false);
+ enemyRole='ACE';
+ const z=-3350,side=-(Math.sign(first.side)||1)*470,x=valleyCenter(z)+side;
+ enemy.position.set(x,terrainHeight(x,z)+135,z);
+ const crossingPoint=ship.position.clone().addScaledVector(heading(),560);
+ const direction=crossingPoint.sub(enemy.position).normalize();
+ enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
+ duel.speed=TURBO_SPEED-10;enemyDetected=true;enemyTime=0;resetEnemyAttack(.28);resetHostileThreat(.6);lastEnemy.copy(enemy.position);
+}
 // Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
 // but widen the firing solution enough that an oblique crossing pass is a real threat.
 enemyFireSolution=function(){
@@ -1347,6 +1358,11 @@ function updateMission(dt){
   mission.detected=true;
   if(!mission.bandit){mission.bandit=true;spawnDefender();}
   else if(enemyAlive){enemyRole='ACE';duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED-8);resetEnemyAttack(.25);resetHostileThreat(.7);}
+ }
+ // If the first interceptor is defeated, detection still has consequences: a second aircraft
+ // enters from the opposite side during the approach instead of letting the valley go quiet.
+ if(mission.detected&&!mission.secondBandit&&!enemyAlive&&ship.position.z<-2850&&!mission.destroyed){
+  mission.secondBandit=true;spawnSecondDefender();
  }
  if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<variant.escape.trigger&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
@@ -1384,7 +1400,7 @@ reset=function(){
  for(const fx of effects.launchFx){scene.remove(fx.mesh);if(fx.light)scene.remove(fx.light);fx.mesh.geometry.dispose();fx.mesh.material.dispose();}effects.launchFx.length=0;
  baseReset();
  missionRun=(missionRun+1)%MISSION_VARIANTS.length;
- Object.assign(mission,{phase:'flight',penetrated:false,detected:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
+ Object.assign(mission,{phase:'flight',penetrated:false,detected:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
  const x=valleyCenter(LEVEL.startZ),entryAimZ=650,entryAimX=valleyCenter(entryAimZ);
