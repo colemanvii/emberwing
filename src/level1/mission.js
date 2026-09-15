@@ -239,7 +239,7 @@ function spawnDefender(escape=false){
  spawnEnemy(!escape);
  // Defenders are strike-path interrupters, not chase bait. Spawn them off-axis and aim through
  // the player's future flight path so the first merge demands a bank/pull decision.
- enemyRole=(escape||mission.detected)?'ACE':'CLIMBER';
+ enemyRole='ACE';
  const z=spec.z,x=valleyCenter(z)+spec.side;
  enemy.position.set(x,terrainHeight(x,z)+spec.alt,z);
  const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?300:500);
@@ -279,14 +279,16 @@ function updateMission(dt){
  // three quarters of a second and the valley wakes up before the strike.
  const watched=sam.stage>=1&&!!sam.site;
  mission.detectClock=watched?Math.min(1.2,mission.detectClock+dt):Math.max(0,mission.detectClock-dt*2.4);
- if(!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile)){
-  mission.detected=true;
-  if(!mission.bandit){mission.bandit=true;spawnDefender();}
-  else if(enemyAlive){enemyRole='ACE';duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED-8);resetEnemyAttack(.25);resetHostileThreat(.7);}
+ if(!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile))mission.detected=true;
+ // Air pressure is guaranteed. Good masking can delay the intercept, but it cannot turn the
+ // strike into an empty sightseeing run. Detection brings the fighter early; otherwise the
+ // defender commits as the player reaches the opening ridge.
+ if(!mission.bandit&&(mission.detected||ship.position.z<variant.bandit.trigger)){
+  mission.detected=true;mission.bandit=true;spawnDefender();
  }
- // If the first interceptor is defeated, detection still has consequences: a second aircraft
- // enters from the opposite side during the approach instead of letting the valley go quiet.
- if(mission.detected&&!mission.secondBandit&&!enemyAlive&&ship.position.z<-2850&&!mission.destroyed){
+ // Killing the first fighter buys space, not safety. A second ACE crosses the approach later
+ // from the opposite side so a strong run still has another aviation problem to solve.
+ if(mission.detected&&!mission.secondBandit&&!enemyAlive&&ship.position.z<-2400&&!mission.destroyed){
   mission.secondBandit=true;spawnSecondDefender();
  }
  if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<variant.escape.trigger&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
