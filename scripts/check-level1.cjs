@@ -68,9 +68,13 @@ window.scenario={
   assert.equal(await page.locator('#briefing').count(),1);
   assert.equal(await page.locator('#realmCard,#missionBrief,#headingTape,#coach,#objective,#score,#readout').count(),0);
 
-  const frozen=await page.evaluate(()=>emberwing.snapshot());
-  await page.waitForTimeout(600);
-  assert.deepEqual(await page.evaluate(()=>emberwing.snapshot()),frozen);
+  const opening=await page.evaluate(()=>emberwing.snapshot());
+  assert.equal(opening.phase,'flight','Level 1 must begin in live flight');
+  await page.waitForTimeout(500);
+  const moving=await page.evaluate(()=>emberwing.snapshot());
+  const traveled=Math.hypot(...moving.position.map((v,i)=>v-opening.position[i]));
+  assert.ok(traveled>30,'Aircraft must already be moving when Level 1 loads');
+  await page.waitForFunction(()=>document.getElementById('briefing').hidden,{timeout:4000});
 
   const entry=await page.evaluate(()=>scenario.entrySafe());
   assert.equal(entry.crashed,false,'Level 1 spawn must survive four seconds hands-off');
@@ -102,7 +106,7 @@ window.scenario={
 
   for(let i=0;i<3;i++){
    const reset=await page.evaluate(()=>scenario.replay());
-   assert.equal(reset.phase,'briefing');
+   assert.equal(reset.phase,'flight');
    assert.equal(reset.missile,null);
    assert.equal(reset.smoke,0);
    assert.equal(reset.fire,0);
@@ -111,7 +115,7 @@ window.scenario={
   }
 
   assert.deepEqual(errors,[]);
-  console.log(`PASS: frozen briefing, mission boundary at ${exitZ}, strike authority, physical SAM cover, concealment, and replay cleanup.`);
+  console.log(`PASS: airborne start, transient mission title, mission boundary at ${exitZ}, strike authority, physical SAM cover, concealment, and replay cleanup.`);
  }finally{
   if(browser)await browser.close();
   if(local)await local.close();
