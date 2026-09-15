@@ -1087,10 +1087,10 @@ const LEVEL={startZ:1300,entryZ:1050,targetX:-300,targetZ:-5700,exitZ:-7200};
 // Four authored pressure patterns reuse the same geography and five physical batteries.
 // They change where the mission leans hardest without adding random enemies or procedural chaos.
 const MISSION_VARIANTS=Object.freeze([
- {id:'RIDGE',sam:[1250,1600,1700,2050,2100],cooldown:2.6,bandit:{trigger:150,z:-500,side:420,alt:150,delay:2.5},escape:{trigger:-5900,z:-6500,side:650,alt:150,delay:1.25}},
- {id:'THROAT',sam:[1180,1725,1800,2000,2050],cooldown:2.9,bandit:{trigger:-100,z:-950,side:-520,alt:165,delay:2.7},escape:{trigger:-6000,z:-6620,side:520,alt:155,delay:1.35}},
- {id:'TERMINAL',sam:[1120,1500,1740,2150,2200],cooldown:3.0,bandit:{trigger:-250,z:-1350,side:560,alt:170,delay:2.9},escape:{trigger:-5850,z:-6400,side:-620,alt:160,delay:1.2}},
- {id:'CROSSWIND',sam:[1320,1540,1620,2100,2150],cooldown:2.8,bandit:{trigger:50,z:-700,side:-460,alt:145,delay:2.6},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
+ {id:'RIDGE',sam:[1250,1600,1700,2050,2100],cooldown:2.6,bandit:{trigger:260,z:-420,side:320,alt:115,delay:.55},escape:{trigger:-5900,z:-6500,side:650,alt:150,delay:1.25}},
+ {id:'THROAT',sam:[1180,1725,1800,2000,2050],cooldown:2.9,bandit:{trigger:180,z:-620,side:-340,alt:120,delay:.6},escape:{trigger:-6000,z:-6620,side:520,alt:155,delay:1.35}},
+ {id:'TERMINAL',sam:[1120,1500,1740,2150,2200],cooldown:3.0,bandit:{trigger:120,z:-760,side:360,alt:125,delay:.65},escape:{trigger:-5850,z:-6400,side:-620,alt:160,delay:1.2}},
+ {id:'CROSSWIND',sam:[1320,1540,1620,2100,2150],cooldown:2.8,bandit:{trigger:220,z:-520,side:-320,alt:110,delay:.55},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
 ]);
 let missionRun=-1;
 const mission={phase:'flight',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
@@ -1320,20 +1320,20 @@ function spawnDefender(escape=false){
  enemyRole=escape?'ACE':'CLIMBER';
  const z=spec.z,x=valleyCenter(z)+spec.side;
  enemy.position.set(x,terrainHeight(x,z)+spec.alt,z);
- const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?260:330);
+ const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?300:500);
  const direction=crossingPoint.sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
- duel.speed=escape?TURBO_SPEED-10:CRUISE_SPEED+18;
- enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.55:1.15));lastEnemy.copy(enemy.position);
+ duel.speed=escape?TURBO_SPEED-8:CRUISE_SPEED+30;
+ enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.45:.65));lastEnemy.copy(enemy.position);
 }
 // Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
 // but widen the firing solution enough that an oblique crossing pass is a real threat.
 enemyFireSolution=function(){
- if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<1.15||duel.state==='extend'||duel.state==='break')return false;
+ if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<.65||duel.state==='extend'||duel.state==='break')return false;
  const aim=ship.position.clone().sub(enemy.position),range=aim.length();
- if(range<65||range>(mission.destroyed?590:540))return false;
+ if(range<55||range>(mission.destroyed?700:660))return false;
  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();
- const cone=mission.destroyed?.88:.91;
+ const cone=mission.destroyed?.82:.86;
  return forward.dot(aim.multiplyScalar(1/Math.max(range,.001)))>cone&&enemyLOS();
 };
 function updateMission(dt){
