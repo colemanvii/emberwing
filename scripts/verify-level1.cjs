@@ -12,22 +12,23 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  page.on('pageerror',e=>{errors.push(e.message);console.log('ERROR',e.message)});
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
  await page.goto(process.env.URL||(local.url+'/play.html'));await page.waitForFunction(()=>window.emberwing);
- // Keep headless verification cheap enough to exercise a whole mission in CI without changing gameplay.
- await page.evaluate(()=>{renderer.setPixelRatio(.65);renderer.setSize(innerWidth,innerHeight);});
- // The second CI flight advances two authored patterns so we exercise both ingress-heavy and terminal-heavy pressure.
- if(output.includes('run-b')){await page.keyboard.press('r');await page.waitForTimeout(180);await page.keyboard.press('r');await page.waitForTimeout(180);}
+ // CI exercises ingress-heavy and terminal-heavy patterns; VARIANT selects any of the four for review.
+ const variant=Number(process.env.VARIANT??(output.includes('run-b')?2:0));
+ for(let i=0;i<variant;i++){await page.keyboard.press('r');await page.waitForTimeout(180);}
  const opening=await page.evaluate(()=>emberwing.snapshot());
  if(opening.phase!=='flight')throw Error('Level 1 did not begin in live flight');
  await page.waitForTimeout(350);
  await page.screenshot({path:path.join(output,'opening.png')});
  async function keys(next){for(const k of held)if(!next.has(k)){await page.keyboard.up(k);held.delete(k)}for(const k of next)if(!held.has(k)){await page.keyboard.down(k);held.add(k)}}
  let lastLog=-10,lastShot=-10;
+ const events={};
  const started=Date.now();
  while(Date.now()-started<420000){
   const s=await page.evaluate(()=>{const s=emberwing.snapshot(),z=s.position[2];return {...s,center:emberwing.center(z-550),aheadFloor:emberwing.height(s.position[0],z-220)}});
-  if(s.elapsed-lastLog>5){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,destroyed:s.destroyed}));}
+  if(s.elapsed-lastLog>1){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,destroyed:s.destroyed}));}
   const z=s.position[2];
-  for(const [name,threshold] of [['approach',1200],['escarpment',850],['dogleg',250],['valley',-150],['bandit',-500],['throat',-1900],['bend',-4200],['reveal',-4800],['attack',-5350],['escape',-6200]])if(z<threshold&&!captured.has(name)){captured.add(name);await page.screenshot({path:path.join(output,name+'.png')});}
+  for(const [event,active] of [['targetVisible',s.geometry.onscreen],['targetAcquired',s.selected==='ground'&&s.lock===2],['strike',s.destroyed]])if(active&&!events[event]){events[event]={time:s.elapsed,position:s.position,altitude:s.altitude};await page.screenshot({path:path.join(output,event+'.png')});}
+  for(const [name,threshold] of [['approach',1200],['escarpment',850],['dogleg',250],['valley',-150],['bandit',-500],['throat',-1900],['pre-reveal',-4400],['headland',-5000],['reveal',-5200],['attack',-5450],['post-strike',-5800],['escape',-6200],['breakout',-7000]])if(z<threshold&&!captured.has(name)){captured.add(name);await page.screenshot({path:path.join(output,name+'.png')});}
   if(s.destroyed&&!captured.has('destruction')){captured.add('destruction');await page.screenshot({path:path.join(output,'destruction.png')});}
   if(s.crashed||s.complete){await page.screenshot({path:path.join(output,s.complete?'extracted.png':'crash.png')});console.log('TERMINAL',JSON.stringify(s));samples.push(s);break;}
   const [x,y]=s.position,[qx,qy,qz,qw]=s.quaternion;
@@ -35,22 +36,20 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let targetX=s.center;
   // Follow the natural westward dogleg around the eastern escarpment without treating it like a binary lane choice.
   if(z<1180&&z>-260)targetX=s.center-120;
-  if(z<-4400&&z>-5850&&!s.destroyed)targetX=s.target[0];
-  let altitude=z>3500?110:50;
+  // Read the western shoulder, then turn toward the installation once around the headland.
+  if(z<-3600&&z>-4900)targetX=s.center-130;
+  if(z<=-4900&&z>-5900&&!s.destroyed)targetX=s.target[0];
+  const altitude=Number(process.env.ALTITUDE||50);
   let desiredY=s.aheadFloor+altitude;
-  if(z<-4800&&!s.destroyed)desiredY=s.target[1]+100;
+  if(z<-5150&&!s.destroyed)desiredY=s.target[1]+65;
+  // Accelerate out of exposure while preserving terrain cover instead of climbing at every warning.
   const missileBreak=s.samMissile;
   const banditBreak=s.banditRange!==null&&s.banditRange<245;
-  if(missileBreak||banditBreak){
-   const banditX=s.banditPosition?.[0]??x;
-   const away=banditX>=x?-1:1;
-   const weave=Math.floor(s.elapsed*1.35)%2?1:-1;
-   targetX=s.center+(missileBreak?away:weave)*210;
-   desiredY=Math.max(desiredY,s.aheadFloor+(missileBreak?78:66));
-  }
   let desiredPitch=clamp((desiredY-y)/480,-.21,.18);
-  if(missileBreak)desiredPitch=Math.max(desiredPitch,.14);
-  const desiredYaw=Math.atan2(targetX-x,600),yawError=Math.atan2(Math.sin(desiredYaw-yaw),Math.cos(desiredYaw-yaw)),desiredBank=clamp(yawError*1.8,-.58,.58);
+
+  const aiming=z<-4900&&z>-5480&&!s.destroyed;
+  if(aiming)desiredPitch=clamp(Math.atan2(s.target[1]-y,Math.hypot(s.target[0]-x,s.target[2]-z)),-.21,.18);
+  const desiredYaw=aiming?Math.atan2(s.target[0]-x,z-s.target[2]):Math.atan2(targetX-x,600),yawError=Math.atan2(Math.sin(desiredYaw-yaw),Math.cos(desiredYaw-yaw)),desiredBank=clamp(yawError*1.8,-.58,.58);
   const next=new Set();
   if(bank<desiredBank-.045)next.add('ArrowRight');else if(bank>desiredBank+.045)next.add('ArrowLeft');
   if(pitch<desiredPitch-.016)next.add('ArrowDown');else if(pitch>desiredPitch+.016)next.add('ArrowUp');
@@ -60,10 +59,11 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
    if(s.lock===2&&s.selected==='ground'){lastShot=s.elapsed;}
    else next.add('KeyX');
   }
+
   await keys(next);await page.waitForTimeout(110);
  }
  await keys(new Set());
- fs.writeFileSync(path.join(output,'flight-log.json'),JSON.stringify({errors,samples},null,2));
+ fs.writeFileSync(path.join(output,'flight-log.json'),JSON.stringify({errors,events,samples},null,2));
  await page.keyboard.press('r');await page.waitForTimeout(500);console.log('RESET',await page.evaluate(()=>emberwing.snapshot()));
  await browser.close();if(local)await local.close();
  if(errors.length||!samples.at(-1)?.complete)process.exitCode=1;

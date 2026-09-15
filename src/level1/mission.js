@@ -55,12 +55,13 @@ terrainHeight=function(x,z){
 
  // 3. THE BASIN REVEAL — a single monumental headland conceals the launch basin until the route bends around it.
  // Its short north/south falloff keeps the target floor itself open and attackable once revealed.
- const headland=520*terrainLobe(x,z,valleyCenter(-5050)+225,-5050,410,300);
+ // Leave a low western shoulder on the strike axis and enough basin depth to acquire after rounding it.
+ const headland=520*terrainLobe(x,z,valleyCenter(-4850)+365,-4850,350,300);
  const basinRim=125*terrainLobe(x,z,valleyCenter(-5750)+690,-5750,520,820);
 
  // 4. THE NORTH BREAKOUT — a low western spine creates a trustworthy covered escape line before the walls fall away.
  // It is broad and overflyable, so it reads as a tactical option rather than a mandatory tunnel.
- const breakoutSpine=255*terrainLobe(x,z,valleyCenter(-6420)-320,-6420,330,760);
+ const breakoutSpine=255*terrainLobe(x,z,valleyCenter(-6420)-440,-6420,300,760);
  const breakoutGate=105*terrainLobe(x,z,valleyCenter(-6800)+610,-6800,520,650);
 
  return floor+foothills+wall*ridge*(1-opening*.84)+escarpment+escarpmentCrown+escarpmentToe+westernShelf+throatWest+throatEast+headland+basinRim+breakoutSpine+breakoutGate;
@@ -303,7 +304,7 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(200)+190,200],[valleyCenter(-1200)-240,-1200],[valleyCenter(-3000)+260,-3000],[-120,-5000],[-500,-6300]];
+ const specs=[[valleyCenter(200)+190,200],[valleyCenter(-1200)-240,-1200],[valleyCenter(-3000)+260,-3000],[-40,-5200],[-560,-6400]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  variant.sam.forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();

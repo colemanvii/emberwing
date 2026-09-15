@@ -53,6 +53,21 @@ window.scenario={
     reset();
     return {phase:mission.phase,missile:sam.missile,smoke:effects.samTrail.length,fire:firestorm.fires.length,sams:sam.sites.length,time:missionElapsed};
   },
+  routing(){
+    reset();mission.phase='test';
+    const point=(z,offset=0,altitude=40)=>{const x=valleyCenter(z)+offset;return new THREE.Vector3(x,terrainHeight(x,z)+altitude,z);};
+    const sight=(index,p)=>lineClear(sam.sites[index].position,p,8)&&!scenerySegmentHit(sam.sites[index].position,p,5,8,true);
+    return {
+      concealed:lineClear(point(-4400,-130,50),rocket.position),
+      revealed:lineClear(point(-4900,-130,50),rocket.position),
+      escapeFloor:[-5700,-5900,-6100,-6300,-6500,-6800].map(z=>terrainHeight(valleyCenter(z),z)),
+      terminalMasked:sight(3,point(-5100,-100)),
+      terminalExposed:sight(3,point(-5500)),
+      escapeMasked:sight(4,point(-5500,-100)),
+      escapeClimb:sight(4,point(-5500,-100,160)),
+      escapeOpen:sight(4,point(-5500))
+    };
+  },
   entrySafe(){
     reset();mission.phase='test';crashed=false;
     for(let i=0;i<240&&!crashed;i++){updateFlight(1/60);updateWorld();}
@@ -83,6 +98,16 @@ window.scenario={
   const strikeAxis=await page.evaluate(()=>[-3000,-4100,-4900,-5700,-6300,-6900].map(z=>emberwing.center(z)));
   assert.ok(Math.max(...strikeAxis)-Math.min(...strikeAxis)<220,'Terminal route must read as one coherent strike axis');
   assert.ok(strikeAxis.slice(3).every(x=>x<-150),'Post-strike corridor must not swing back east');
+
+  const routing=await page.evaluate(()=>scenario.routing());
+  assert.equal(routing.concealed,false,'Western ingress must conceal the target before the headland');
+  assert.equal(routing.revealed,true,'Rounding the western shoulder must leave room to acquire the target');
+  assert.ok(routing.escapeFloor.every(y=>y<40),'The strike axis must remain low through the escape spine');
+  assert.equal(routing.terminalMasked,false,'Headland must mask SAM4 on low ingress');
+  assert.equal(routing.terminalExposed,true,'SAM4 must see the exposed strike basin');
+  assert.equal(routing.escapeMasked,false,'Western shoulder must mask SAM5 before the strike');
+  assert.equal(routing.escapeClimb,true,'Climbing out of that cover must expose the aircraft to SAM5');
+  assert.equal(routing.escapeOpen,true,'SAM5 must pressure the open basin line');
 
   const variants=await page.evaluate(()=>scenario.variants());
   assert.equal(variants.length,4,'Level 1 should ship four curated pressure patterns');
