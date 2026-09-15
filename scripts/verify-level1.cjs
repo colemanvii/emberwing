@@ -16,9 +16,10 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  await page.evaluate(()=>{renderer.setPixelRatio(.65);renderer.setSize(innerWidth,innerHeight);});
  // The second CI flight advances two authored patterns so we exercise both ingress-heavy and terminal-heavy pressure.
  if(output.includes('run-b')){await page.keyboard.press('r');await page.waitForTimeout(180);await page.keyboard.press('r');await page.waitForTimeout(180);}
- const before=await page.evaluate(()=>emberwing.snapshot());await page.waitForTimeout(1200);const after=await page.evaluate(()=>emberwing.snapshot());
- if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Simulation moved during briefing');
- await page.screenshot({path:path.join(output,'briefing.png')});await page.click('#deploy');
+ const opening=await page.evaluate(()=>emberwing.snapshot());
+ if(opening.phase!=='flight')throw Error('Level 1 did not begin in live flight');
+ await page.waitForTimeout(350);
+ await page.screenshot({path:path.join(output,'opening.png')});
  async function keys(next){for(const k of held)if(!next.has(k)){await page.keyboard.up(k);held.delete(k)}for(const k of next)if(!held.has(k)){await page.keyboard.down(k);held.add(k)}}
  let lastLog=-10,lastShot=-10;
  const started=Date.now();
