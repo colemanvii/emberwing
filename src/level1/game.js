@@ -230,7 +230,7 @@ landMaterial.onBeforeCompile=shader=>{
     float macro=landFbm(landWorld.xz*.002),grain=noise2(landWorld.xz*.065),slope=1.-max(normalize(landNormal).y,0.);
     float layers=.5+.5*sin(landWorld.y*.11+macro*13.);
     vec3 rock=mix(vec3(.16,.105,.067),vec3(.46,.32,.18),macro);
-    rock*=.92+grain*.08+layers*.06-slope*.24;float wash=pow(noise2(landWorld.xz*.007+vec2(macro*2.,0.)),3.);rock=mix(rock,vec3(.36,.29,.2),wash*.42);if(realm<.5){float ridgeMark=exp(-pow(abs((landWorld.z-120.)/760.),4.));float headMark=exp(-pow(abs((landWorld.z+4850.)/560.),4.));float strata=smoothstep(.76,.93,layers)*smoothstep(.12,.55,slope);rock=mix(rock,vec3(.12,.07,.055),ridgeMark*strata*.34);rock=mix(rock,vec3(.62,.45,.28),headMark*strata*.28);}
+    rock*=.86+grain*.1+layers*.08;float wash=pow(noise2(landWorld.xz*.007+vec2(macro*2.,0.)),3.);rock=mix(rock,vec3(.36,.29,.2),wash*.5);
     if(realm>.5){rock=mix(vec3(.11,.15,.17),vec3(.3,.34,.34),macro);float snowline=140.+macro*210.;float snow=smoothstep(snowline,snowline+170.,landWorld.y);snow*=smoothstep(.25,.85,normalize(landNormal).y+grain*.24);rock=mix(rock,vec3(.82,.87,.86)*(.9+grain*.06),snow);}
     diffuseColor.rgb=rock;`);
   shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
