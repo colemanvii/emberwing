@@ -3,10 +3,10 @@ const LEVEL={startZ:1300,entryZ:1050,targetX:-300,targetZ:-5700,exitZ:-7200};
 // Four authored pressure patterns reuse the same geography and five physical batteries.
 // They change where the mission leans hardest without adding random enemies or procedural chaos.
 const MISSION_VARIANTS=Object.freeze([
- {id:'RIDGE',sam:[1250,1600,1700,1750,1700],cooldown:2.6,bandit:{trigger:700,z:-500,side:420,alt:150,delay:2.5},escape:{trigger:-5900,z:-6500,side:650,alt:150,delay:1.25}},
- {id:'THROAT',sam:[1180,1725,1800,1680,1600],cooldown:2.9,bandit:{trigger:420,z:-950,side:-520,alt:165,delay:2.7},escape:{trigger:-6000,z:-6620,side:520,alt:155,delay:1.35}},
- {id:'TERMINAL',sam:[1120,1500,1740,1920,1840],cooldown:3.0,bandit:{trigger:250,z:-1350,side:560,alt:170,delay:2.9},escape:{trigger:-5850,z:-6400,side:-620,alt:160,delay:1.2}},
- {id:'CROSSWIND',sam:[1320,1540,1620,1800,1760],cooldown:2.8,bandit:{trigger:580,z:-700,side:-460,alt:145,delay:2.6},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
+ {id:'RIDGE',sam:[1250,1600,1700,1750,1700],cooldown:2.6,bandit:{trigger:150,z:-500,side:420,alt:150,delay:2.5},escape:{trigger:-5900,z:-6500,side:650,alt:150,delay:1.25}},
+ {id:'THROAT',sam:[1180,1725,1800,1680,1600],cooldown:2.9,bandit:{trigger:-100,z:-950,side:-520,alt:165,delay:2.7},escape:{trigger:-6000,z:-6620,side:520,alt:155,delay:1.35}},
+ {id:'TERMINAL',sam:[1120,1500,1740,1920,1840],cooldown:3.0,bandit:{trigger:-250,z:-1350,side:560,alt:170,delay:2.9},escape:{trigger:-5850,z:-6400,side:-620,alt:160,delay:1.2}},
+ {id:'CROSSWIND',sam:[1320,1540,1620,1800,1760],cooldown:2.8,bandit:{trigger:50,z:-700,side:-460,alt:145,delay:2.6},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
 ]);
 let missionRun=-1;
 const mission={phase:'flight',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
@@ -17,10 +17,14 @@ const compass=document.getElementById('compass'),health=document.getElementById(
 const terrainPulse=(v,c,r,p=4)=>Math.exp(-Math.pow(Math.abs((v-c)/r),p));
 const terrainLobe=(x,z,cx,cz,rx,rz,p=4)=>Math.exp(-Math.pow(Math.abs((x-cx)/rx),p)-Math.pow(Math.abs((z-cz)/rz),p));
 const valleyCenter=z=>{
- const inherited=-320*Math.sin((2600-z)/1800)*THREE.MathUtils.smoothstep(4000-z,0,1800)-560*Math.exp(-Math.pow((z+4900)/1100,2));
- // Three authored bends give the valley a readable natural line without turning it into a rail.
- // The opening bend now sweeps west around the eastern escarpment instead of splitting into game-like lanes.
- return inherited-170*terrainPulse(z,220,920)-180*terrainPulse(z,-4900,1100)+120*terrainPulse(z,-6500,820);
+ // Keep the authored opening dogleg, then deliberately bleed out the inherited sine-wave wander.
+ // The second half settles onto one west/northwest strike axis instead of reversing direction after each beat.
+ const openingBlend=THREE.MathUtils.smoothstep(z,-2000,-400);
+ const inherited=-320*Math.sin((2600-z)/1800)*(.22+.78*openingBlend);
+ const attackAxis=-285*terrainPulse(z,-4800,3300);
+ const terminalCommit=-95*terrainPulse(z,-5200,1500);
+ const escapeAxis=-90*terrainPulse(z,-6600,1700);
+ return inherited-170*terrainPulse(z,220,920)+attackAxis+terminalCommit+escapeAxis;
 };
 const inheritedTerrain=terrainHeight;
 terrainHeight=function(x,z){
@@ -299,7 +303,7 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(550)+190,550],[valleyCenter(-1200)-240,-1200],[valleyCenter(-3000)+260,-3000],[450,-5000],[-700,-6300]];
+ const specs=[[valleyCenter(200)+190,200],[valleyCenter(-1200)-240,-1200],[valleyCenter(-3000)+260,-3000],[-120,-5000],[-500,-6300]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  variant.sam.forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
