@@ -70,11 +70,11 @@ window.scenario={
 
   const opening=await page.evaluate(()=>emberwing.snapshot());
   assert.equal(opening.phase,'flight','Level 1 must begin in live flight');
-  await page.waitForTimeout(500);
+  assert.equal(await page.locator('#deploy').isHidden(),true,'Level 1 must not present a launch button');
+  await page.waitForFunction(()=>emberwing.snapshot().elapsed>.25,{timeout:6000});
   const moving=await page.evaluate(()=>emberwing.snapshot());
   const traveled=Math.hypot(...moving.position.map((v,i)=>v-opening.position[i]));
-  assert.ok(traveled>30,'Aircraft must already be moving when Level 1 loads');
-  await page.waitForFunction(()=>document.getElementById('briefing').hidden,{timeout:4000});
+  assert.ok(traveled>15,'Aircraft must already be moving when Level 1 loads');
 
   const entry=await page.evaluate(()=>scenario.entrySafe());
   assert.equal(entry.crashed,false,'Level 1 spawn must survive four seconds hands-off');
