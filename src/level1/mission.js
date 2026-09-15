@@ -9,7 +9,7 @@ const MISSION_VARIANTS=Object.freeze([
  {id:'CROSSWIND',sam:[1320,1540,1620,2100,2150],cooldown:2.8,bandit:{trigger:220,z:-520,side:-320,alt:110,delay:.55},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
 ]);
 let missionRun=-1;
-const mission={phase:'flight',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
+const mission={phase:'flight',penetrated:false,detected:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
 function activeVariant(){return MISSION_VARIANTS[Math.max(0,mission.variant)%MISSION_VARIANTS.length];}
 const sam={sites:[],missile:null,lock:0,stage:0,cooldown:5,site:null,lastCue:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
@@ -233,7 +233,7 @@ function spawnDefender(escape=false){
  spawnEnemy(!escape);
  // Defenders are strike-path interrupters, not chase bait. Spawn them off-axis and aim through
  // the player's future flight path so the first merge demands a bank/pull decision.
- enemyRole=escape?'ACE':'CLIMBER';
+ enemyRole=(escape||mission.detected)?'ACE':'CLIMBER';
  const z=spec.z,x=valleyCenter(z)+spec.side;
  enemy.position.set(x,terrainHeight(x,z)+spec.alt,z);
  const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?300:500);
@@ -257,7 +257,13 @@ function updateMission(dt){
  const variant=activeVariant();
  // Invisible spatial activation only paces opponents; nothing gates the target or route.
  if(ship.position.z<=LEVEL.entryZ)mission.penetrated=true;
- if(!mission.bandit&&ship.position.z<variant.bandit.trigger){mission.bandit=true;spawnDefender();}
+ // Detection is the escalation event. Stay masked and the ingress stays quiet; let a SAM
+ // establish a real track and the air-defense picture changes immediately.
+ if(!mission.detected&&(sam.stage>=2||!!sam.missile)){
+  mission.detected=true;
+  if(!mission.bandit){mission.bandit=true;spawnDefender();}
+  else if(enemyAlive){enemyRole='ACE';duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED-8);resetEnemyAttack(.25);resetHostileThreat(.7);}
+ }
  if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<variant.escape.trigger&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
   missionComplete=true;mission.phase='complete';finalTime=missionElapsed;releaseInputs();removeSamMissile();removeHostileMissile();
@@ -294,7 +300,7 @@ reset=function(){
  for(const fx of effects.launchFx){scene.remove(fx.mesh);if(fx.light)scene.remove(fx.light);fx.mesh.geometry.dispose();fx.mesh.material.dispose();}effects.launchFx.length=0;
  baseReset();
  missionRun=(missionRun+1)%MISSION_VARIANTS.length;
- Object.assign(mission,{phase:'flight',penetrated:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
+ Object.assign(mission,{phase:'flight',penetrated:false,detected:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
  const x=valleyCenter(LEVEL.startZ),entryAimZ=650,entryAimX=valleyCenter(entryAimZ);
