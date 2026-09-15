@@ -32,14 +32,19 @@ terrainHeight=function(x,z){
  const center=valleyCenter(z),d=Math.abs(x-center);
  const entry=THREE.MathUtils.smoothstep(z,1800,3800);
  const throat=terrainPulse(z,-2150,720);
- const basin=terrainPulse(z,-5650,1050);
+ // The final third is no longer a broad bowl. It compresses into a committed low approach,
+ // opens just enough for the shot, then stays covered until the northern release.
+ const terminalCompression=terrainPulse(z,-4550,1150);
+ const attackPocket=terrainPulse(z,-5580,620);
+ const escapeCompression=terrainPulse(z,-6280,900);
  // Hold the valley closed through the escape beat, then release it quickly into northern air.
- const opening=1-THREE.MathUtils.smoothstep(z,-7350,-6500);
- const half=440-throat*150+basin*245+opening*1080;
- const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
- const wall=THREE.MathUtils.smoothstep(d,half,half+720);
- const ridge=345+245*noiseLand(x*.0012,z*.0009)+55*Math.sin(z/620)+throat*105;
- const foothills=THREE.MathUtils.smoothstep(d,half*.76,half+135)*(30+throat*24);
+ const opening=1-THREE.MathUtils.smoothstep(z,-7350,-6600);
+ const half=420-throat*170-terminalCompression*220+attackPocket*150-escapeCompression*120+opening*980;
+ const floor=-42+entry*205+noiseLand(x*.002,z*.0018)*9+3*Math.sin(z/590);
+ // Sharper walls make lateral choices legible from the cockpit instead of dissolving into a giant basin.
+ const wall=THREE.MathUtils.smoothstep(d,half,half+430);
+ const ridge=390+255*noiseLand(x*.0012,z*.0009)+48*Math.sin(z/620)+throat*120+terminalCompression*170+escapeCompression*90;
+ const foothills=THREE.MathUtils.smoothstep(d,half*.78,half+95)*(34+throat*28+terminalCompression*18);
 
  // 1. THE EASTERN ESCARPMENT — one monumental ridge shoulder grows naturally out of the valley wall.
  // It bends the route west and creates a readable masking edge without presenting two videogame lanes.
@@ -53,18 +58,20 @@ terrainHeight=function(x,z){
  const throatWest=120*terrainLobe(x,z,valleyCenter(-2150)-350,-2150,330,760);
  const throatEast=165*terrainLobe(x,z,valleyCenter(-2250)+365,-2250,350,700);
 
- // 3. THE BASIN REVEAL — a single monumental headland conceals the launch basin until the route bends around it.
- // Its short north/south falloff keeps the target floor itself open and attackable once revealed.
- // Leave a low western shoulder on the strike axis and enough basin depth to acquire after rounding it.
- const headland=520*terrainLobe(x,z,valleyCenter(-4850)+365,-4850,350,300);
- const basinRim=125*terrainLobe(x,z,valleyCenter(-5750)+690,-5750,520,820);
+ // 3. THE TERMINAL SHOULDER — a large eastern headland blocks the installation from the low western run.
+ // The player must stay tucked left, round a real piece of geography, then gets a short clean attack window.
+ const headland=690*terrainLobe(x,z,valleyCenter(-4760)+320,-4760,380,430,3.4);
+ const headlandCrown=260*terrainLobe(x,z,valleyCenter(-4720)+250,-4720,245,300,3.8);
+ const westernNotch=-72*terrainLobe(x,z,valleyCenter(-4780)-165,-4780,230,620,3.6);
+ const basinRim=150*terrainLobe(x,z,valleyCenter(-5750)+610,-5750,430,720,3.5);
 
- // 4. THE NORTH BREAKOUT — a low western spine creates a trustworthy covered escape line before the walls fall away.
- // It is broad and overflyable, so it reads as a tactical option rather than a mandatory tunnel.
- const breakoutSpine=255*terrainLobe(x,z,valleyCenter(-6420)-440,-6420,300,760);
- const breakoutGate=105*terrainLobe(x,z,valleyCenter(-6800)+610,-6800,520,650);
+ // 4. THE NORTH BREAKOUT — an eastern shielding ridge carries the attack heading into a covered escape cut.
+ // Stay low and west of it and the terrain works for you; climb or drift east and the battery gets the sky back.
+ const escapeShoulder=430*terrainLobe(x,z,valleyCenter(-6280)+355,-6280,350,880,3.4);
+ const escapeCrown=190*terrainLobe(x,z,valleyCenter(-6360)+300,-6360,220,620,3.7);
+ const breakoutGate=125*terrainLobe(x,z,valleyCenter(-6860)+520,-6860,430,560,3.5);
 
- return floor+foothills+wall*ridge*(1-opening*.84)+escarpment+escarpmentCrown+escarpmentToe+westernShelf+throatWest+throatEast+headland+basinRim+breakoutSpine+breakoutGate;
+ return floor+foothills+wall*ridge*(1-opening*.86)+escarpment+escarpmentCrown+escarpmentToe+westernShelf+throatWest+throatEast+headland+headlandCrown+westernNotch+basinRim+escapeShoulder+escapeCrown+breakoutGate;
 };
 function lineClear(a,b,clearance=3){
  const steps=Math.max(10,Math.ceil(a.distanceTo(b)/40));
@@ -304,7 +311,13 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(200)+190,200],[valleyCenter(-1200)-240,-1200],[valleyCenter(-3000)+260,-3000],[-40,-5200],[-560,-6400]];
+ const specs=[
+  [valleyCenter(200)+190,200],
+  [valleyCenter(-1200)-240,-1200],
+  [valleyCenter(-3000)+260,-3000],
+  [valleyCenter(-5200)+430,-5200],
+  [valleyCenter(-6400)+500,-6400]
+ ];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  variant.sam.forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
