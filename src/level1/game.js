@@ -1083,7 +1083,7 @@ function updateLaunchVapor(){
 }
 
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
-const LEVEL={startZ:1300,entryZ:1050,targetX:-300,targetZ:-5700,exitZ:-7200};
+const LEVEL={startZ:1300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-7200};
 // Four authored pressure patterns reuse the same geography and five physical batteries.
 // They change where the mission leans hardest without adding random enemies or procedural chaos.
 const MISSION_VARIANTS=Object.freeze([
@@ -1206,7 +1206,13 @@ for(let deg=0;deg<360;deg+=30){const mark=document.createElement('span');mark.te
 const objectiveItems=[...document.querySelectorAll('#objectives li')];
 function updateObjectives(){
  const completed=[mission.penetrated,mission.destroyed,missionComplete];
- objectiveItems.forEach((item,i)=>{const done=String(completed[i]);if(item.dataset.done!==done){item.dataset.done=done;item.setAttribute('aria-label',item.textContent.replace('✓','').trim()+(completed[i]?' — complete':' — pending'));}});
+ const active=completed.findIndex(done=>!done);
+ objectiveItems.forEach((item,i)=>{
+  const done=String(completed[i]),isActive=String(i===active);
+  if(item.dataset.done!==done)item.dataset.done=done;
+  if(item.dataset.active!==isActive)item.dataset.active=isActive;
+  item.setAttribute('aria-label',item.textContent.replace('✓','').trim()+(completed[i]?' — complete':i===active?' — active':' — pending'));
+ });
 }
 function updateInstruments(){
  updateObjectives();
