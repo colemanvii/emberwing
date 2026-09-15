@@ -200,7 +200,7 @@ function destroyTarget(){
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
  announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,.35);lockState=lockTimer=0;setSeeker(false);
- if(enemyAlive){duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED-12);resetEnemyAttack(.45);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
+ if(enemyAlive){enemyRole='ACE';duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED-8);resetEnemyAttack(.25);resetHostileThreat(.65);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
