@@ -58,6 +58,10 @@ window.scenario={
     const point=(z,offset=0,altitude=40)=>{const x=valleyCenter(z)+offset;return new THREE.Vector3(x,terrainHeight(x,z)+altitude,z);};
     const sight=(index,p)=>lineClear(sam.sites[index].position,p,8)&&!scenerySegmentHit(sam.sites[index].position,p,5,8,true);
     return {
+      ridgeMasked:sight(0,point(-300,-220,40)),
+      ridgeExposed:sight(0,point(-300,-220,180)),
+      ridgeCut:sight(0,point(-300,100,40)),
+      throat:[-1950,-2150,-2350].map(z=>({floor:terrainHeight(valleyCenter(z),z),west:terrainHeight(valleyCenter(z)-220,z),east:terrainHeight(valleyCenter(z)+220,z)})),
       concealed:lineClear(point(-4400,-130,50),rocket.position),
       revealed:lineClear(point(-4900,-130,50),rocket.position),
       escapeFloor:[-5700,-5900,-6100,-6300,-6500,-6800].map(z=>terrainHeight(valleyCenter(z),z)),
@@ -100,6 +104,10 @@ window.scenario={
   assert.ok(strikeAxis.slice(3).every(x=>x<-150),'Post-strike corridor must not swing back east');
 
   const routing=await page.evaluate(()=>scenario.routing());
+  assert.equal(routing.ridgeMasked,false,'Wide low ridge line must break SAM1 visibility');
+  assert.equal(routing.ridgeExposed,true,'Climbing above the ridge must surrender cover');
+  assert.equal(routing.ridgeCut,true,'Cutting over the spur must be an exposed alternative');
+  assert.ok(routing.throat.every(p=>p.floor<0&&p.west-p.floor>170&&p.east-p.floor>170),'Throat must have a continuous low slot between substantial close faces');
   assert.equal(routing.concealed,false,'Western ingress must conceal the target before the headland');
   assert.equal(routing.revealed,true,'Rounding the western shoulder must leave room to acquire the target');
   assert.ok(routing.escapeFloor.every(y=>y<40),'The strike axis must remain low through the escape spine');

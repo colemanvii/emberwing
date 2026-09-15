@@ -39,6 +39,8 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   // Read the western shoulder, then turn toward the installation once around the headland.
   if(z<-3600&&z>-4900)targetX=s.center-130;
   if(z<=-4900&&z>-5900&&!s.destroyed)targetX=s.target[0];
+  // Break west after impact: flying through the surviving launch tower is still a collision.
+  if(s.destroyed&&z>-6100)targetX=s.center-180;
   const altitude=Number(process.env.ALTITUDE||50);
   let desiredY=s.aheadFloor+altitude;
   if(z<-5150&&!s.destroyed)desiredY=s.target[1]+65;

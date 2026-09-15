@@ -35,36 +35,39 @@ terrainHeight=function(x,z){
  const basin=terrainPulse(z,-5650,1050);
  // Hold the valley closed through the escape beat, then release it quickly into northern air.
  const opening=1-THREE.MathUtils.smoothstep(z,-7350,-6500);
- const half=440-throat*150+basin*245+opening*1080;
+ const half=440-throat*225+basin*300+opening*1080;
  const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
  const wall=THREE.MathUtils.smoothstep(d,half,half+720);
- const ridge=345+245*noiseLand(x*.0012,z*.0009)+55*Math.sin(z/620)+throat*105;
+ // Quiet the generic skyline so the four authored masses own the silhouette.
+ const ridge=330+105*noiseLand(x*.0007,z*.0005)+throat*180;
  const foothills=THREE.MathUtils.smoothstep(d,half*.76,half+135)*(30+throat*24);
 
- // 1. THE EASTERN ESCARPMENT — one monumental ridge shoulder grows naturally out of the valley wall.
- // It bends the route west and creates a readable masking edge without presenting two videogame lanes.
- const escarpment=430*terrainLobe(x,z,valleyCenter(220)+535,220,360,920,3.25);
- const escarpmentCrown=260*terrainLobe(x,z,valleyCenter(120)+455,120,215,560,3.8);
- const escarpmentToe=95*terrainLobe(x,z,valleyCenter(-40)+315,-40,235,620,4);
- // A low western shelf gives the bend depth and scale but leaves the flight floor open and readable.
- const westernShelf=48*terrainLobe(x,z,valleyCenter(120)-520,120,360,760,3.6);
+ // 1. THE RIDGE CHOICE — the eastern wall ends in a long, blade-shaped spur.
+ // Its low western toe can be cut closely; the wider west arc stays below the SAM shelf.
+ const escarpment=480*terrainLobe(x,z,valleyCenter(220)+540,220,345,940,4);
+ const escarpmentCrown=340*terrainLobe(x,z,valleyCenter(120)+440,120,175,570,5);
+ const escarpmentToe=115*terrainLobe(x,z,valleyCenter(-40)+245,-40,180,660,4);
+ const ridgeSpur=145*terrainLobe(x,z,valleyCenter(-100)+40,-100,130,320,4);
+ const westernShelf=35*terrainLobe(x,z,valleyCenter(120)-550,120,300,740,4);
 
- // 2. THE NARROW THROAT — the base walls close in here; asymmetric buttresses make the compression legible at speed.
- const throatWest=120*terrainLobe(x,z,valleyCenter(-2150)-350,-2150,330,760);
- const throatEast=165*terrainLobe(x,z,valleyCenter(-2250)+365,-2250,350,700);
+ // 2. THE NARROW THROAT — staggered sheer buttresses, with a low continuous slot.
+ // The west prow arrives first; the taller east face fills the forward view on entry.
+ const throatWest=330*terrainLobe(x,z,valleyCenter(-1950)-365,-1950,245,660,5);
+ const throatEast=480*terrainLobe(x,z,valleyCenter(-2350)+350,-2350,230,720,5);
 
- // 3. THE BASIN REVEAL — a single monumental headland conceals the launch basin until the route bends around it.
- // Its short north/south falloff keeps the target floor itself open and attackable once revealed.
- // Leave a low western shoulder on the strike axis and enough basin depth to acquire after rounding it.
+ // 3. THE BASIN REVEAL — a high eastern headland with a low western rounding shoulder.
+ // Keep its western foot and northern falloff: they govern concealment and the firing window.
  const headland=520*terrainLobe(x,z,valleyCenter(-4850)+365,-4850,350,300);
- const basinRim=125*terrainLobe(x,z,valleyCenter(-5750)+690,-5750,520,820);
+ const headlandCrown=310*terrainLobe(x,z,valleyCenter(-4850)+445,-4850,200,280,5);
+ const basinRim=220*terrainLobe(x,z,valleyCenter(-5750)+820,-5750,420,770,4);
 
- // 4. THE NORTH BREAKOUT — a low western spine creates a trustworthy covered escape line before the walls fall away.
- // It is broad and overflyable, so it reads as a tactical option rather than a mandatory tunnel.
+ // 4. THE NORTH BREAKOUT — hug the inside of a western fin, then leave its blunt nose.
+ // The inner foot stays low; the outer crest gives cover a distinct, readable silhouette.
  const breakoutSpine=255*terrainLobe(x,z,valleyCenter(-6420)-440,-6420,300,760);
- const breakoutGate=105*terrainLobe(x,z,valleyCenter(-6800)+610,-6800,520,650);
+ const breakoutCrest=285*terrainLobe(x,z,valleyCenter(-6300)-505,-6300,155,570,5);
+ const breakoutGate=150*terrainLobe(x,z,valleyCenter(-6560)+640,-6560,390,430,4);
 
- return floor+foothills+wall*ridge*(1-opening*.84)+escarpment+escarpmentCrown+escarpmentToe+westernShelf+throatWest+throatEast+headland+basinRim+breakoutSpine+breakoutGate;
+ return floor+foothills+wall*ridge*(1-opening*.84)+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+throatWest+throatEast+headland+headlandCrown+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
 };
 function lineClear(a,b,clearance=3){
  const steps=Math.max(10,Math.ceil(a.distanceTo(b)/40));
