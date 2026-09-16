@@ -49,7 +49,7 @@ jobs:
       - name: Run fast browser checks
         run: npm test
 
-      - name: Reckless centerline must fail
+      - name: Reckless centerline must be punished
         run: RECKLESS=1 OUTPUT=.artifacts/level1-reckless npm run verify
 
       - name: Fly two complete verification runs
