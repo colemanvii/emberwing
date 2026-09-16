@@ -1,12 +1,22 @@
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
 const LEVEL={startZ:1300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-8500};
+// Galaga lesson: the mission is learnable, but the entrance has choreography.
+// These cycle deterministically so runs feel different without turning difficulty into RNG.
+const ENTRY_PATTERNS=Object.freeze([
+ {id:'WEST_SCRAPE',z:1560,side:-260,agl:48,aimZ:680,aimSide:-90,aimAgl:55,bank:-.20,speed:225},
+ {id:'RIDGE_DROP',z:1760,side:110,agl:155,aimZ:640,aimSide:-80,aimAgl:55,bank:.18,speed:235},
+ {id:'EAST_KNIFE',z:1620,side:290,agl:60,aimZ:620,aimSide:20,aimAgl:65,bank:.28,speed:245},
+ {id:'LOW_SLOT',z:1480,side:-150,agl:35,aimZ:690,aimSide:-120,aimAgl:48,bank:-.10,speed:220},
+ {id:'HIGH_CROSS',z:1700,side:-40,agl:120,aimZ:600,aimSide:160,aimAgl:68,bank:.12,speed:240}
+]);
+let entryRun=-1;
 // Level 1 is one authored mission, not a hidden difficulty lottery.
 // The player should be able to learn this valley, understand its threat geometry, and improve by mastery.
 const MISSION_VARIANTS=Object.freeze([
  {id:'VALLEY',sam:[1250,1600,1740,1950,2000],cooldown:2.8,bandit:{trigger:680,z:80,side:260,alt:108,delay:.30},escape:{trigger:-6000,z:-6600,side:-620,alt:155,delay:1.3}}
 ]);
 let missionRun=-1;
-const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
+const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,entry:'WEST_SCRAPE',introUntil:2.35};
 function activeVariant(){return MISSION_VARIANTS[Math.max(0,mission.variant)%MISSION_VARIANTS.length];}
 const sam={sites:[],missiles:[],missile:null,lock:0,stage:0,cooldown:0,site:null,lastCue:-99,lastLaunch:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
@@ -357,12 +367,15 @@ reset=function(){
  Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
- const x=valleyCenter(LEVEL.startZ),entryAimZ=650,entryAimX=valleyCenter(entryAimZ);
- ship.position.set(x,terrainHeight(x,LEVEL.startZ)+65,LEVEL.startZ);
- // Spawn already aligned with the opening dogleg. A hands-off player should enter the valley,
- // not be pointed at the eastern escarpment and forced into an emergency first input.
- const entryForward=new THREE.Vector3(entryAimX-x,0,entryAimZ-LEVEL.startZ).normalize();
+ entryRun=(entryRun+1)%ENTRY_PATTERNS.length;
+ const entry=ENTRY_PATTERNS[entryRun],x=valleyCenter(entry.z)+entry.side;
+ const aimX=valleyCenter(entry.aimZ)+entry.aimSide,startY=terrainHeight(x,entry.z)+entry.agl,aimY=terrainHeight(aimX,entry.aimZ)+entry.aimAgl;
+ ship.position.set(x,startY,entry.z);
+ // Each run enters on a different authored vector, then converges into the same learnable valley.
+ const entryForward=new THREE.Vector3(aimX-x,aimY-startY,entry.aimZ-entry.z).normalize();
  ship.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),entryForward);
+ ship.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,-1),entry.bank));
+ speed=entry.speed;burner=0;mission.entry=entry.id;
  launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1);
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
@@ -371,9 +384,9 @@ reset=function(){
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  variant.sam.forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
- rebuildTerrain(0,Math.round(LEVEL.startZ/620)*620);positionDistantRidges(0,Math.round(LEVEL.startZ/620)*620);
+ rebuildTerrain(0,Math.round(entry.z/620)*620);positionDistantRidges(0,Math.round(entry.z/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
- camera.position.set(x,ship.position.y+5.3,LEVEL.startZ+12);resetCameraFrame();
+ camera.position.copy(ship.position).addScaledVector(entryForward,-12).addScaledVector(worldUp,5.3);resetCameraFrame();
  releaseInputs();audioCtx?.suspend();missionElapsed=0;briefing.hidden=false;document.body.dataset.state='flight';radio.hidden=true;targetUI.hidden=true;capture.hidden=true;
  updateWorld();updateCamera(1/60);renderer.render(scene,camera);
  updateObjectives();deploy.disabled=true;renderer.domElement.focus();
@@ -391,4 +404,4 @@ function loop(){
 reset();requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 // Read-only diagnostics support repeatable browser verification without an alternate simulation.
-window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:sam.missiles.length>0,samMissiles:sam.missiles.length,samTracking:sam.stage,samTracks:sam.sites.map(s=>s.stage||0),samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,geometry:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE)}),height:terrainHeight,center:valleyCenter});
+window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,entry:mission.entry,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:sam.missiles.length>0,samMissiles:sam.missiles.length,samTracking:sam.stage,samTracks:sam.sites.map(s=>s.stage||0),samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,geometry:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE)}),height:terrainHeight,center:valleyCenter});
