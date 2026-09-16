@@ -9,7 +9,9 @@ const ENTRY_PATTERNS=Object.freeze([
  {id:'LOW_SLOT',z:1480,side:-150,agl:35,aimZ:690,aimSide:-120,aimAgl:48,bank:-.10,speed:220},
  {id:'HIGH_CROSS',z:1700,side:-40,agl:120,aimZ:600,aimSide:160,aimAgl:68,bank:.12,speed:240}
 ]);
-let entryRun=-1;
+function loadEntryRun(){try{const v=Number(sessionStorage.getItem('emberwingEntryRun'));return Number.isFinite(v)?v:-1}catch{return -1}}
+function saveEntryRun(v){try{sessionStorage.setItem('emberwingEntryRun',String(v))}catch{}}
+let entryRun=loadEntryRun();
 // Level 1 is one authored mission, not a hidden difficulty lottery.
 // The player should be able to learn this valley, understand its threat geometry, and improve by mastery.
 const MISSION_VARIANTS=Object.freeze([
@@ -367,7 +369,7 @@ reset=function(){
  Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
- entryRun=(entryRun+1)%ENTRY_PATTERNS.length;
+ entryRun=(entryRun+1)%ENTRY_PATTERNS.length;saveEntryRun(entryRun);
  const entry=ENTRY_PATTERNS[entryRun],x=valleyCenter(entry.z)+entry.side;
  const aimX=valleyCenter(entry.aimZ)+entry.aimSide,startY=terrainHeight(x,entry.z)+entry.agl,aimY=terrainHeight(aimX,entry.aimZ)+entry.aimAgl;
  ship.position.set(x,startY,entry.z);
