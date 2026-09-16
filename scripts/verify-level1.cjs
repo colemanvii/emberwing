@@ -12,10 +12,8 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  page.on('pageerror',e=>{errors.push(e.message);console.log('ERROR',e.message)});
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
  await page.goto(process.env.URL||(local.url+'/play.html'));await page.waitForFunction(()=>window.emberwing);
- // CI exercises ingress-heavy and terminal-heavy patterns; VARIANT selects any of the four for review.
+ // Level 1 is deliberately one authored mission. Repeat runs test mastery, not hidden encounter variants.
  const reckless=process.env.RECKLESS==='1';
- const variant=Number(process.env.VARIANT??(output.includes('run-b')?2:0));
- for(let i=0;i<variant;i++){await page.keyboard.press('r');await page.waitForTimeout(180);}
  const opening=await page.evaluate(()=>emberwing.snapshot());
  if(opening.phase!=='flight')throw Error('Level 1 did not begin in live flight');
  await page.waitForTimeout(350);
