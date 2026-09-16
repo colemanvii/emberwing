@@ -210,7 +210,17 @@ function destroyTarget(){
  if(mission.destroyed)return;
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
- announce('TARGET DESTROYED');for(const site of sam.sites)site.cooldown=Math.min(site.cooldown||0,.22);lockState=lockTimer=0;setSeeker(false);
+ announce('TARGET DESTROYED');
+ mission.detected=true;
+ sam.lastLaunch=Math.min(sam.lastLaunch,missionElapsed-.62);
+ for(const site of sam.sites){
+  if(site.disabled)continue;
+  site.cooldown=Math.min(site.cooldown||0,.08);
+  site.hotUntil=missionElapsed+4.2;
+  site.lock=Math.max(site.lock||0,.68);
+  site.stage=Math.max(site.stage||0,2);
+ }
+ lockState=lockTimer=0;setSeeker(false);
  if(enemyAlive){
   enemyRole='ACE';
   const escapeRange=enemy.position.distanceTo(ship.position);
@@ -263,17 +273,6 @@ function spawnDefender(escape=false){
  duel.speed=escape?TURBO_SPEED+28:TURBO_SPEED+18;
  enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.38:.30));lastEnemy.copy(enemy.position);
 }
-function spawnSecondDefender(){
- const first=activeVariant().bandit;
- spawnEnemy(false);
- enemyRole='ACE';
- const z=-3350,side=-(Math.sign(first.side)||1)*470,x=valleyCenter(z)+side;
- enemy.position.set(x,terrainHeight(x,z)+135,z);
- const crossingPoint=ship.position.clone().addScaledVector(heading(),560);
- const direction=crossingPoint.sub(enemy.position).normalize();
- enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
- duel.speed=TURBO_SPEED+18;enemyDetected=true;enemyTime=0;resetEnemyAttack(.18);resetHostileThreat(.35);lastEnemy.copy(enemy.position);
-}
 // Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
 // but widen the firing solution enough that an oblique crossing pass is a real threat.
 enemyFireSolution=function(){
@@ -300,11 +299,6 @@ function updateMission(dt){
  // defender commits as the player reaches the opening ridge.
  if(!mission.bandit&&(mission.detected||ship.position.z<variant.bandit.trigger)){
   mission.detected=true;mission.bandit=true;spawnDefender();
- }
- // Killing the first fighter buys space, not safety. A second ACE crosses the approach later
- // from the opposite side so a strong run still has another aviation problem to solve.
- if(mission.detected&&!mission.secondBandit&&!enemyAlive&&ship.position.z<-2400&&!mission.destroyed){
-  mission.secondBandit=true;spawnSecondDefender();
  }
  if(mission.destroyed&&!mission.escapeBandit&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
