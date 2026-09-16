@@ -101,7 +101,6 @@ window.scenario={
   assert.ok(traveled>15,'Aircraft must already be moving when Level 1 loads');
 
   const entries=await page.evaluate(()=>scenario.entrySafety());
-  console.log('ENTRY SAFETY',JSON.stringify(entries));
   assert.equal(entries.length,5,'Level 1 should ship five authored opening patterns');
   assert.equal(new Set(entries.map(e=>e.entry)).size,5,'Every opening pattern must be distinct');
   assert.ok(entries.every(e=>!e.crashed),'Every authored opening must survive four seconds hands-off');
