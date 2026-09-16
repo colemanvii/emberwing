@@ -408,3 +408,6 @@ html,body{
  #radio{bottom:174px;font-size:8px;max-width:76vw}
  #health{right:15px;bottom:13px}
 }
+
+#radio[data-tone=status]{color:var(--ew-bone)}
+#radio[data-tone=status]:before{background:var(--ew-bone);box-shadow:none}

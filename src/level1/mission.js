@@ -3,10 +3,10 @@ const LEVEL={startZ:1300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-7200};
 // Four authored pressure patterns reuse the same geography and five physical batteries.
 // They change where the mission leans hardest without adding random enemies or procedural chaos.
 const MISSION_VARIANTS=Object.freeze([
- {id:'RIDGE',sam:[1250,1600,1700,2050,2100],cooldown:2.6,bandit:{trigger:260,z:-420,side:320,alt:115,delay:.55},escape:{trigger:-5900,z:-6500,side:650,alt:150,delay:1.25}},
- {id:'THROAT',sam:[1180,1725,1800,2000,2050],cooldown:2.9,bandit:{trigger:180,z:-620,side:-340,alt:120,delay:.6},escape:{trigger:-6000,z:-6620,side:520,alt:155,delay:1.35}},
- {id:'TERMINAL',sam:[1120,1500,1740,2150,2200],cooldown:3.0,bandit:{trigger:120,z:-760,side:360,alt:125,delay:.65},escape:{trigger:-5850,z:-6400,side:-620,alt:160,delay:1.2}},
- {id:'CROSSWIND',sam:[1320,1540,1620,2100,2150],cooldown:2.8,bandit:{trigger:220,z:-520,side:-320,alt:110,delay:.55},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
+ {id:'RIDGE',sam:[1250,1600,1700,2050,2100],cooldown:2.6,bandit:{trigger:700,z:100,side:260,alt:105,delay:.28},escape:{trigger:-5900,z:-6500,side:650,alt:150,delay:1.25}},
+ {id:'THROAT',sam:[1180,1725,1800,2000,2050],cooldown:2.9,bandit:{trigger:660,z:40,side:-275,alt:110,delay:.30},escape:{trigger:-6000,z:-6620,side:520,alt:155,delay:1.35}},
+ {id:'TERMINAL',sam:[1120,1500,1740,2150,2200],cooldown:3.0,bandit:{trigger:620,z:0,side:290,alt:115,delay:.32},escape:{trigger:-5850,z:-6400,side:-620,alt:160,delay:1.2}},
+ {id:'CROSSWIND',sam:[1320,1540,1620,2100,2150],cooldown:2.8,bandit:{trigger:680,z:80,side:-260,alt:105,delay:.28},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
 ]);
 let missionRun=-1;
 const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
@@ -95,10 +95,11 @@ samLineClear=site=>lineClear(site.position,ship.position,6)&&!scenerySegmentHit(
 function clockBearing(pos){const p=pos.clone().sub(ship.position).applyQuaternion(ship.quaternion.clone().invert());return ((Math.round(Math.atan2(p.x,-p.z)*6/Math.PI)+12)%12)||12;}
 function announce(text){
  if(mission.phase!=='flight')return;
- const message=/SAM LAUNCH/.test(text)?'MISSILE INBOUND':/RADAR TRACK|SAM TRACK/.test(text)?'SAM TRACKING':/TARGET DESTROYED/.test(text)?'TARGET DESTROYED · EXIT NORTH':null;
+ const message=/SAM LAUNCH/.test(text)?'MISSILE INBOUND · '+(sam.site?clockBearing(sam.site.position)+" O'CLOCK":'BREAK'):/MISSILE INBOUND/.test(text)?text:/RADAR TRACK|SAM TRACK/.test(text)?'SAM TRACKING':/BANDIT AHEAD|(?:ROOKIE|SKIMMER|CLIMBER|ACE) INBOUND/.test(text)?'BANDIT · '+clockBearing(enemy.position)+" O'CLOCK":/HOSTILE GUNS/.test(text)?'HOSTILE GUNS · BREAK':/TARGET DESTROYED/.test(text)?'TARGET DESTROYED · EXIT NORTH':null;
  if(!message)return;
- if(missionElapsed-mission.lastMessage<4&&!/TARGET|INBOUND/.test(message))return;
- mission.lastMessage=missionElapsed;mission.messageUntil=missionElapsed+2.6;radio.textContent=message;
+ const gap=/TARGET|INBOUND|BANDIT|HOSTILE GUNS/.test(message)?1.1:4;
+ if(missionElapsed-mission.lastMessage<gap)return;
+ mission.lastMessage=missionElapsed;mission.messageUntil=missionElapsed+2.6;radio.textContent=message;radio.dataset.tone=/TARGET DESTROYED/.test(message)?'status':'threat';
 }
 function releaseInputs(){for(const k in keys)keys[k]=false;releaseTouch();silence();}
 addEventListener('blur',releaseInputs);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseInputs();});
@@ -245,8 +246,8 @@ function spawnDefender(escape=false){
  const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?300:500);
  const direction=crossingPoint.sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
- duel.speed=escape?TURBO_SPEED-8:CRUISE_SPEED+30;
- enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.45:.65));lastEnemy.copy(enemy.position);
+ duel.speed=escape?TURBO_SPEED-4:TURBO_SPEED-6;
+ enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.38:.30));lastEnemy.copy(enemy.position);
 }
 function spawnSecondDefender(){
  const first=activeVariant().bandit;
@@ -262,11 +263,11 @@ function spawnSecondDefender(){
 // Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
 // but widen the firing solution enough that an oblique crossing pass is a real threat.
 enemyFireSolution=function(){
- if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<.65||duel.state==='extend'||duel.state==='break')return false;
+ if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<.35||duel.state==='extend'||duel.state==='break')return false;
  const aim=ship.position.clone().sub(enemy.position),range=aim.length();
- if(range<55||range>(mission.destroyed?700:660))return false;
+ if(range<50||range>(mission.destroyed?820:760))return false;
  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();
- const cone=mission.destroyed?.82:.86;
+ const cone=mission.destroyed?.78:.82;
  return forward.dot(aim.multiplyScalar(1/Math.max(range,.001)))>cone&&enemyLOS();
 };
 function updateMission(dt){
@@ -310,6 +311,24 @@ const flightCrash=crashNow;
 crashNow=function(reason){flightCrash(reason);audioCtx?.suspend();releaseInputs();};
 const roadMaterial=new THREE.MeshStandardMaterial({color:0x655d4c,roughness:1});
 const serviceRoad=new THREE.Mesh(new THREE.BufferGeometry(),roadMaterial);scene.add(serviceRoad);
+
+// The launch assignment reads as one severe object in the basin: part weapon,
+// part future ruin. Keep the rocket mechanically legible inside a monolithic frame.
+towerMat.color.setHex(0x3f403b);towerMat.roughness=.92;towerMat.metalness=.08;
+beaconMat.color.setHex(0xff523f);beaconMat.transparent=true;beaconMat.opacity=.78;
+const relicStoneMat=new THREE.MeshStandardMaterial({color:0x8e897e,roughness:.98,metalness:0});
+const relicVoidMat=new THREE.MeshStandardMaterial({color:0x141817,roughness:.86,metalness:.08});
+const launchRelic=new THREE.Group();launchRelic.name='Launch relic shell';launchSite.add(launchRelic);
+function relicSlab(w,h,d,x,y,z,mat=relicStoneMat){
+ const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+ mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;launchRelic.add(mesh);return mesh;
+}
+relicSlab(98,11,78,0,-85,1);
+const relicLeft=relicSlab(14,154,19,-37,-8,1),relicRight=relicSlab(14,154,19,37,-8,1);
+relicLeft.rotation.z=-.024;relicRight.rotation.z=.024;
+relicSlab(84,12,19,0,64,1);
+relicSlab(58,126,4,0,-10,-14,relicVoidMat);
+relicSlab(44,4,8,0,20,-8,relicStoneMat);
 function seatServiceRoad(){
  const positions=[],indices=[];
  for(let i=0;i<=60;i++){
