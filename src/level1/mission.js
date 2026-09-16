@@ -215,10 +215,10 @@ function destroyTarget(){
  sam.lastLaunch=Math.min(sam.lastLaunch,missionElapsed-.62);
  for(const site of sam.sites){
   if(site.disabled)continue;
-  site.cooldown=Math.min(site.cooldown||0,.08);
-  site.hotUntil=missionElapsed+4.2;
-  site.lock=Math.max(site.lock||0,.68);
-  site.stage=Math.max(site.stage||0,2);
+  site.cooldown=Math.min(site.cooldown||0,.28);
+  site.hotUntil=missionElapsed+3.2;
+  site.lock=Math.max(site.lock||0,.38);
+  site.stage=Math.max(site.stage||0,1);
  }
  lockState=lockTimer=0;setSeeker(false);
  if(enemyAlive){
@@ -230,7 +230,7 @@ function destroyTarget(){
    const intercept=ship.position.clone().addScaledVector(f,220).sub(enemy.position).normalize();
    enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),intercept);enemyCourse.copy(intercept);duel.forward.copy(intercept);
   }
-  duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED+24);enemyTime=Math.max(enemyTime,1);resetEnemyAttack(.12);resetHostileThreat(.22);announce('BANDIT · SIX O\'CLOCK');
+  duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED+18);enemyTime=Math.max(enemyTime,.8);resetEnemyAttack(.28);resetHostileThreat(.5);announce('BANDIT · SIX O\'CLOCK');
  }else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
