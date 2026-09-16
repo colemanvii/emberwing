@@ -49,7 +49,7 @@ function fireMissile(){if(crashed||missionComplete||missionCompleteTimer>0||!ene
 function removeHostileMissile(){if(!hostileMissile)return;hostileMissile.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))for(const m of o.material)m.dispose();else o.material.dispose()}});scene.remove(hostileMissile.mesh);hostileMissile=null}
 function resetHostileThreat(delay=4){removeHostileMissile();hostileLock=0;hostileLockStage=0;hostileLaunchDelay=0;hostileMissileCooldown=delay}
 function hostileMissileBurst(pos){for(let i=0;i<12;i++){const mesh=new THREE.Mesh(new THREE.SphereGeometry(.14+Math.random()*.24,5,4),new THREE.MeshBasicMaterial({color:i%3?0xff5738:0xffffff,transparent:true,opacity:.92,blending:THREE.AdditiveBlending,depthWrite:false}));mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*2.4,(Math.random()-.5)*2.4,(Math.random()-.5)*2.4));scene.add(mesh);const v=new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize().multiplyScalar(18+Math.random()*25),life=.28+Math.random()*.18;combatFX.push({mesh,v,life,maxLife:life,smoke:false})}}
-function hostileLockSolution(){if((worldIndex===0&&!mission.detected)||enemyRole!=='ACE'||!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<.85)return false;const toShip=ship.position.clone().sub(enemy.position),range=toShip.length();if(range<115||range>760)return false;const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();return forward.dot(toShip.multiplyScalar(1/Math.max(range,.001)))>.68&&enemyLOS()}
+function hostileLockSolution(){if((worldIndex===0&&!mission.detected)||enemyRole!=='ACE'||!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<1.15)return false;const toShip=ship.position.clone().sub(enemy.position),range=toShip.length();if(range<130||range>680)return false;const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();return forward.dot(toShip.multiplyScalar(1/Math.max(range,.001)))>.72&&enemyLOS()}
 function playerBreakingLock(){const up=worldUp.clone().applyQuaternion(ship.quaternion),bank=Math.abs(Math.atan2(up.x,up.y)),pulling=keys.ArrowUp||keys.ArrowDown;return bank>.52&&(pulling||burner>.52)}
 function launchHostileMissile(){const m=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.17,.22,2.7,8),new THREE.MeshStandardMaterial({color:0x2b3036,metalness:.55,roughness:.38})),tip=new THREE.Mesh(new THREE.ConeGeometry(.2,.7,8),new THREE.MeshBasicMaterial({color:0xff4b32})),flame=new THREE.Mesh(new THREE.ConeGeometry(.18,1.8,8),new THREE.MeshBasicMaterial({color:0xff3b24,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false}));body.rotation.x=Math.PI/2;tip.rotation.x=-Math.PI/2;tip.position.z=-1.7;flame.rotation.x=-Math.PI/2;flame.position.z=2.1;m.add(body,tip,flame);const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();m.position.copy(enemy.position).addScaledVector(forward,5.4);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),forward);scene.add(m);hostileMissile={mesh:m,v:forward.multiplyScalar(205),life:5.4,age:0,trailClock:0,warnClock:0,near:false};hostileLock=0;hostileLockStage=0;hostileLaunchDelay=0;hostileMissileCooldown=8.5;announce('MISSILE INBOUND · '+clockBearing(enemy.position)+" O'CLOCK — BREAK");flashScreen(.12);chirp(1120,.08,.045);chirp(1480,.12,.04,.09)}
 function updateHostileMissileFlight(dt){const h=hostileMissile;h.life-=dt;h.age+=dt;h.trailClock-=dt;h.warnClock-=dt;if(h.warnClock<=0){chirp(980,.045,.026);h.warnClock=.38}if(h.trailClock<=0){spawnMissileTrail(h.mesh.position,h.v);h.trailClock=.035}const previous=h.mesh.position.clone(),shipForward=new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).normalize(),lead=ship.position.clone().addScaledVector(shipForward,speed*.12),desired=lead.sub(h.mesh.position).normalize().multiplyScalar(228),turn=1-Math.exp(-dt*2.15);h.v.lerp(desired,turn);h.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),h.v.clone().normalize());h.mesh.position.addScaledVector(h.v,dt);const travel=h.mesh.position.clone().sub(previous),toShip=ship.position.clone().sub(previous),u=THREE.MathUtils.clamp(toShip.dot(travel)/Math.max(travel.lengthSq(),.001),0,1),closest=previous.clone().addScaledVector(travel,u),hit=closest.distanceToSquared(ship.position)<49;if(!h.near&&!hit&&closest.distanceToSquared(ship.position)<400){h.near=true;hostileNearMiss()}let blocked=h.mesh.position.y<=terrainHeight(h.mesh.position.x,h.mesh.position.z)+1;for(const m of scenery){if(blocked||!m.visible)continue;const dx=h.mesh.position.x-m.position.x,dz=h.mesh.position.z-m.position.z,r=(m.userData.collisionR||0)+1;if(dx*dx+dz*dz<r*r&&Math.abs(h.mesh.position.y-m.position.y)<(m.userData.collisionH||8)+1)blocked=true}if(hit){const p=h.mesh.position.clone();removeHostileMissile();hostileMissileBurst(p);hitKick=Math.max(hitKick,1);flashScreen(.34);chirp(58,.15,.06);hitPlayer();return}if(blocked||h.life<=0){const p=h.mesh.position.clone();removeHostileMissile();hostileMissileBurst(p);announce(blocked?'MISSILE DEFEATED':'MISSILE EVADED');chirp(430,.07,.035);chirp(690,.08,.025,.06)}}
@@ -1087,10 +1087,10 @@ const LEVEL={startZ:1300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-7200};
 // Four authored pressure patterns reuse the same geography and five physical batteries.
 // They change where the mission leans hardest without adding random enemies or procedural chaos.
 const MISSION_VARIANTS=Object.freeze([
- {id:'RIDGE',sam:[1250,1600,1700,2050,2100],cooldown:2.6,bandit:{trigger:700,z:100,side:260,alt:105,delay:.28},escape:{trigger:-5900,z:-6500,side:650,alt:150,delay:1.25}},
- {id:'THROAT',sam:[1180,1725,1800,2000,2050],cooldown:2.9,bandit:{trigger:660,z:40,side:-275,alt:110,delay:.30},escape:{trigger:-6000,z:-6620,side:520,alt:155,delay:1.35}},
- {id:'TERMINAL',sam:[1120,1500,1740,2150,2200],cooldown:3.0,bandit:{trigger:620,z:0,side:290,alt:115,delay:.32},escape:{trigger:-5850,z:-6400,side:-620,alt:160,delay:1.2}},
- {id:'CROSSWIND',sam:[1320,1540,1620,2100,2150],cooldown:2.8,bandit:{trigger:680,z:80,side:-260,alt:105,delay:.28},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
+ {id:'RIDGE',sam:[1250,1600,1700,2050,2100],cooldown:2.6,bandit:{trigger:260,z:-420,side:320,alt:115,delay:.55},escape:{trigger:-5900,z:-6500,side:650,alt:150,delay:1.25}},
+ {id:'THROAT',sam:[1180,1725,1800,2000,2050],cooldown:2.9,bandit:{trigger:180,z:-620,side:-340,alt:120,delay:.6},escape:{trigger:-6000,z:-6620,side:520,alt:155,delay:1.35}},
+ {id:'TERMINAL',sam:[1120,1500,1740,2150,2200],cooldown:3.0,bandit:{trigger:120,z:-760,side:360,alt:125,delay:.65},escape:{trigger:-5850,z:-6400,side:-620,alt:160,delay:1.2}},
+ {id:'CROSSWIND',sam:[1320,1540,1620,2100,2150],cooldown:2.8,bandit:{trigger:220,z:-520,side:-320,alt:110,delay:.55},escape:{trigger:-6100,z:-6700,side:700,alt:165,delay:1.4}}
 ]);
 let missionRun=-1;
 const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
@@ -1179,10 +1179,9 @@ samLineClear=site=>lineClear(site.position,ship.position,6)&&!scenerySegmentHit(
 function clockBearing(pos){const p=pos.clone().sub(ship.position).applyQuaternion(ship.quaternion.clone().invert());return ((Math.round(Math.atan2(p.x,-p.z)*6/Math.PI)+12)%12)||12;}
 function announce(text){
  if(mission.phase!=='flight')return;
- const message=/SAM LAUNCH/.test(text)?'MISSILE INBOUND · '+(sam.site?clockBearing(sam.site.position)+" O'CLOCK":'BREAK'):/MISSILE INBOUND/.test(text)?text:/RADAR TRACK|SAM TRACK/.test(text)?'SAM TRACKING':/BANDIT AHEAD|(?:ROOKIE|SKIMMER|CLIMBER|ACE) INBOUND/.test(text)?'BANDIT · '+clockBearing(enemy.position)+" O'CLOCK":/HOSTILE GUNS/.test(text)?'HOSTILE GUNS · BREAK':/TARGET DESTROYED/.test(text)?'TARGET DESTROYED · EXIT NORTH':null;
+ const message=/SAM LAUNCH/.test(text)?'MISSILE INBOUND':/RADAR TRACK|SAM TRACK/.test(text)?'SAM TRACKING':/TARGET DESTROYED/.test(text)?'TARGET DESTROYED · EXIT NORTH':null;
  if(!message)return;
- const gap=/TARGET|INBOUND|BANDIT|HOSTILE GUNS/.test(message)?1.1:4;
- if(missionElapsed-mission.lastMessage<gap)return;
+ if(missionElapsed-mission.lastMessage<4&&!/TARGET|INBOUND/.test(message))return;
  mission.lastMessage=missionElapsed;mission.messageUntil=missionElapsed+2.6;radio.textContent=message;
 }
 function releaseInputs(){for(const k in keys)keys[k]=false;releaseTouch();silence();}
@@ -1330,8 +1329,8 @@ function spawnDefender(escape=false){
  const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?300:500);
  const direction=crossingPoint.sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
- duel.speed=escape?TURBO_SPEED-4:TURBO_SPEED-6;
- enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.38:.30));lastEnemy.copy(enemy.position);
+ duel.speed=escape?TURBO_SPEED-8:CRUISE_SPEED+30;
+ enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.45:.65));lastEnemy.copy(enemy.position);
 }
 function spawnSecondDefender(){
  const first=activeVariant().bandit;
@@ -1347,11 +1346,11 @@ function spawnSecondDefender(){
 // Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
 // but widen the firing solution enough that an oblique crossing pass is a real threat.
 enemyFireSolution=function(){
- if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<.35||duel.state==='extend'||duel.state==='break')return false;
+ if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<.65||duel.state==='extend'||duel.state==='break')return false;
  const aim=ship.position.clone().sub(enemy.position),range=aim.length();
- if(range<50||range>(mission.destroyed?820:760))return false;
+ if(range<55||range>(mission.destroyed?700:660))return false;
  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();
- const cone=mission.destroyed?.78:.82;
+ const cone=mission.destroyed?.82:.86;
  return forward.dot(aim.multiplyScalar(1/Math.max(range,.001)))>cone&&enemyLOS();
 };
 function updateMission(dt){
