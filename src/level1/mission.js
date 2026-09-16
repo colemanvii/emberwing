@@ -211,7 +211,17 @@ function destroyTarget(){
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
  announce('TARGET DESTROYED');for(const site of sam.sites)site.cooldown=Math.min(site.cooldown||0,.22);lockState=lockTimer=0;setSeeker(false);
- if(enemyAlive){enemyRole='ACE';duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED-8);resetEnemyAttack(.25);resetHostileThreat(.65);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
+ if(enemyAlive){
+  enemyRole='ACE';
+  const escapeRange=enemy.position.distanceTo(ship.position);
+  if(escapeRange>720){
+   const f=heading().clone(),r=new THREE.Vector3().crossVectors(f,worldUp).normalize(),rear=ship.position.clone().addScaledVector(f,-430).addScaledVector(r,duel.side*150);
+   rear.y=Math.max(terrainHeight(rear.x,rear.z)+95,ship.position.y+45);enemy.position.copy(rear);
+   const intercept=ship.position.clone().addScaledVector(f,220).sub(enemy.position).normalize();
+   enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),intercept);enemyCourse.copy(intercept);duel.forward.copy(intercept);
+  }
+  duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED+24);enemyTime=Math.max(enemyTime,1);resetEnemyAttack(.12);resetHostileThreat(.22);announce('BANDIT · SIX O\'CLOCK');
+ }else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -250,7 +260,7 @@ function spawnDefender(escape=false){
  const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?300:500);
  const direction=crossingPoint.sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
- duel.speed=escape?TURBO_SPEED-4:TURBO_SPEED-6;
+ duel.speed=escape?TURBO_SPEED+28:TURBO_SPEED+18;
  enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.38:.30));lastEnemy.copy(enemy.position);
 }
 function spawnSecondDefender(){
@@ -262,7 +272,7 @@ function spawnSecondDefender(){
  const crossingPoint=ship.position.clone().addScaledVector(heading(),560);
  const direction=crossingPoint.sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
- duel.speed=TURBO_SPEED-10;enemyDetected=true;enemyTime=0;resetEnemyAttack(.28);resetHostileThreat(.6);lastEnemy.copy(enemy.position);
+ duel.speed=TURBO_SPEED+18;enemyDetected=true;enemyTime=0;resetEnemyAttack(.18);resetHostileThreat(.35);lastEnemy.copy(enemy.position);
 }
 // Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
 // but widen the firing solution enough that an oblique crossing pass is a real threat.
@@ -296,7 +306,7 @@ function updateMission(dt){
  if(mission.detected&&!mission.secondBandit&&!enemyAlive&&ship.position.z<-2400&&!mission.destroyed){
   mission.secondBandit=true;spawnSecondDefender();
  }
- if(mission.destroyed&&!mission.escapeBandit&&ship.position.z<variant.escape.trigger&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
+ if(mission.destroyed&&!mission.escapeBandit&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
   missionComplete=true;mission.phase='complete';finalTime=missionElapsed;releaseInputs();removeSamMissile();removeHostileMissile();
   const previousBest=bestTime,newBest=finalTime<previousBest;
