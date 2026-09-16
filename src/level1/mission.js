@@ -4,10 +4,10 @@ const LEVEL={startZ:1300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-8500};
 // These cycle deterministically so runs feel different without turning difficulty into RNG.
 const ENTRY_PATTERNS=Object.freeze([
  {id:'WEST_SCRAPE',z:1560,side:-260,agl:48,aimZ:680,aimSide:-90,aimAgl:55,bank:-.20,speed:225},
- {id:'RIDGE_DROP',z:1760,side:110,agl:155,aimZ:640,aimSide:-80,aimAgl:55,bank:.18,speed:235},
- {id:'EAST_KNIFE',z:1620,side:290,agl:60,aimZ:620,aimSide:20,aimAgl:65,bank:.28,speed:245},
+ {id:'RIDGE_DROP',z:1760,side:110,agl:160,aimZ:640,aimSide:-80,aimAgl:118,bank:.08,speed:235},
+ {id:'EAST_KNIFE',z:1620,side:290,agl:88,aimZ:620,aimSide:20,aimAgl:112,bank:.12,speed:245},
  {id:'LOW_SLOT',z:1480,side:-150,agl:35,aimZ:690,aimSide:-120,aimAgl:48,bank:-.10,speed:220},
- {id:'HIGH_CROSS',z:1700,side:-40,agl:120,aimZ:600,aimSide:160,aimAgl:68,bank:.12,speed:240}
+ {id:'HIGH_CROSS',z:1700,side:-40,agl:138,aimZ:600,aimSide:160,aimAgl:120,bank:.06,speed:240}
 ]);
 function loadEntryRun(){try{const v=Number(sessionStorage.getItem('emberwingEntryRun'));return Number.isFinite(v)?v:-1}catch{return -1}}
 function saveEntryRun(v){try{sessionStorage.setItem('emberwingEntryRun',String(v))}catch{}}
