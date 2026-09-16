@@ -373,7 +373,7 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(200)+190,200],[valleyCenter(-1450)-500,-1450],[valleyCenter(-3150)+500,-3150],[valleyCenter(-5300)+470,-5300],[valleyCenter(-6520)-520,-6520]];
+ const specs=[[valleyCenter(200)+190,200],[valleyCenter(-1450)-500,-1450],[valleyCenter(-3150)+500,-3150],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  variant.sam.forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
