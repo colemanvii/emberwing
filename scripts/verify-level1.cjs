@@ -19,13 +19,19 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  await page.waitForTimeout(350);
  await page.screenshot({path:path.join(output,'opening.png')});
  async function keys(next){for(const k of held)if(!next.has(k)){await page.keyboard.up(k);held.delete(k)}for(const k of next)if(!held.has(k)){await page.keyboard.down(k);held.add(k)}}
- let lastLog=-10,lastShot=-10;
+ let lastLog=-10,lastShot=-10,recklessPunished=false;
  const events={};
  const started=Date.now();
  while(Date.now()-started<(reckless?120000:420000)){
   const s=await page.evaluate(()=>{const s=emberwing.snapshot(),z=s.position[2];return {...s,center:emberwing.center(z-550),aheadFloor:emberwing.height(s.position[0],z-220)}});
   if(s.elapsed-lastLog>1){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,destroyed:s.destroyed}));}
   const z=s.position[2];
+  if(reckless&&s.hp<=1&&z<-2200){
+   recklessPunished=true;
+   await page.screenshot({path:path.join(output,'reckless-critical.png')});
+   samples.push(s);
+   break;
+  }
   for(const [event,active] of [['targetVisible',s.geometry.onscreen],['targetAcquired',s.selected==='ground'&&s.lock===2],['strike',s.destroyed]])if(active&&!events[event]){events[event]={time:s.elapsed,position:s.position,altitude:s.altitude};await page.screenshot({path:path.join(output,event+'.png')});}
   for(const [name,threshold] of [['approach',1200],['escarpment',850],['dogleg',250],['valley',-150],['bandit',-500],['throat',-1900],['pre-reveal',-4400],['headland',-5000],['reveal',-5200],['attack',-5450],['post-strike',-5800],['escape',-6200],['breakout',-7000]])if(z<threshold&&!captured.has(name)){captured.add(name);await page.screenshot({path:path.join(output,name+'.png')});}
   if(s.destroyed&&!captured.has('destruction')){captured.add('destruction');await page.screenshot({path:path.join(output,'destruction.png')});}
@@ -80,9 +86,9 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  const terminal=samples.at(-1),tookHostileDamage=samples.some(sample=>sample.hp<3);
  await browser.close();if(local)await local.close();
  if(reckless){
-  if(errors.length||terminal?.complete||!terminal?.crashed||!tookHostileDamage){
-   console.error('RECKLESS REGRESSION',JSON.stringify({complete:terminal?.complete,crashed:terminal?.crashed,hp:terminal?.hp,tookHostileDamage}));
+  if(errors.length||terminal?.complete||!tookHostileDamage||!recklessPunished){
+   console.error('RECKLESS REGRESSION',JSON.stringify({complete:terminal?.complete,crashed:terminal?.crashed,hp:terminal?.hp,tookHostileDamage,recklessPunished}));
    process.exitCode=1;
-  }else console.log('PASS: reckless centerline took hostile damage and failed to extract');
+  }else console.log('PASS: reckless centerline reaches critical damage before the terminal half');
  }else if(errors.length||!terminal?.complete)process.exitCode=1;
 })().catch(error=>{console.error(error);process.exitCode=1;});
