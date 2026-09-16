@@ -58,10 +58,11 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let desiredBank=clamp(yawError*1.8,-.58,.58);
   if(missileBreak){
    desiredBank=(x<s.center?1:-1)*.72;
-   desiredPitch=Math.max(desiredPitch,.08);
+   // Defeat the shot with a lateral terrain break, not a panic climb into the radar picture.
+   desiredPitch=s.altitude>72?Math.min(desiredPitch,-.08):Math.min(desiredPitch,.012);
   }else if(banditBreak&&s.banditPosition){
    desiredBank=(x<s.center?1:-1)*.66;
-   desiredPitch=Math.max(desiredPitch,.05);
+   desiredPitch=s.altitude>88?Math.min(desiredPitch,-.055):Math.min(desiredPitch,.018);
   }
   const next=new Set();
   if(bank<desiredBank-.045)next.add('ArrowRight');else if(bank>desiredBank+.045)next.add('ArrowLeft');
