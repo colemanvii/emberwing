@@ -13,6 +13,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
  await page.goto(process.env.URL||(local.url+'/play.html'));await page.waitForFunction(()=>window.emberwing);
  // CI exercises ingress-heavy and terminal-heavy patterns; VARIANT selects any of the four for review.
+ const reckless=process.env.RECKLESS==='1';
  const variant=Number(process.env.VARIANT??(output.includes('run-b')?2:0));
  for(let i=0;i<variant;i++){await page.keyboard.press('r');await page.waitForTimeout(180);}
  const opening=await page.evaluate(()=>emberwing.snapshot());
@@ -23,7 +24,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  let lastLog=-10,lastShot=-10;
  const events={};
  const started=Date.now();
- while(Date.now()-started<420000){
+ while(Date.now()-started<(reckless?120000:420000)){
   const s=await page.evaluate(()=>{const s=emberwing.snapshot(),z=s.position[2];return {...s,center:emberwing.center(z-550),aheadFloor:emberwing.height(s.position[0],z-220)}});
   if(s.elapsed-lastLog>1){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,destroyed:s.destroyed}));}
   const z=s.position[2];
@@ -34,19 +35,21 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const [x,y]=s.position,[qx,qy,qz,qw]=s.quaternion;
   const bank=Math.atan2(-2*(qx*qy+qw*qz),1-2*(qx*qx+qz*qz)),pitch=Math.asin(clamp(s.forward[1],-1,1)),yaw=Math.atan2(s.forward[0],-s.forward[2]);
   let targetX=s.center;
-  // Follow the natural westward dogleg around the eastern escarpment without treating it like a binary lane choice.
-  if(z<1180&&z>-260)targetX=s.center-120;
-  // Read the western shoulder, then turn toward the installation once around the headland.
-  if(z<-3600&&z>-4900)targetX=s.center-130;
+  if(!reckless){
+   // Follow the natural westward dogleg around the eastern escarpment without treating it like a binary lane choice.
+   if(z<1180&&z>-260)targetX=s.center-120;
+   // Read the western shoulder, then turn toward the installation once around the headland.
+   if(z<-3600&&z>-4900)targetX=s.center-130;
+   // Break west after impact: flying through the surviving launch tower is still a collision.
+   if(s.destroyed&&z>-6100)targetX=s.center-180;
+  }
   if(z<=-4900&&z>-5900&&!s.destroyed)targetX=s.target[0];
-  // Break west after impact: flying through the surviving launch tower is still a collision.
-  if(s.destroyed&&z>-6100)targetX=s.center-180;
-  const altitude=Number(process.env.ALTITUDE||50);
+  const altitude=Number(process.env.ALTITUDE||(reckless?110:50));
   let desiredY=s.aheadFloor+altitude;
-  if(z<-5150&&!s.destroyed)desiredY=s.target[1]+65;
-  // Accelerate out of exposure while preserving terrain cover instead of climbing at every warning.
-  const missileBreak=s.samMissile;
-  const banditBreak=s.banditRange!==null&&s.banditRange<245;
+  if(z<-5150&&!s.destroyed)desiredY=s.target[1]+(reckless?95:65);
+  // The normal pilot reacts. The reckless regression pilot deliberately ignores every warning.
+  const missileBreak=!reckless&&s.samMissile;
+  const banditBreak=!reckless&&s.banditRange!==null&&s.banditRange<245;
   let desiredPitch=clamp((desiredY-y)/480,-.21,.18);
 
   const aiming=z<-4900&&z>-5480&&!s.destroyed;
@@ -63,7 +66,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const next=new Set();
   if(bank<desiredBank-.045)next.add('ArrowRight');else if(bank>desiredBank+.045)next.add('ArrowLeft');
   if(pitch<desiredPitch-.016)next.add('ArrowDown');else if(pitch>desiredPitch+.016)next.add('ArrowUp');
-  if(missileBreak||banditBreak||(z<-1900&&z>-3500)||(s.destroyed&&z<-5900))next.add('Shift');
+  if(reckless||missileBreak||banditBreak||(z<-1900&&z>-3500)||(s.destroyed&&z<-5900))next.add('Shift');
   if(!s.destroyed&&s.geometry.state&&s.selected!=='ground'&&!s.seeker)next.add('KeyX');
   if(!s.destroyed&&s.geometry.state&&!s.missile&&s.elapsed-lastShot>2){
    if(s.lock===2&&s.selected==='ground'){lastShot=s.elapsed;}
@@ -75,6 +78,12 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  await keys(new Set());
  fs.writeFileSync(path.join(output,'flight-log.json'),JSON.stringify({errors,events,samples},null,2));
  await page.keyboard.press('r');await page.waitForTimeout(500);console.log('RESET',await page.evaluate(()=>emberwing.snapshot()));
+ const terminal=samples.at(-1),tookHostileDamage=samples.some(sample=>sample.hp<3);
  await browser.close();if(local)await local.close();
- if(errors.length||!samples.at(-1)?.complete)process.exitCode=1;
+ if(reckless){
+  if(errors.length||terminal?.complete||!terminal?.crashed||!tookHostileDamage){
+   console.error('RECKLESS REGRESSION',JSON.stringify({complete:terminal?.complete,crashed:terminal?.crashed,hp:terminal?.hp,tookHostileDamage}));
+   process.exitCode=1;
+  }else console.log('PASS: reckless centerline took hostile damage and failed to extract');
+ }else if(errors.length||!terminal?.complete)process.exitCode=1;
 })().catch(error=>{console.error(error);process.exitCode=1;});
