@@ -25,3 +25,386 @@ button:disabled{opacity:.42;cursor:wait}.controls{font-size:6px;line-height:1.6;
 @media(prefers-reduced-motion:reduce){#objectives li,#objectives span{transition:none}}
 
 #complete .runTime{font-size:clamp(30px,6vw,48px);letter-spacing:.08em;color:#ece9df;margin:-4px 0 8px}#complete .best{color:#b8b9ad;letter-spacing:.12em}#complete .best.new{color:#9fbd9e}
+
+/* EW DESIGN PASS — archaeological industrial restraint */
+:root{
+ --ew-ink:#0b0e0d;
+ --ew-bone:#ece9df;
+ --ew-ash:#b7b5ab;
+ --ew-dim:rgba(236,233,223,.42);
+ --ew-hair:rgba(236,233,223,.16);
+ --ew-hair-strong:rgba(236,233,223,.34);
+ --ew-signal:#ff523f;
+ --ew-signal-soft:rgba(255,82,63,.24);
+ --ew-warm:#cbbd9d;
+}
+html,body{
+ background:var(--ew-ink);
+ color:var(--ew-bone);
+ font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+ -webkit-font-smoothing:antialiased;
+}
+#hud{ text-shadow:0 1px 12px rgba(0,0,0,.34) }
+
+/* Briefing: editorial, not a game card. */
+#briefing{
+ left:max(30px,3.2vw);
+ bottom:max(30px,4.2vh);
+ text-shadow:0 2px 18px rgba(0,0,0,.48);
+}
+.eyebrow,.controls,#objectives:before,#runClock,#radio,#health,#complete small,#crash small{
+ font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+}
+.eyebrow{
+ margin:0 0 10px;
+ font-size:7px;
+ font-weight:500;
+ letter-spacing:.28em;
+ color:rgba(236,233,223,.52);
+}
+#briefing h1{
+ margin:0 0 9px;
+ font-size:clamp(22px,2.4vw,34px);
+ line-height:.98;
+ font-weight:500;
+ letter-spacing:.035em;
+ color:var(--ew-bone);
+}
+.orders{
+ max-width:680px;
+ margin:0;
+ font-size:8px;
+ font-weight:500;
+ line-height:1.6;
+ letter-spacing:.16em;
+ color:rgba(236,233,223,.58);
+}
+.controls{
+ margin-top:13px;
+ font-size:6px;
+ letter-spacing:.11em;
+ color:rgba(236,233,223,.30);
+}
+
+/* Instrumentation floats in space. No cockpit-card chrome. */
+#objectives{
+ top:max(76px,calc(env(safe-area-inset-top) + 58px));
+ left:max(28px,env(safe-area-inset-left));
+ min-width:0;
+ width:208px;
+ margin:0;
+ padding:25px 0 0;
+ background:none;
+ border:0;
+ clip-path:none;
+ backdrop-filter:none;
+ -webkit-backdrop-filter:none;
+ font-size:9px;
+ line-height:2.1;
+ letter-spacing:.11em;
+ color:rgba(236,233,223,.42);
+ text-transform:uppercase;
+}
+#objectives:before{
+ content:'EW-01  /  MISSION';
+ left:0;
+ top:0;
+ font-size:6px;
+ font-weight:500;
+ letter-spacing:.24em;
+ color:rgba(236,233,223,.36);
+}
+#objectives:after{
+ content:'';
+ position:absolute;
+ left:0;
+ top:14px;
+ width:128px;
+ height:1px;
+ background:linear-gradient(90deg,var(--ew-hair-strong),transparent);
+}
+#objectives li{
+ min-height:19px;
+ padding-left:16px;
+ opacity:.46;
+ color:rgba(236,233,223,.58);
+ transform:none;
+ transition:opacity .24s ease,color .24s ease,transform .24s ease;
+}
+#objectives span{
+ left:0;
+ width:9px;
+ color:var(--ew-bone);
+ font-size:7px;
+ letter-spacing:0;
+}
+#objectives li[data-done=true]{
+ color:rgba(236,233,223,.32);
+ opacity:.8;
+}
+#objectives li[data-active=true]{
+ color:var(--ew-bone);
+ opacity:1;
+ transform:none;
+}
+#objectives li[data-active=true]:before{
+ content:'';
+ left:0;
+ top:50%;
+ width:7px;
+ height:1px;
+ background:var(--ew-bone);
+ box-shadow:none;
+}
+
+/* Timer: almost metadata. */
+#runClock{
+ top:max(78px,calc(env(safe-area-inset-top) + 60px));
+ right:max(28px,env(safe-area-inset-right));
+ color:rgba(236,233,223,.52);
+ letter-spacing:.13em;
+ text-shadow:none;
+}
+#runTime{
+ font-size:10px;
+ font-weight:500;
+ font-variant-numeric:tabular-nums;
+}
+#runBest{
+ margin-top:6px;
+ font-size:6px;
+ letter-spacing:.17em;
+ color:rgba(236,233,223,.27);
+}
+
+/* Compass: one calibration line, barely there until you need it. */
+#compass{
+ top:max(20px,env(safe-area-inset-top));
+ width:272px;
+ height:31px;
+ mask-image:linear-gradient(90deg,transparent,#000 24%,#000 76%,transparent);
+}
+#compass:before{
+ top:8px;
+ height:1px;
+ background:linear-gradient(90deg,transparent,var(--ew-hair),var(--ew-hair),transparent);
+}
+#compass i{
+ top:4px;
+ height:8px;
+ background:rgba(236,233,223,.72);
+}
+#compass span{
+ top:15px;
+ font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+ font-size:7px;
+ font-weight:500;
+ color:rgba(236,233,223,.38);
+}
+#compass span[data-north=true]{color:rgba(236,233,223,.76)}
+
+/* Targeting becomes an optical instrument rather than a videogame crosshair. */
+#reticle{
+ left:50%;
+ top:42%;
+ width:30px;
+ height:30px;
+ border:0;
+ border-radius:0;
+ transform:translate(-50%,-50%);
+ opacity:.78;
+ background:
+  linear-gradient(var(--ew-bone) 0 0) left top/7px 1px no-repeat,
+  linear-gradient(var(--ew-bone) 0 0) left top/1px 7px no-repeat,
+  linear-gradient(var(--ew-bone) 0 0) right top/7px 1px no-repeat,
+  linear-gradient(var(--ew-bone) 0 0) right top/1px 7px no-repeat,
+  linear-gradient(var(--ew-bone) 0 0) left bottom/7px 1px no-repeat,
+  linear-gradient(var(--ew-bone) 0 0) left bottom/1px 7px no-repeat,
+  linear-gradient(var(--ew-bone) 0 0) right bottom/7px 1px no-repeat,
+  linear-gradient(var(--ew-bone) 0 0) right bottom/1px 7px no-repeat;
+}
+#reticle:before{
+ top:14px;
+ left:12px;
+ width:6px;
+ height:1px;
+ background:rgba(236,233,223,.86);
+}
+#reticle.track{
+ border:0;
+ filter:none;
+ background:
+  linear-gradient(var(--ew-warm) 0 0) left top/8px 1px no-repeat,
+  linear-gradient(var(--ew-warm) 0 0) left top/1px 8px no-repeat,
+  linear-gradient(var(--ew-warm) 0 0) right top/8px 1px no-repeat,
+  linear-gradient(var(--ew-warm) 0 0) right top/1px 8px no-repeat,
+  linear-gradient(var(--ew-warm) 0 0) left bottom/8px 1px no-repeat,
+  linear-gradient(var(--ew-warm) 0 0) left bottom/1px 8px no-repeat,
+  linear-gradient(var(--ew-warm) 0 0) right bottom/8px 1px no-repeat,
+  linear-gradient(var(--ew-warm) 0 0) right bottom/1px 8px no-repeat;
+}
+#reticle.lock{
+ border:0;
+ opacity:1;
+ background:
+  linear-gradient(var(--ew-signal) 0 0) left top/10px 1px no-repeat,
+  linear-gradient(var(--ew-signal) 0 0) left top/1px 10px no-repeat,
+  linear-gradient(var(--ew-signal) 0 0) right top/10px 1px no-repeat,
+  linear-gradient(var(--ew-signal) 0 0) right top/1px 10px no-repeat,
+  linear-gradient(var(--ew-signal) 0 0) left bottom/10px 1px no-repeat,
+  linear-gradient(var(--ew-signal) 0 0) left bottom/1px 10px no-repeat,
+  linear-gradient(var(--ew-signal) 0 0) right bottom/10px 1px no-repeat,
+  linear-gradient(var(--ew-signal) 0 0) right bottom/1px 10px no-repeat;
+ filter:drop-shadow(0 0 8px var(--ew-signal-soft));
+}
+#capture{
+ width:min(38vw,286px);
+ border:1px solid rgba(236,233,223,.07);
+ border-radius:50%;
+}
+#target{
+ width:28px;
+ height:28px;
+ border:0;
+ opacity:.72;
+ background:
+  linear-gradient(var(--ew-warm) 0 0) left top/8px 1px no-repeat,
+  linear-gradient(var(--ew-warm) 0 0) left top/1px 8px no-repeat,
+  linear-gradient(var(--ew-warm) 0 0) right bottom/8px 1px no-repeat,
+  linear-gradient(var(--ew-warm) 0 0) right bottom/1px 8px no-repeat;
+}
+#target.lock{
+ border:0;
+ opacity:1;
+ background:
+  linear-gradient(var(--ew-signal) 0 0) left top/9px 1px no-repeat,
+  linear-gradient(var(--ew-signal) 0 0) left top/1px 9px no-repeat,
+  linear-gradient(var(--ew-signal) 0 0) right bottom/9px 1px no-repeat,
+  linear-gradient(var(--ew-signal) 0 0) right bottom/1px 9px no-repeat;
+}
+
+/* Threat calls are the visual interruption: scarce signal red, no bubble. */
+#radio{
+ left:50%;
+ right:auto;
+ bottom:56px;
+ width:auto;
+ max-width:min(78vw,620px);
+ padding:0 0 0 12px;
+ transform:translateX(-50%);
+ text-align:left;
+ font-size:9px;
+ font-weight:600;
+ line-height:1.25;
+ letter-spacing:.16em;
+ color:var(--ew-signal);
+ text-shadow:0 1px 16px rgba(0,0,0,.6);
+}
+#radio:before{
+ content:'';
+ position:absolute;
+ left:0;
+ top:-2px;
+ bottom:-2px;
+ width:1px;
+ background:var(--ew-signal);
+ box-shadow:0 0 9px var(--ew-signal-soft);
+}
+
+/* Hull is treated as material state, not a game meter. */
+#health{
+ right:28px;
+ bottom:25px;
+ font-size:9px;
+ letter-spacing:5px;
+ color:rgba(236,233,223,.42);
+ text-shadow:none;
+}
+
+/* End states: gallery-severe, almost architectural. */
+#crash,#complete{
+ background:rgba(9,11,10,.955);
+ color:var(--ew-bone);
+ font-size:clamp(24px,4vw,46px);
+ font-weight:500;
+ letter-spacing:.025em;
+ text-shadow:none;
+}
+#crash:before,#complete:before{
+ content:'';
+ position:absolute;
+ top:calc(50% - 84px);
+ left:50%;
+ width:min(440px,70vw);
+ height:1px;
+ transform:translateX(-50%);
+ background:linear-gradient(90deg,transparent,var(--ew-hair-strong),transparent);
+}
+#crash small,#complete small{
+ margin-top:14px;
+ font-size:7px;
+ font-weight:500;
+ line-height:1.9;
+ letter-spacing:.18em;
+ color:rgba(236,233,223,.38);
+}
+#complete h1{
+ margin:18px 0 20px;
+ font-size:clamp(28px,5vw,58px);
+ font-weight:500;
+ letter-spacing:.02em;
+}
+#complete p{
+ margin:14px 0 0;
+ font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+ font-size:12px;
+ font-weight:400;
+ color:rgba(236,233,223,.48);
+}
+#complete .runTime{
+ margin:0 0 9px;
+ font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+ font-size:clamp(30px,5.5vw,52px);
+ font-weight:400;
+ letter-spacing:.035em;
+ color:var(--ew-bone);
+}
+#complete .best{color:rgba(236,233,223,.34)}
+#complete .best.new{color:var(--ew-bone)}
+#again{
+ min-width:146px;
+ margin:28px auto 0;
+ padding:12px 20px;
+ border:1px solid var(--ew-hair-strong);
+ border-radius:0;
+ background:transparent;
+ font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+ font-size:7px;
+ font-weight:600;
+ letter-spacing:.20em;
+ color:rgba(236,233,223,.74);
+ backdrop-filter:none;
+}
+#again:hover{
+ background:rgba(236,233,223,.06);
+ border-color:rgba(236,233,223,.58);
+}
+
+/* Keep impact light warm; reserve signal red for information and danger. */
+#flash{background:rgba(226,202,174,.16)}
+
+@media(pointer:coarse),(max-width:700px){
+ #briefing{left:18px;bottom:max(24px,env(safe-area-inset-bottom))}
+ #briefing h1{font-size:22px}
+ #objectives{
+  left:max(16px,env(safe-area-inset-left));
+  top:max(56px,calc(env(safe-area-inset-top) + 44px));
+  width:180px;
+  padding-top:23px;
+  font-size:8px;
+ }
+ #runClock{right:max(16px,env(safe-area-inset-right));top:max(57px,calc(env(safe-area-inset-top) + 45px))}
+ #compass{top:max(14px,env(safe-area-inset-top));width:212px}
+ #radio{bottom:174px;font-size:8px;max-width:76vw}
+ #health{right:15px;bottom:13px}
+}
