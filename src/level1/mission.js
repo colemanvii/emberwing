@@ -1,5 +1,5 @@
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
-const LEVEL={startZ:1300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-7200};
+const LEVEL={startZ:1300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-8500};
 // Four authored pressure patterns reuse the same geography and five physical batteries.
 // They change where the mission leans hardest without adding random enemies or procedural chaos.
 const MISSION_VARIANTS=Object.freeze([
@@ -11,7 +11,7 @@ const MISSION_VARIANTS=Object.freeze([
 let missionRun=-1;
 const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,introUntil:2.35};
 function activeVariant(){return MISSION_VARIANTS[Math.max(0,mission.variant)%MISSION_VARIANTS.length];}
-const sam={sites:[],missile:null,lock:0,stage:0,cooldown:5,site:null,lastCue:-99,smokeClock:0};
+const sam={sites:[],missiles:[],missile:null,lock:0,stage:0,cooldown:0,site:null,lastCue:-99,lastLaunch:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
 const compass=document.getElementById('compass'),health=document.getElementById('health'),runTimeUI=document.getElementById('runTime'),runBestUI=document.getElementById('runBest');
 const terrainPulse=(v,c,r,p=4)=>Math.exp(-Math.pow(Math.abs((v-c)/r),p));
@@ -148,14 +148,15 @@ function projectedGeometry(pos,maxRange){
  const d=Math.hypot(p.x*.5*innerWidth,(-p.y*.5+.08)*innerHeight);
  return {state:d<trackR?1:0,hard:d<trackR*.7,onscreen,dist,d,trackR};
 }
+const STRIKE_LOCK_RANGE=700,SAM_COUNTER_RANGE=720;
 const airGeometry=geometry;
 geometry=function(){
  const air=enemyAlive?airGeometry():{state:0,hard:false,d:99999,onscreen:false};
- const ground=mission.destroyed?{state:0,hard:false,d:99999,onscreen:false}:projectedGeometry(rocket.position,1350);
+ const ground=mission.destroyed?{state:0,hard:false,d:99999,onscreen:false}:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE);
  let next=ground.state&&(!air.state||ground.d<air.d)?'ground':'air',best=next==='ground'?ground:air;
  for(const site of sam.sites){
-  if(site.disabled)continue;
-  const candidate=projectedGeometry(site.position,1350);
+  if(site.disabled||site.stage<1)continue;
+  const candidate=projectedGeometry(site.position,SAM_COUNTER_RANGE);
   if(candidate.state&&(!best.state||candidate.d<best.d)){next='sam:'+site.index;best=candidate;}
  }
  if(next!==mission.selected){lockState=lockTimer=lastLock=0;mission.selected=next;}
@@ -164,7 +165,7 @@ geometry=function(){
 function updateTargeting(dt){
  if(!seeker){lockState=lockTimer=lastLock=0;capture.hidden=true;reticle.className='';silence();return;}
  const t=geometry();capture.hidden=false;
- const qualified=t.state&&!keys.Space,need=mission.selected==='ground'?.55:(firstTarget?.3:.55);
+ const qualified=t.state&&!keys.Space,need=mission.selected==='ground'?.72:(mission.selected.startsWith('sam:')?.62:(firstTarget?.3:.55));
  lockTimer=qualified?Math.min(1,lockTimer+dt*(t.hard?1.8:1)):Math.max(0,lockTimer-dt*.7);
  lockState=qualified?(lockTimer>=need?2:1):0;
  if(lockState===2&&lastLock!==2){chirp(980,.09,.045);chirp(1240,.12,.035,.07);}
@@ -175,7 +176,8 @@ function updateGuidance(){
  // Only a requested weapon designation gets a bracket. No permanent objective marker.
  const site=selectedSam();
  const pos=site&&!site.disabled?site.position:mission.selected==='ground'?rocket.position:mission.selected==='air'&&enemyAlive?enemy.position:null;
- if(!seeker||!pos||!projectedGeometry(pos,1350).onscreen){targetUI.hidden=true;return;}
+ const guideRange=mission.selected==='ground'?STRIKE_LOCK_RANGE:mission.selected.startsWith('sam:')?SAM_COUNTER_RANGE:1350;
+ if(!seeker||!pos||!projectedGeometry(pos,guideRange).onscreen){targetUI.hidden=true;return;}
  const p=pos.clone().project(camera);targetUI.hidden=false;targetUI.style.opacity='.75';
  targetUI.style.left=(p.x*.5+.5)*innerWidth+'px';targetUI.style.top=(-p.y*.5+.5)*innerHeight+'px';
  targetUI.className=lockState===2?'lock':'';
@@ -206,7 +208,7 @@ function destroyTarget(){
  if(mission.destroyed)return;
  mission.destroyed=true;mission.hitAt=missionElapsed;mission.hp=0;rocket.visible=rocketFlame.visible=false;
  spawnLaunchClimax(rocket.position.clone());v44IgniteComplex(rocket.position.clone());
- announce('TARGET DESTROYED');sam.cooldown=Math.min(sam.cooldown,.35);lockState=lockTimer=0;setSeeker(false);
+ announce('TARGET DESTROYED');for(const site of sam.sites)site.cooldown=Math.min(site.cooldown||0,.22);lockState=lockTimer=0;setSeeker(false);
  if(enemyAlive){enemyRole='ACE';duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED-8);resetEnemyAttack(.25);resetHostileThreat(.65);}else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
@@ -383,4 +385,4 @@ function loop(){
 reset();requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 // Read-only diagnostics support repeatable browser verification without an alternate simulation.
-window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:!!sam.missile,samTracking:sam.stage,samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,geometry:projectedGeometry(rocket.position,1350)}),height:terrainHeight,center:valleyCenter});
+window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:sam.missiles.length>0,samMissiles:sam.missiles.length,samTracking:sam.stage,samTracks:sam.sites.map(s=>s.stage||0),samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,geometry:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE)}),height:terrainHeight,center:valleyCenter});

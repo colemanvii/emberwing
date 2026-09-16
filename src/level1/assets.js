@@ -56,134 +56,24 @@ function makeSamSite(dx,dz,index){
  const light=new THREE.Mesh(new THREE.SphereGeometry(.7,8,6),samLightMat.clone());light.position.set(-10,16.4,-4);g.add(light);
  const x=launchSite.position.x+dx,z=launchSite.position.z+dz,y=terrainHeight(x,z);
  g.position.set(x,y+.1,z);g.rotation.y=index*.72-.34;scene.add(g);
- return{group:g,position:new THREE.Vector3(x,y+10,z),disabled:false,light,index};
+ return{group:g,position:new THREE.Vector3(x,y+10,z),disabled:false,light,index,lock:0,stage:0,cooldown:index*.12,lastCue:-99};
 }
 function disposeOwnTree(root){
  if(!root)return;
  root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&!Object.values({samConcrete,samSteel,samDark,samLightMat}).includes(o.material)){try{o.material.dispose()}catch{}}});
  scene.remove(root);
 }
-function removeSamMissile(){
- const h=sam.missile;if(!h)return;
- h.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)try{o.material.dispose()}catch{}});
- scene.remove(h.mesh);sam.missile=null;
-}
-function clearSamNetwork(){
- removeSamMissile();
- for(const s of sam.sites){
-  s.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&!([samConcrete,samSteel,samDark].includes(o.material)))try{o.material.dispose()}catch{}});
-  scene.remove(s.group);
- }
- sam.sites.length=0;sam.lock=0;sam.stage=0;sam.site=null;
-}
-function setupSamNetwork(){
- clearSamNetwork();
- const specs=[[-560,510],[540,190],[120,-520]];
- sam.sites=specs.map((p,i)=>makeSamSite(p[0],p[1],i));
- sam.cooldown=4.8;sam.lock=0;sam.stage=0;sam.site=null;sam.lastCue=-99;
-}
-function samLineClear(site){
- const a=site.position,b=ship.position;
- for(let i=1;i<=9;i++){
-  const t=i/10,x=THREE.MathUtils.lerp(a.x,b.x,t),z=THREE.MathUtils.lerp(a.z,b.z,t),y=THREE.MathUtils.lerp(a.y,b.y,t);
-  if(terrainHeight(x,z)+18>y)return false;
- }
- return true;
-}
-
-function launchSam(site){samLaunchBurst(site);
- const m=new THREE.Group();
- const body=new THREE.Mesh(new THREE.CylinderGeometry(.19,.26,3.2,8),new THREE.MeshStandardMaterial({color:0xc9c5b6,metalness:.38,roughness:.44}));
- body.rotation.x=Math.PI/2;m.add(body);
- const nose=new THREE.Mesh(new THREE.ConeGeometry(.25,.75,8),new THREE.MeshBasicMaterial({color:0xff633a}));
- nose.rotation.x=-Math.PI/2;nose.position.z=-1.95;m.add(nose);
- const flame=new THREE.Mesh(new THREE.ConeGeometry(.23,2.1,8),new THREE.MeshBasicMaterial({color:0xff6b31,transparent:true,opacity:.94,blending:THREE.AdditiveBlending,depthWrite:false}));
- flame.rotation.x=-Math.PI/2;flame.position.z=2.45;m.add(flame);
- const start=site.position.clone().addScaledVector(worldUp,4);
- const initial=ship.position.clone().addScaledVector(worldUp,125).sub(start).normalize();
- m.position.copy(start);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),initial);scene.add(m);
- sam.missile={mesh:m,v:initial.multiplyScalar(196),life:7.2,trail:0,warn:0,near:false};
- sam.lock=0;sam.stage=0;sam.site=null;sam.cooldown=mission.destroyed?2.70:3.05;
- announce('SAM LAUNCH — '+clockBearing(start)+" O'CLOCK");
- flashScreen(.1);chirp(1060,.07,.045);chirp(1450,.11,.04,.07);
-}
-function updateSamMissile(dt){
- if(sam.missile){sam.smokeClock-=dt;if(sam.smokeClock<=0){spawnV43SamSmoke(sam.missile.mesh.position,sam.missile.v);sam.smokeClock=.07;}}
- const h=sam.missile;if(!h)return;
- h.life-=dt;h.trail-=dt;h.warn-=dt;
- if(h.warn<=0){chirp(960,.04,.024);h.warn=.43;}
- if(h.trail<=0){spawnMissileTrail(h.mesh.position,h.v);h.trail=.04;}
- const previous=h.mesh.position.clone();
- const up=worldUp.clone().applyQuaternion(ship.quaternion),bank=Math.abs(Math.atan2(up.x,up.y));
- const defensive=THREE.MathUtils.clamp((bank-.45)/.55,0,1)*((keys.ArrowUp||keys.ArrowDown)?1:.35)*(burner>.45?1:.72);
- const lead=ship.position.clone().addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion),speed*.11);
- const desired=lead.sub(h.mesh.position).normalize().multiplyScalar(mission.destroyed?214:226);
- const turnRate=(mission.destroyed?1.62:2.08)*(1-defensive*.34);
- h.v.lerp(desired,1-Math.exp(-dt*turnRate));
- h.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),h.v.clone().normalize());
- h.mesh.position.addScaledVector(h.v,dt);
- const travel=h.mesh.position.clone().sub(previous),toShip=ship.position.clone().sub(previous);
- const u=THREE.MathUtils.clamp(toShip.dot(travel)/Math.max(.001,travel.lengthSq()),0,1),closest=previous.clone().addScaledVector(travel,u);
- const hit=closest.distanceToSquared(ship.position)<64;
- if(!h.near&&!hit&&closest.distanceToSquared(ship.position)<420){h.near=true;hostileNearMiss();}
- const sceneryHit=scenerySegmentHit(previous,h.mesh.position,1.5,2,false);
- const blocked=h.mesh.position.y<=terrainHeight(h.mesh.position.x,h.mesh.position.z)+4||!!sceneryHit;
- if(hit&&!blocked){
-  const p=h.mesh.position.clone();removeSamMissile();hostileMissileBurst(p);hitKick=Math.max(hitKick,1);flashScreen(.3);chirp(58,.15,.06);hitPlayer();return;
- }
- if(blocked||h.life<=0){
-  const p=sceneryHit||h.mesh.position.clone();removeSamMissile();hostileMissileBurst(p);
-  announce(blocked?'SAM DEFEATED — TERRAIN MASK':'SAM EVADED');chirp(430,.06,.032);chirp(690,.075,.024,.05);
- }
-}
-
-function samCandidate(){
- const agl=Math.max(0,ship.position.y-terrainHeight(ship.position.x,ship.position.z));
- let best=null,bestScore=Infinity;
- for(const s of sam.sites){
-  if(s.disabled)continue;
-  const range=s.position.distanceTo(ship.position),maxRange=s.range||(mission.destroyed?1550:1900);
-  if(range>maxRange||!samLineClear(s))continue;
-  // Low flight helps, but open ground is still exposed; actual cover must break line of sight.
-  // Above ~160 units AGL, ground-clutter benefit is mostly gone.
-  const clutter=.28+.72*THREE.MathUtils.smoothstep(agl,24,105);
-  const rangeQuality=THREE.MathUtils.clamp(1-(range/maxRange)*.34,.62,1);
-  const exposure=clutter*rangeQuality;
-  const score=range/Math.max(.18,exposure);
-  if(score<bestScore){bestScore=score;best={site:s,range,agl,exposure};}
- }
- return best;
-};
-
-function updateSamNetwork(dt){
- if(mission.phase==='briefing'||worldIndex!==0||crashed||missionComplete||missionCompleteTimer>0){removeSamMissile();return;}
- sam.cooldown=Math.max(0,sam.cooldown-dt);
- if(sam.missile){updateSamMissile(dt);return;}
- const c=samCandidate();
- if(!c||sam.cooldown>0){
-  if(sam.stage&&sam.lock>.25&&missionElapsed-sam.lastCue>1.2){
-   announce('RADAR TRACK BROKEN — TERRAIN MASK');
-   sam.lastCue=missionElapsed;
-  }
-  sam.lock=Math.max(0,sam.lock-dt*1.55);
-  if(sam.lock<=.02){sam.stage=0;sam.site=null;}
-  return;
- }
- sam.site=c.site;
- const baseLock=mission.destroyed?1.35:(c.site.index===0?1.08:(c.site.index>=3?1.12:1.40));
- sam.lock=Math.min(1,sam.lock+dt/baseLock*c.exposure);
- if(sam.stage===0){
-  sam.stage=1;
-  announce(c.agl<70?'RADAR SEARCH — STAY IN THE TERRAIN':'RADAR SEARCH — GET LOW / USE TERRAIN');
-  chirp(520,.045,.026);sam.lastCue=missionElapsed;
- }else if(sam.lock>.52&&sam.stage===1){
-  sam.stage=2;
-  announce('RADAR TRACK — BREAK LINE OF SIGHT');
-  chirp(690,.05,.03);chirp(910,.05,.026,.1);sam.lastCue=missionElapsed;
- }
- if(sam.lock>=1)launchSam(c.site);
-};
-
+function disposeSamMissile(h){if(!h)return;h.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)try{o.material.dispose()}catch{}});scene.remove(h.mesh)}
+function syncSamMissileAlias(){sam.missile=sam.missiles[0]||null}
+function removeSamMissile(target=null){if(target){const i=sam.missiles.indexOf(target);if(i>=0)sam.missiles.splice(i,1);disposeSamMissile(target)}else{for(const h of sam.missiles)disposeSamMissile(h);sam.missiles.length=0}syncSamMissileAlias()}
+function clearSamNetwork(){removeSamMissile();for(const s of sam.sites){s.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&!([samConcrete,samSteel,samDark].includes(o.material)))try{o.material.dispose()}catch{}});scene.remove(s.group)}sam.sites.length=0;sam.lock=0;sam.stage=0;sam.site=null;sam.lastLaunch=-99}
+function setupSamNetwork(){clearSamNetwork();const specs=[[-560,510],[540,190],[120,-520]];sam.sites=specs.map((p,i)=>makeSamSite(p[0],p[1],i));sam.lock=0;sam.stage=0;sam.site=null;sam.lastCue=-99;sam.lastLaunch=-99}
+function samLineClear(site){const a=site.position,b=ship.position;for(let i=1;i<=9;i++){const t=i/10,x=THREE.MathUtils.lerp(a.x,b.x,t),z=THREE.MathUtils.lerp(a.z,b.z,t),y=THREE.MathUtils.lerp(a.y,b.y,t);if(terrainHeight(x,z)+18>y)return false}return true}
+function launchSam(site){if(sam.missiles.length>=2||missionElapsed-sam.lastLaunch<.55)return;samLaunchBurst(site);const m=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.19,.26,3.2,8),new THREE.MeshStandardMaterial({color:0xc9c5b6,metalness:.38,roughness:.44}));body.rotation.x=Math.PI/2;m.add(body);const nose=new THREE.Mesh(new THREE.ConeGeometry(.25,.75,8),new THREE.MeshBasicMaterial({color:0xff633a}));nose.rotation.x=-Math.PI/2;nose.position.z=-1.95;m.add(nose);const flame=new THREE.Mesh(new THREE.ConeGeometry(.23,2.1,8),new THREE.MeshBasicMaterial({color:0xff6b31,transparent:true,opacity:.94,blending:THREE.AdditiveBlending,depthWrite:false}));flame.rotation.x=-Math.PI/2;flame.position.z=2.45;m.add(flame);const start=site.position.clone().addScaledVector(worldUp,4),initial=ship.position.clone().addScaledVector(worldUp,95).sub(start).normalize();m.position.copy(start);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),initial);scene.add(m);const h={mesh:m,v:initial.multiplyScalar(218),life:8,trail:0,warn:0,smoke:0,near:false,site};sam.missiles.push(h);syncSamMissileAlias();sam.lastLaunch=missionElapsed;site.lock=0;site.stage=0;site.cooldown=mission.destroyed?1.05:1.55;sam.site=site;announce('SAM LAUNCH — '+clockBearing(start)+" O'CLOCK");flashScreen(.1);chirp(1060,.07,.045);chirp(1450,.11,.04,.07)}
+function updateOneSamMissile(h,dt){h.life-=dt;h.trail-=dt;h.warn-=dt;h.smoke-=dt;if(h.warn<=0){chirp(960,.04,.024);h.warn=.36}if(h.trail<=0){spawnMissileTrail(h.mesh.position,h.v);h.trail=.035}if(h.smoke<=0){spawnV43SamSmoke(h.mesh.position,h.v);h.smoke=.065}const previous=h.mesh.position.clone(),up=worldUp.clone().applyQuaternion(ship.quaternion),bank=Math.abs(Math.atan2(up.x,up.y));const defensive=THREE.MathUtils.clamp((bank-.55)/.45,0,1)*((keys.ArrowUp||keys.ArrowDown)?1:.25)*(burner>.48?1:.7);const lead=ship.position.clone().addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion),speed*.09),desired=lead.sub(h.mesh.position).normalize().multiplyScalar(mission.destroyed?262:252),turnRate=(mission.destroyed?2.9:2.72)*(1-defensive*.58);h.v.lerp(desired,1-Math.exp(-dt*turnRate));h.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),h.v.clone().normalize());h.mesh.position.addScaledVector(h.v,dt);const travel=h.mesh.position.clone().sub(previous),toShip=ship.position.clone().sub(previous),u=THREE.MathUtils.clamp(toShip.dot(travel)/Math.max(.001,travel.lengthSq()),0,1),closest=previous.clone().addScaledVector(travel,u),hit=closest.distanceToSquared(ship.position)<72;if(!h.near&&!hit&&closest.distanceToSquared(ship.position)<440){h.near=true;hostileNearMiss()}const sceneryHit=scenerySegmentHit(previous,h.mesh.position,1.5,2,false),blocked=h.mesh.position.y<=terrainHeight(h.mesh.position.x,h.mesh.position.z)+4||!!sceneryHit;if(hit&&!blocked){const p=h.mesh.position.clone();removeSamMissile(h);hostileMissileBurst(p);hitKick=Math.max(hitKick,1.15);flashScreen(.42);chirp(48,.18,.075);hitPlayer(2);return}if(blocked||h.life<=0){const p=sceneryHit||h.mesh.position.clone();removeSamMissile(h);hostileMissileBurst(p);announce(blocked?'SAM DEFEATED — TERRAIN MASK':'SAM EVADED');chirp(430,.06,.032);chirp(690,.075,.024,.05)}}
+function updateSamMissiles(dt){for(const h of [...sam.missiles])updateOneSamMissile(h,dt);syncSamMissileAlias()}
+function samExposure(s){if(s.disabled)return null;const agl=Math.max(0,ship.position.y-terrainHeight(ship.position.x,ship.position.z)),range=s.position.distanceTo(ship.position),maxRange=s.range||(mission.destroyed?1550:1900);if(range>maxRange||!samLineClear(s))return null;const clutter=.24+.76*THREE.MathUtils.smoothstep(agl,22,100),highExposure=1+THREE.MathUtils.smoothstep(agl,120,215)*1.35,rangeQuality=THREE.MathUtils.clamp(1-(range/maxRange)*.30,.68,1);return{site:s,range,agl,exposure:clutter*highExposure*rangeQuality}}
+function updateSamNetwork(dt){if(mission.phase==='briefing'||worldIndex!==0||crashed||missionComplete||missionCompleteTimer>0){removeSamMissile();return}updateSamMissiles(dt);let leadSite=null,leadScore=-1;for(const s of sam.sites){if(s.disabled)continue;s.cooldown=Math.max(0,(s.cooldown||0)-dt);const c=samExposure(s);if(!c){s.lock=Math.max(0,(s.lock||0)-dt*1.7);if(s.lock<=.02)s.stage=0}else{const baseLock=mission.destroyed?.78:(s.index===0?.92:(s.index>=3?.86:1.08));s.lock=Math.min(1,(s.lock||0)+dt/baseLock*c.exposure);if(s.stage===0){s.stage=1;if(missionElapsed-sam.lastCue>1.15){announce(c.agl<70?'RADAR SEARCH — STAY IN THE TERRAIN':'RADAR SEARCH — GET LOW / USE TERRAIN');sam.lastCue=missionElapsed}chirp(520,.045,.026);s.lastCue=missionElapsed}else if(s.lock>.46&&s.stage===1){s.stage=2;if(missionElapsed-sam.lastCue>.7){announce('RADAR TRACK — BREAK LINE OF SIGHT');sam.lastCue=missionElapsed}chirp(690,.05,.03);chirp(910,.05,.026,.1);s.lastCue=missionElapsed}if(s.lock>=1&&s.cooldown<=0&&sam.missiles.length<2&&missionElapsed-sam.lastLaunch>=.55)launchSam(s)}const score=(s.stage||0)*2+(s.lock||0);if(score>leadScore){leadScore=score;leadSite=s}}sam.site=leadSite&&leadSite.stage?leadSite:null;sam.lock=leadSite?.lock||0;sam.stage=leadSite?.stage||0}
 
 const effects={samTrail:[],launchFx:[],launchFxActive:false,launchFxAge:0};
 const samTrailGeo=new THREE.IcosahedronGeometry(1,1);
