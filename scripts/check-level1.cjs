@@ -118,11 +118,11 @@ window.scenario={
   assert.equal(routing.escapeOpen,true,'SAM5 must pressure the open basin line');
 
   const variants=await page.evaluate(()=>scenario.variants());
-  assert.equal(variants.length,4,'Level 1 should ship four curated pressure patterns');
-  assert.equal(new Set(variants.map(v=>v.id)).size,4,'Pressure pattern IDs must be unique');
+  assert.equal(variants.length,1,'Level 1 should ship one authored, learnable pressure pattern');
+  assert.equal(variants[0].id,'VALLEY','Level 1 pressure pattern should remain the canonical VALLEY mission');
   for(const v of variants){
-   assert.equal(v.sam.length,5,'Every pressure pattern must preserve the five-SAM network');
-   assert.ok(v.sam.every(range=>range>=1000&&range<=2000),'SAM range variation must remain bounded');
+   assert.equal(v.sam.length,5,'The canonical mission must preserve the five-SAM network');
+   assert.ok(v.sam.every(range=>range>=1000&&range<=2000),'SAM ranges must remain bounded');
    assert.ok(v.bandit.trigger>v.escape.trigger,'Ingress defender must activate before escape pressure');
   }
 
