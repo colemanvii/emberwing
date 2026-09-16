@@ -44,16 +44,16 @@ terrainHeight=function(x,z){
 
  // 1. THE RIDGE CHOICE — the eastern wall ends in a long, blade-shaped spur.
  // Its low western toe can be cut closely; the wider west arc stays below the SAM shelf.
- const escarpment=480*terrainLobe(x,z,valleyCenter(220)+540,220,345,940,4);
- const escarpmentCrown=340*terrainLobe(x,z,valleyCenter(120)+440,120,175,570,5);
- const escarpmentToe=115*terrainLobe(x,z,valleyCenter(-40)+245,-40,180,660,4);
+ const escarpment=535*terrainLobe(x,z,valleyCenter(220)+555,220,375,980,4);
+ const escarpmentCrown=370*terrainLobe(x,z,valleyCenter(120)+455,120,190,610,5);
+ const escarpmentToe=135*terrainLobe(x,z,valleyCenter(-40)+250,-40,195,700,4);
  const ridgeSpur=145*terrainLobe(x,z,valleyCenter(-100)+40,-100,130,320,4);
  const westernShelf=35*terrainLobe(x,z,valleyCenter(120)-550,120,300,740,4);
 
  // 2. THE NARROW THROAT — staggered sheer buttresses, with a low continuous slot.
  // The west prow arrives first; the taller east face fills the forward view on entry.
- const throatWest=330*terrainLobe(x,z,valleyCenter(-1950)-365,-1950,245,660,5);
- const throatEast=480*terrainLobe(x,z,valleyCenter(-2350)+350,-2350,230,720,5);
+ const throatWest=365*terrainLobe(x,z,valleyCenter(-1950)-380,-1950,260,700,5);
+ const throatEast=525*terrainLobe(x,z,valleyCenter(-2350)+365,-2350,245,760,5);
 
  // 3. THE BASIN REVEAL — a high eastern headland with a low western rounding shoulder.
  // Keep its western foot and northern falloff: they govern concealment and the firing window.
@@ -148,14 +148,16 @@ function projectedGeometry(pos,maxRange){
  const d=Math.hypot(p.x*.5*innerWidth,(-p.y*.5+.08)*innerHeight);
  return {state:d<trackR?1:0,hard:d<trackR*.7,onscreen,dist,d,trackR};
 }
-const STRIKE_LOCK_RANGE=700,SAM_COUNTER_RANGE=720;
+const STRIKE_LOCK_RANGE=700,SAM_COUNTER_RANGE=700;
 const airGeometry=geometry;
 geometry=function(){
  const air=enemyAlive?airGeometry():{state:0,hard:false,d:99999,onscreen:false};
  const ground=mission.destroyed?{state:0,hard:false,d:99999,onscreen:false}:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE);
  let next=ground.state&&(!air.state||ground.d<air.d)?'ground':'air',best=next==='ground'?ground:air;
  for(const site of sam.sites){
-  if(site.disabled||site.stage<1)continue;
+  if(site.disabled)continue;
+  const retaliatory=site.stage>=2||missionElapsed<(site.hotUntil||-99);
+  if(!retaliatory)continue;
   const candidate=projectedGeometry(site.position,SAM_COUNTER_RANGE);
   if(candidate.state&&(!best.state||candidate.d<best.d)){next='sam:'+site.index;best=candidate;}
  }
@@ -165,7 +167,7 @@ geometry=function(){
 function updateTargeting(dt){
  if(!seeker){lockState=lockTimer=lastLock=0;capture.hidden=true;reticle.className='';silence();return;}
  const t=geometry();capture.hidden=false;
- const qualified=t.state&&!keys.Space,need=mission.selected==='ground'?.72:(mission.selected.startsWith('sam:')?.62:(firstTarget?.3:.55));
+ const qualified=t.state&&!keys.Space,need=mission.selected==='ground'?.72:(mission.selected.startsWith('sam:')?.78:(firstTarget?.3:.55));
  lockTimer=qualified?Math.min(1,lockTimer+dt*(t.hard?1.8:1)):Math.max(0,lockTimer-dt*.7);
  lockState=qualified?(lockTimer>=need?2:1):0;
  if(lockState===2&&lastLock!==2){chirp(980,.09,.045);chirp(1240,.12,.035,.07);}
@@ -361,7 +363,7 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(200)+190,200],[valleyCenter(-1200)-240,-1200],[valleyCenter(-3000)+260,-3000],[-40,-5200],[-560,-6400]];
+ const specs=[[valleyCenter(260)+545,260],[valleyCenter(-1450)-500,-1450],[valleyCenter(-3150)+500,-3150],[valleyCenter(-5300)+470,-5300],[valleyCenter(-6520)-520,-6520]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  variant.sam.forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
