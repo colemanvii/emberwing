@@ -72,10 +72,15 @@ window.scenario={
       escapeOpen:sight(4,point(-5500))
     };
   },
-  entrySafe(){
-    reset();mission.phase='test';crashed=false;
-    for(let i=0;i<240&&!crashed;i++){updateFlight(1/60);updateWorld();}
-    return {crashed,position:ship.position.toArray(),altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z)};
+  entrySafety(){
+    const results=[];
+    for(let run=0;run<ENTRY_PATTERNS.length;run++){
+      reset();mission.phase='test';crashed=false;
+      const start=ship.position.toArray();
+      for(let i=0;i<240&&!crashed;i++){updateFlight(1/60);updateWorld();}
+      results.push({entry:mission.entry,start,crashed,position:ship.position.toArray(),altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z)});
+    }
+    return results;
   }
 };`
    });
@@ -95,9 +100,14 @@ window.scenario={
   const traveled=Math.hypot(...moving.position.map((v,i)=>v-opening.position[i]));
   assert.ok(traveled>15,'Aircraft must already be moving when Level 1 loads');
 
-  const entry=await page.evaluate(()=>scenario.entrySafe());
-  assert.equal(entry.crashed,false,'Level 1 spawn must survive four seconds hands-off');
-  assert.ok(entry.altitude>8,'Opening line must retain safe terrain clearance');
+  const entries=await page.evaluate(()=>scenario.entrySafety());
+  assert.equal(entries.length,5,'Level 1 should ship five authored opening patterns');
+  assert.equal(new Set(entries.map(e=>e.entry)).size,5,'Every opening pattern must be distinct');
+  assert.ok(entries.every(e=>!e.crashed),'Every authored opening must survive four seconds hands-off');
+  assert.ok(entries.every(e=>e.altitude>8),'Every opening line must retain safe terrain clearance');
+  const startXs=entries.map(e=>Math.round(e.start[0])),startZs=entries.map(e=>Math.round(e.start[2]));
+  assert.ok(Math.max(...startXs)-Math.min(...startXs)>350,'Opening patterns must meaningfully vary lateral position');
+  assert.ok(Math.max(...startZs)-Math.min(...startZs)>200,'Opening patterns must meaningfully vary approach depth');
 
   const strikeAxis=await page.evaluate(()=>[-3000,-4100,-4900,-5700,-6300,-6900].map(z=>emberwing.center(z)));
   assert.ok(Math.max(...strikeAxis)-Math.min(...strikeAxis)<220,'Terminal route must read as one coherent strike axis');
