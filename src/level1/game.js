@@ -1013,11 +1013,12 @@ const LEVEL={startZ:1300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-8500};
 // Galaga lesson: the mission is learnable, but the entrance has choreography.
 // These cycle deterministically so runs feel different without turning difficulty into RNG.
 const ENTRY_PATTERNS=Object.freeze([
- {id:'WEST_SCRAPE',z:1560,side:-260,agl:48,aimZ:680,aimSide:-90,aimAgl:55,bank:-.20,speed:225},
- {id:'RIDGE_DROP',z:1760,side:110,agl:160,aimZ:640,aimSide:-80,aimAgl:118,bank:.08,speed:235},
- {id:'EAST_KNIFE',z:1620,side:290,agl:225,aimZ:620,aimSide:20,aimAgl:215,bank:.05,speed:245},
- {id:'LOW_SLOT',z:1480,side:-150,agl:35,aimZ:690,aimSide:-120,aimAgl:48,bank:-.10,speed:220},
- {id:'HIGH_CROSS',z:1700,side:-40,agl:138,aimZ:600,aimSide:160,aimAgl:120,bank:.06,speed:240}
+ // Different composition, same difficulty envelope: variation should create freshness, not chaos.
+ {id:'WEST_SCRAPE',z:1560,side:-190,agl:62,aimZ:700,aimSide:-70,aimAgl:66,bank:-.07,speed:230},
+ {id:'RIDGE_LINE',z:1710,side:60,agl:85,aimZ:680,aimSide:-25,aimAgl:70,bank:.04,speed:232},
+ {id:'EAST_CUT',z:1620,side:180,agl:72,aimZ:670,aimSide:35,aimAgl:68,bank:.06,speed:234},
+ {id:'LOW_SLOT',z:1480,side:-105,agl:48,aimZ:700,aimSide:-80,aimAgl:58,bank:-.04,speed:228},
+ {id:'CENTER_CROSS',z:1660,side:20,agl:88,aimZ:650,aimSide:90,aimAgl:74,bank:.03,speed:232}
 ]);
 function loadEntryRun(){try{const v=Number(sessionStorage.getItem('emberwingEntryRun'));return Number.isFinite(v)?v:-1}catch{return -1}}
 function saveEntryRun(v){try{sessionStorage.setItem('emberwingEntryRun',String(v))}catch{}}
