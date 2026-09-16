@@ -51,7 +51,15 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
   const aiming=z<-4900&&z>-5480&&!s.destroyed;
   if(aiming)desiredPitch=clamp(Math.atan2(s.target[1]-y,Math.hypot(s.target[0]-x,s.target[2]-z)),-.21,.18);
-  const desiredYaw=aiming?Math.atan2(s.target[0]-x,z-s.target[2]):Math.atan2(targetX-x,600),yawError=Math.atan2(Math.sin(desiredYaw-yaw),Math.cos(desiredYaw-yaw)),desiredBank=clamp(yawError*1.8,-.58,.58);
+  const desiredYaw=aiming?Math.atan2(s.target[0]-x,z-s.target[2]):Math.atan2(targetX-x,600),yawError=Math.atan2(Math.sin(desiredYaw-yaw),Math.cos(desiredYaw-yaw));
+  let desiredBank=clamp(yawError*1.8,-.58,.58);
+  if(missileBreak){
+   desiredBank=(x<=s.center?-1:1)*.72;
+   desiredPitch=Math.max(desiredPitch,.08);
+  }else if(banditBreak&&s.banditPosition){
+   desiredBank=(s.banditPosition[0]>x?-1:1)*.66;
+   desiredPitch=Math.max(desiredPitch,.05);
+  }
   const next=new Set();
   if(bank<desiredBank-.045)next.add('ArrowRight');else if(bank>desiredBank+.045)next.add('ArrowLeft');
   if(pitch<desiredPitch-.016)next.add('ArrowDown');else if(pitch>desiredPitch+.016)next.add('ArrowUp');
