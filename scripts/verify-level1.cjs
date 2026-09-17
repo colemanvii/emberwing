@@ -24,7 +24,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  const started=Date.now();
  while(Date.now()-started<(reckless?120000:420000)){
   const s=await page.evaluate(()=>{const s=emberwing.snapshot(),z=s.position[2];return {...s,center:emberwing.center(z-550),aheadFloor:emberwing.height(s.position[0],z-220)}});
-  if(s.elapsed-lastLog>1){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,destroyed:s.destroyed}));}
+  if(s.elapsed-lastLog>1){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),ahead:Math.round(s.aheadFloor),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,bandit:s.banditRange===null?null:Math.round(s.banditRange),passes:s.banditPasses,destroyed:s.destroyed}));}
   const z=s.position[2];
   if(reckless&&s.hp<=1&&z<-2200){
    recklessPunished=true;
@@ -62,11 +62,19 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let desiredBank=clamp(yawError*1.8,-.58,.58);
   if(missileBreak){
    desiredBank=(x<s.center?1:-1)*.72;
-   // Defeat the shot with a lateral terrain break, not a panic climb into the radar picture.
-   desiredPitch=s.altitude>72?Math.min(desiredPitch,-.08):Math.min(desiredPitch,.012);
+   // Stay low when there is room, but never flatten the pull when terrain is already rising into us.
+   if(s.altitude>72)desiredPitch=Math.min(desiredPitch,-.08);
+   else{desiredPitch=Math.max(desiredPitch,.13);desiredBank=clamp(desiredBank,-.38,.38);}
   }else if(banditBreak&&s.banditPosition){
    desiredBank=(x<s.center?1:-1)*.66;
-   desiredPitch=s.altitude>88?Math.min(desiredPitch,-.055):Math.min(desiredPitch,.018);
+   if(s.altitude>88)desiredPitch=Math.min(desiredPitch,-.055);
+   else{desiredPitch=Math.max(desiredPitch,.12);desiredBank=clamp(desiredBank,-.38,.38);}
+  }
+  // Terrain is the final authority. A verification pilot may evade, but it may not knowingly trade
+  // radar masking for a ground collision. Recover toward the authored corridor before resuming the break.
+  if(!reckless&&(s.altitude<45||s.aheadFloor+38>y)){
+   desiredBank=clamp(yawError*1.25,-.34,.34);
+   desiredPitch=Math.max(desiredPitch,.15);
   }
   const next=new Set();
   if(bank<desiredBank-.045)next.add('ArrowRight');else if(bank>desiredBank+.045)next.add('ArrowLeft');
