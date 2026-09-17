@@ -1,0 +1,25 @@
+/* Off-screen bandit reacquisition: one quiet peripheral cue, gone the moment the aircraft returns. */
+#banditCue{
+ position:absolute;
+ z-index:4;
+ width:16px;
+ height:16px;
+ opacity:.46;
+ pointer-events:none;
+ will-change:left,top,transform,opacity;
+ filter:drop-shadow(0 1px 4px rgba(0,0,0,.42));
+}
+#banditCue:before,#banditCue:after{
+ content:'';
+ position:absolute;
+ left:2px;
+ width:12px;
+ height:1px;
+ background:rgba(236,233,223,.78);
+ transform-origin:left center;
+}
+#banditCue:before{top:3px;transform:rotate(26deg)}
+#banditCue:after{bottom:3px;transform:rotate(-26deg)}
+body[data-state=complete] #banditCue{display:none}
+@media(pointer:coarse),(max-width:700px){#banditCue{width:14px;height:14px}#banditCue:before,#banditCue:after{width:10px}}
+@media(prefers-reduced-motion:reduce){#banditCue{transition:none}}
