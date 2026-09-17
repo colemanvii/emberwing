@@ -1533,17 +1533,17 @@ updateEnemy=function(dt){
  if(banditOfferClock>0)return;
  banditOfferActive=false;
 
- // Missing the opening shot must create a *real pass*, not a close co-orbit. Aim the ACE
- // through the player's near-future path and give it enough energy to overtake a turboing pilot.
- // The attack still obeys terrain LOS and normal gun/missile solutions; nothing deals free damage.
+ // Missing the opening shot still creates a dangerous intercept, but not a mathematically
+ // perfect merge. Aim through the near-future path with only a small energy advantage so a
+ // real lateral break or terrain mask can spoil the pass without making straight flight safe.
  const playerForward=heading().clone(),right=banditMissRight.crossVectors(playerForward,worldUp).normalize();
- banditMissLead.copy(ship.position).addScaledVector(playerForward,230).addScaledVector(right,duel.side*78);
+ banditMissLead.copy(ship.position).addScaledVector(playerForward,175).addScaledVector(right,duel.side*78);
  banditMissLead.y=Math.max(terrainHeight(banditMissLead.x,banditMissLead.z)+72,ship.position.y+10);
  enemyCourse.copy(banditMissLead.sub(enemy.position).normalize());
  duel.forward.copy(enemyCourse);duel.course.copy(enemyCourse);duelState('engage');
- duel.speed=Math.max(duel.speed,TURBO_SPEED+24);
- banditReattackClock=.32;
- resetEnemyAttack(.32);resetHostileThreat(.9);
+ duel.speed=Math.max(duel.speed,TURBO_SPEED+10);
+ banditReattackClock=.6;
+ resetEnemyAttack(.6);resetHostileThreat(1.2);
 };
 
 // Make cannon work feel generous without turning it into an aimbot. If the bandit is
