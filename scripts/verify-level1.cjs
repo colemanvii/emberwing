@@ -19,12 +19,18 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  await page.waitForTimeout(350);
  await page.screenshot({path:path.join(output,'opening.png')});
  async function keys(next){for(const k of held)if(!next.has(k)){await page.keyboard.up(k);held.delete(k)}for(const k of next)if(!held.has(k)){await page.keyboard.down(k);held.add(k)}}
- let lastLog=-10,lastShot=-10,recklessPunished=false;
+ let lastLog=-10,lastShot=-10,lastBanditRange=null,recklessPunished=false;
  const events={};
  const started=Date.now();
  while(Date.now()-started<(reckless?120000:420000)){
-  const s=await page.evaluate(()=>{const s=emberwing.snapshot(),z=s.position[2];return {...s,center:emberwing.center(z-550),aheadFloor:emberwing.height(s.position[0],z-220)}});
-  if(s.elapsed-lastLog>1){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),ahead:Math.round(s.aheadFloor),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,bandit:s.banditRange===null?null:Math.round(s.banditRange),passes:s.banditPasses,destroyed:s.destroyed}));}
+  const s=await page.evaluate(()=>{
+   const s=emberwing.snapshot(),[x,,z]=s.position,[fx,,fz]=s.forward;
+   const horizontal=Math.hypot(fx,fz)||1,nx=fx/horizontal,nz=fz/horizontal;
+   return {...s,center:emberwing.center(z-550),aheadFloor:emberwing.height(x+nx*220,z+nz*220),farFloor:emberwing.height(x+nx*420,z+nz*420)};
+  });
+  const banditClosing=s.banditRange!==null&&lastBanditRange!==null&&s.banditRange<lastBanditRange-2;
+  lastBanditRange=s.banditRange;
+  if(s.elapsed-lastLog>1){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),ahead:Math.round(s.aheadFloor),far:Math.round(s.farFloor),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,bandit:s.banditRange===null?null:Math.round(s.banditRange),closing:banditClosing,passes:s.banditPasses,destroyed:s.destroyed}));}
   const z=s.position[2];
   if(reckless&&s.hp<=1&&z<-2200){
    recklessPunished=true;
@@ -50,31 +56,35 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   if(z<=-4900&&z>-5900&&!s.destroyed)targetX=s.target[0];
   const altitude=Number(process.env.ALTITUDE||(reckless?110:50));
   let desiredY=s.aheadFloor+altitude;
+  if(!reckless)desiredY=Math.max(desiredY,s.farFloor+Math.max(38,altitude-12));
   if(z<-5150&&!s.destroyed)desiredY=s.target[1]+(reckless?95:65);
   // The normal pilot reacts. The reckless regression pilot deliberately ignores every warning.
   const missileBreak=!reckless&&s.samMissile;
-  const banditBreak=!reckless&&s.banditRange!==null&&s.banditRange<245;
+  // Range alone is not a threat. Break when the ACE is actually closing, with an emergency catch
+  // only for a genuinely close merge. A diverging post-pass bandit must not hold the pilot evasive.
+  const banditBreak=!reckless&&s.banditRange!==null&&s.banditRange<285&&(banditClosing||s.banditRange<170);
   let desiredPitch=clamp((desiredY-y)/480,-.21,.18);
 
   const aiming=z<-4900&&z>-5480&&!s.destroyed;
   if(aiming)desiredPitch=clamp(Math.atan2(s.target[1]-y,Math.hypot(s.target[0]-x,s.target[2]-z)),-.21,.18);
   const desiredYaw=aiming?Math.atan2(s.target[0]-x,z-s.target[2]):Math.atan2(targetX-x,600),yawError=Math.atan2(Math.sin(desiredYaw-yaw),Math.cos(desiredYaw-yaw));
   let desiredBank=clamp(yawError*1.8,-.58,.58);
+  // Look farther down the current flight path than the old last-instant catch. Once terrain is
+  // tightening, defensive maneuvers may bank but may not command the nose down into the slope.
+  const terrainTight=!reckless&&(s.altitude<48||s.aheadFloor+50>y||s.farFloor+40>y);
   if(missileBreak){
    desiredBank=(x<s.center?1:-1)*.72;
-   // Stay low when there is room, but never flatten the pull when terrain is already rising into us.
-   if(s.altitude>72)desiredPitch=Math.min(desiredPitch,-.08);
+   if(!terrainTight&&s.altitude>72)desiredPitch=Math.min(desiredPitch,-.08);
    else{desiredPitch=Math.max(desiredPitch,.13);desiredBank=clamp(desiredBank,-.38,.38);}
   }else if(banditBreak&&s.banditPosition){
    desiredBank=(x<s.center?1:-1)*.66;
-   if(s.altitude>88)desiredPitch=Math.min(desiredPitch,-.055);
+   if(!terrainTight&&s.altitude>88)desiredPitch=Math.min(desiredPitch,-.035);
    else{desiredPitch=Math.max(desiredPitch,.12);desiredBank=clamp(desiredBank,-.38,.38);}
   }
-  // Terrain is the final authority. A verification pilot may evade, but it may not knowingly trade
-  // radar masking for a ground collision. Recover toward the authored corridor before resuming the break.
-  if(!reckless&&(s.altitude<45||s.aheadFloor+38>y)){
+  // Terrain is the final authority. Recover toward the authored corridor before resuming a break.
+  if(terrainTight){
    desiredBank=clamp(yawError*1.25,-.34,.34);
-   desiredPitch=Math.max(desiredPitch,.15);
+   desiredPitch=Math.max(desiredPitch,.17);
   }
   const next=new Set();
   if(bank<desiredBank-.045)next.add('ArrowRight');else if(bank>desiredBank+.045)next.add('ArrowLeft');
