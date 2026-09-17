@@ -20,6 +20,7 @@ const MISSION_VARIANTS=Object.freeze([
 ]);
 let missionRun=-1;
 const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,entry:'WEST_SCRAPE',introUntil:2.35};
+let banditReattackClock=0,banditPass=0;
 function activeVariant(){return MISSION_VARIANTS[Math.max(0,mission.variant)%MISSION_VARIANTS.length];}
 const sam={sites:[],missiles:[],missile:null,lock:0,stage:0,cooldown:0,site:null,lastCue:-99,lastLaunch:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
@@ -284,6 +285,7 @@ function spawnDefender(escape=false){
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
  duel.speed=escape?TURBO_SPEED+28:TURBO_SPEED+18;
  enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.38:.30));lastEnemy.copy(enemy.position);
+ banditReattackClock=escape?.9:1.2;
 }
 // Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
 // but widen the firing solution enough that an oblique crossing pass is a real threat.
@@ -294,6 +296,28 @@ enemyFireSolution=function(){
  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();
  const cone=mission.destroyed?.78:.82;
  return forward.dot(aim.multiplyScalar(1/Math.max(range,.001)))>cone&&enemyLOS();
+};
+// The authored ACE is persistent pressure, not a one-pass cutscene. Once it has crossed the player
+// and opened enough separation, bend it back toward a predicted intercept so it keeps making readable
+// attack runs without teleporting or becoming a permanent tail chase.
+const level1EnemyUpdate=updateEnemy;
+updateEnemy=function(dt){
+ level1EnemyUpdate(dt);
+ if(worldIndex!==0||!enemyAlive||enemyRole!=='ACE'||crashed||missionComplete)return;
+ banditReattackClock=Math.max(0,banditReattackClock-dt);
+ if(banditReattackClock>0)return;
+ const toShip=ship.position.clone().sub(enemy.position),range=toShip.length();
+ if(range<360)return;
+ const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();
+ if(forward.dot(toShip.clone().normalize())>-.18)return;
+ const playerForward=heading().clone(),right=new THREE.Vector3().crossVectors(playerForward,worldUp).normalize();
+ const side=(banditPass%2?1:-1)*(mission.destroyed?85:120);
+ const lead=ship.position.clone().addScaledVector(playerForward,mission.destroyed?250:340).addScaledVector(right,side);
+ lead.y=Math.max(terrainHeight(lead.x,lead.z)+(mission.destroyed?72:82),ship.position.y+15);
+ enemyCourse.copy(lead.sub(enemy.position).normalize());duel.forward.copy(enemyCourse);duel.side*=-1;duelState('engage');
+ banditPass++;banditReattackClock=mission.destroyed?1.15:1.55;
+ resetEnemyAttack(mission.destroyed?.30:.42);
+ announce('BANDIT AHEAD');
 };
 function updateMission(dt){
  if(crashed||missionComplete)return;
@@ -365,7 +389,7 @@ reset=function(){
  for(const p of effects.samTrail){scene.remove(p.mesh);p.mesh.material.dispose();}effects.samTrail.length=0;
  for(const fx of effects.launchFx){scene.remove(fx.mesh);if(fx.light)scene.remove(fx.light);fx.mesh.geometry.dispose();fx.mesh.material.dispose();}effects.launchFx.length=0;
  baseReset();
- playerInitiativeUntil=-99;initiativeKind='';
+ playerInitiativeUntil=-99;initiativeKind='';banditReattackClock=0;banditPass=0;
  missionRun=(missionRun+1)%MISSION_VARIANTS.length;
  Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
  const variant=activeVariant();
@@ -407,4 +431,4 @@ function loop(){
 reset();requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 // Read-only diagnostics support repeatable browser verification without an alternate simulation.
-window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,entry:mission.entry,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:sam.missiles.length>0,samMissiles:sam.missiles.length,samTracking:sam.stage,samTracks:sam.sites.map(s=>s.stage||0),samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,geometry:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE)}),height:terrainHeight,center:valleyCenter});
+window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,entry:mission.entry,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:sam.missiles.length>0,samMissiles:sam.missiles.length,samTracking:sam.stage,samTracks:sam.sites.map(s=>s.stage||0),samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,banditPasses:banditPass,geometry:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE)}),height:terrainHeight,center:valleyCenter});
