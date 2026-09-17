@@ -1486,6 +1486,7 @@ window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activ
 // player gets a clean guns decision before the ACE is allowed to become a pursuit problem.
 let banditOfferActive=false,banditOfferClock=0;
 const banditOfferDir=new THREE.Vector3(),banditOfferForward=new THREE.Vector3(),banditOfferRight=new THREE.Vector3(),banditOfferQ=new THREE.Quaternion();
+const banditMissLead=new THREE.Vector3(),banditMissRight=new THREE.Vector3();
 
 const banditFlowSpawnDefender=spawnDefender;
 spawnDefender=function(escape=false){
@@ -1531,11 +1532,18 @@ updateEnemy=function(dt){
  enemyCourse.copy(banditOfferForward);duel.forward.copy(banditOfferForward);
  if(banditOfferClock>0)return;
  banditOfferActive=false;
- // The opening is a bargain, not a cutscene. Miss it and the same jet immediately turns
- // back into the fight. This makes "take the shot" a real choice without spawning more enemies.
- duel.course.copy(banditOfferForward);duelState('engage');duel.speed=Math.max(duel.speed,CRUISE_SPEED+18);
- banditReattackClock=.65;
- resetEnemyAttack(.85);resetHostileThreat(1.45);
+
+ // Missing the opening shot must create a *real pass*, not a close co-orbit. Aim the ACE
+ // through the player's near-future path and give it enough energy to overtake a turboing pilot.
+ // The attack still obeys terrain LOS and normal gun/missile solutions; nothing deals free damage.
+ const playerForward=heading().clone(),right=banditMissRight.crossVectors(playerForward,worldUp).normalize();
+ banditMissLead.copy(ship.position).addScaledVector(playerForward,230).addScaledVector(right,duel.side*78);
+ banditMissLead.y=Math.max(terrainHeight(banditMissLead.x,banditMissLead.z)+72,ship.position.y+10);
+ enemyCourse.copy(banditMissLead.sub(enemy.position).normalize());
+ duel.forward.copy(enemyCourse);duel.course.copy(enemyCourse);duelState('engage');
+ duel.speed=Math.max(duel.speed,TURBO_SPEED+24);
+ banditReattackClock=.32;
+ resetEnemyAttack(.32);resetHostileThreat(.9);
 };
 
 // Make cannon work feel generous without turning it into an aimbot. If the bandit is
