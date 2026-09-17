@@ -1034,7 +1034,9 @@ let banditReattackClock=0,banditPass=0;
 function activeVariant(){return MISSION_VARIANTS[Math.max(0,mission.variant)%MISSION_VARIANTS.length];}
 const sam={sites:[],missiles:[],missile:null,lock:0,stage:0,cooldown:0,site:null,lastCue:-99,lastLaunch:-99,smokeClock:0};
 const briefing=document.getElementById('briefing'),deploy=document.getElementById('deploy'),radio=document.getElementById('radio');
-const compass=document.getElementById('compass'),health=document.getElementById('health'),runTimeUI=document.getElementById('runTime'),runBestUI=document.getElementById('runBest');
+const compass=document.getElementById('compass'),banditCue=document.getElementById('banditCue'),health=document.getElementById('health'),runTimeUI=document.getElementById('runTime'),runBestUI=document.getElementById('runBest');
+let banditKnown=false,banditCueActive=false,banditCueX=0,banditCueY=0,banditRearSide=1;
+const banditCueLocal=new THREE.Vector3(),banditCueProjected=new THREE.Vector3(),banditCueInverse=new THREE.Quaternion();
 const terrainPulse=(v,c,r,p=4)=>Math.exp(-Math.pow(Math.abs((v-c)/r),p));
 const terrainLobe=(x,z,cx,cz,rx,rz,p=4)=>Math.exp(-Math.pow(Math.abs((x-cx)/rx),p)-Math.pow(Math.abs((z-cz)/rz),p));
 const valleyCenter=z=>{
@@ -1118,6 +1120,7 @@ function announce(text){
  if(mission.phase!=='flight')return;
  const message=/SAM LAUNCH/.test(text)?'MISSILE INBOUND · '+(sam.site?clockBearing(sam.site.position)+" O'CLOCK":'BREAK'):/BANDIT OVERSHOOT/.test(text)?'BANDIT OVERSHOOT · FOX':/SAM EXPOSED/.test(text)?'SAM EXPOSED · COUNTER':/MISSILE INBOUND/.test(text)?text:/RADAR TRACK|SAM TRACK/.test(text)?'SAM TRACKING':/BANDIT AHEAD|(?:ROOKIE|SKIMMER|CLIMBER|ACE) INBOUND/.test(text)?'BANDIT · '+clockBearing(enemy.position)+" O'CLOCK":/HOSTILE GUNS/.test(text)?'HOSTILE GUNS · BREAK':/TARGET DESTROYED/.test(text)?'TARGET DESTROYED · EXIT NORTH':null;
  if(!message)return;
+ if(/BANDIT|HOSTILE GUNS/.test(message))banditKnown=true;
  const gap=/OVERSHOOT|EXPOSED/.test(message)?.35:/TARGET|INBOUND|BANDIT|HOSTILE GUNS/.test(message)?1.1:4;
  if(missionElapsed-mission.lastMessage<gap)return;
  mission.lastMessage=missionElapsed;mission.messageUntil=missionElapsed+2.6;radio.textContent=message;radio.dataset.tone=/TARGET DESTROYED|OVERSHOOT|EXPOSED/.test(message)?'status':'threat';
@@ -1168,6 +1171,40 @@ function projectedGeometry(pos,maxRange){
  if(!onscreen||dist>maxRange||!lineClear(ship.position,pos))return {state:0,hard:false,onscreen:false,dist,d:99999,trackR};
  const d=Math.hypot(p.x*.5*innerWidth,(-p.y*.5+.08)*innerHeight);
  return {state:d<trackR?1:0,hard:d<trackR*.7,onscreen,dist,d,trackR};
+}
+function hideBanditCue(){banditCueActive=false;if(banditCue)banditCue.hidden=true;}
+function updateBanditCue(dt){
+ if(!banditCue||!enemyAlive||crashed||missionComplete){hideBanditCue();return;}
+ banditCueInverse.copy(camera.quaternion).invert();
+ banditCueLocal.copy(enemy.position).sub(camera.position).applyQuaternion(banditCueInverse);
+ banditCueProjected.copy(enemy.position).project(camera);
+ const behind=banditCueLocal.z>0;
+ const seenNow=!behind&&Math.abs(banditCueProjected.x)<=.98&&Math.abs(banditCueProjected.y)<=.96;
+ if(seenNow)banditKnown=true;
+ if(!banditKnown){hideBanditCue();return;}
+ const offscreen=behind||Math.abs(banditCueProjected.x)>1.02||Math.abs(banditCueProjected.y)>1.02;
+ const reacquired=!behind&&Math.abs(banditCueProjected.x)<.96&&Math.abs(banditCueProjected.y)<.94;
+ if((!banditCueActive&&!offscreen)||(banditCueActive&&reacquired)){hideBanditCue();return;}
+ let dx,dy;
+ if(!behind){dx=banditCueProjected.x;dy=-banditCueProjected.y;}
+ else{
+  const azimuth=Math.atan2(banditCueLocal.x,-banditCueLocal.z);
+  const elevation=Math.atan2(banditCueLocal.y,Math.hypot(banditCueLocal.x,banditCueLocal.z));
+  let lateral=Math.sin(azimuth);
+  if(Math.abs(lateral)>.20)banditRearSide=Math.sign(lateral)||banditRearSide;
+  else lateral=banditRearSide*.20;
+  dx=lateral;dy=-Math.sin(elevation)*1.25;
+ }
+ if(Math.abs(dx)<.001&&Math.abs(dy)<.001)dx=banditRearSide*.20;
+ const cx=innerWidth*.5,cy=innerHeight*.5,inset=Math.max(22,Math.min(30,Math.min(innerWidth,innerHeight)*.035));
+ const halfW=Math.max(1,cx-inset),halfH=Math.max(1,cy-inset),edgeScale=1/Math.max(Math.abs(dx),Math.abs(dy),.0001);
+ const targetX=cx+dx*edgeScale*halfW,targetY=cy+dy*edgeScale*halfH;
+ const wasVisible=!banditCue.hidden,follow=wasVisible?1-Math.exp(-dt*18):1;
+ banditCueX=THREE.MathUtils.lerp(wasVisible?banditCueX:targetX,targetX,follow);banditCueY=THREE.MathUtils.lerp(wasVisible?banditCueY:targetY,targetY,follow);
+ const range=enemy.position.distanceTo(ship.position),close=1-THREE.MathUtils.smoothstep(range,180,1250),opacity=.34+close*.28;
+ const angle=THREE.MathUtils.radToDeg(Math.atan2(targetY-cy,targetX-cx));
+ banditCue.hidden=false;banditCueActive=true;banditCue.style.left=banditCueX+'px';banditCue.style.top=banditCueY+'px';banditCue.style.opacity=opacity.toFixed(3);banditCue.style.transform=`translate(-50%,-50%) rotate(${angle.toFixed(1)}deg)`;
+ banditCue.dataset.rear=behind?'true':'false';
 }
 const STRIKE_LOCK_RANGE=700,SAM_COUNTER_RANGE=700;
 const airGeometry=geometry;
@@ -1400,6 +1437,7 @@ reset=function(){
  for(const fx of effects.launchFx){scene.remove(fx.mesh);if(fx.light)scene.remove(fx.light);fx.mesh.geometry.dispose();fx.mesh.material.dispose();}effects.launchFx.length=0;
  baseReset();
  playerInitiativeUntil=-99;initiativeKind='';banditReattackClock=0;banditPass=0;
+ banditKnown=false;banditRearSide=1;banditCueX=banditCueY=0;hideBanditCue();
  missionRun=(missionRun+1)%MISSION_VARIANTS.length;
  Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
  const variant=activeVariant();
@@ -1435,10 +1473,10 @@ function loop(){
  const dt=rawDt*(killSlow>0?.42:1);killSlow=Math.max(0,killSlow-rawDt);
  if(!crashed)missionElapsed+=rawDt;
  if(!briefing.hidden&&missionElapsed>=mission.introUntil)briefing.hidden=true;
- if(!crashed){updateTouchFlight();updateFlight(dt);updateDanger(dt);updateWorld();if(enemyAlive)updateEnemy(dt);updateEnemyAttack(dt);updateSamNetwork(dt);updateMission(dt);updateRange(dt);updateCamera(dt);updateSpeedFX(dt);updateCombatFX(dt);updateWeapons(dt);updateV43SamSmoke(dt);updateLaunchClimax(dt);v44UpdateFirestorm(dt);updateTargeting(dt);updateGuidance();updateInstruments();}
+ if(!crashed){updateTouchFlight();updateFlight(dt);updateDanger(dt);updateWorld();if(enemyAlive)updateEnemy(dt);updateEnemyAttack(dt);updateSamNetwork(dt);updateMission(dt);updateRange(dt);updateCamera(dt);updateSpeedFX(dt);updateCombatFX(dt);updateWeapons(dt);updateV43SamSmoke(dt);updateLaunchClimax(dt);v44UpdateFirestorm(dt);updateTargeting(dt);updateGuidance();updateBanditCue(dt);updateInstruments();}
  renderer.render(scene,camera);
 }
 reset();requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 // Read-only diagnostics support repeatable browser verification without an alternate simulation.
-window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,entry:mission.entry,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:sam.missiles.length>0,samMissiles:sam.missiles.length,samTracking:sam.stage,samTracks:sam.sites.map(s=>s.stage||0),samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,banditPasses:banditPass,geometry:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE)}),height:terrainHeight,center:valleyCenter});
+window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,entry:mission.entry,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:sam.missiles.length>0,samMissiles:sam.missiles.length,samTracking:sam.stage,samTracks:sam.sites.map(s=>s.stage||0),samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,banditPasses:banditPass,banditKnown,banditCue:banditCueActive&&!banditCue.hidden?[Math.round(banditCueX),Math.round(banditCueY),banditCue.dataset.rear==='true']:null,geometry:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE)}),height:terrainHeight,center:valleyCenter});
