@@ -103,8 +103,9 @@ window.scenario={
   const entries=await page.evaluate(()=>scenario.entrySafety());
   assert.equal(entries.length,5,'Level 1 should ship five authored opening patterns');
   assert.equal(new Set(entries.map(e=>e.entry)).size,5,'Every opening pattern must be distinct');
-  assert.ok(entries.every(e=>!e.crashed),'Every authored opening must survive four seconds hands-off');
-  assert.ok(entries.every(e=>e.altitude>8),'Every opening line must retain safe terrain clearance');
+  const unsafeEntries=entries.filter(e=>e.crashed||e.altitude<=8);
+  assert.ok(entries.every(e=>!e.crashed),`Every authored opening must survive four seconds hands-off. Unsafe: ${JSON.stringify(unsafeEntries)}`);
+  assert.ok(entries.every(e=>e.altitude>8),`Every opening line must retain safe terrain clearance. Unsafe: ${JSON.stringify(unsafeEntries)}`);
   const startXs=entries.map(e=>Math.round(e.start[0])),startZs=entries.map(e=>Math.round(e.start[2]));
   assert.ok(Math.max(...startXs)-Math.min(...startXs)>350,'Opening patterns must meaningfully vary lateral position');
   assert.ok(Math.max(...startZs)-Math.min(...startZs)>200,'Opening patterns must meaningfully vary approach depth');
