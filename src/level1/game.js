@@ -1531,9 +1531,11 @@ updateEnemy=function(dt){
  enemyCourse.copy(banditOfferForward);duel.forward.copy(banditOfferForward);
  if(banditOfferClock>0)return;
  banditOfferActive=false;
- duel.course.copy(banditOfferForward);duel.state='extend';duel.age=0;duel.speed=Math.max(duel.speed,CRUISE_SPEED+8);
- banditReattackClock=Math.max(banditReattackClock,1.6);
- resetEnemyAttack(1.2);resetHostileThreat(1.8);
+ // The opening is a bargain, not a cutscene. Miss it and the same jet immediately turns
+ // back into the fight. This makes "take the shot" a real choice without spawning more enemies.
+ duel.course.copy(banditOfferForward);duelState('engage');duel.speed=Math.max(duel.speed,CRUISE_SPEED+18);
+ banditReattackClock=.65;
+ resetEnemyAttack(.85);resetHostileThreat(1.45);
 };
 
 // Make cannon work feel generous without turning it into an aimbot. If the bandit is
