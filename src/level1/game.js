@@ -1016,7 +1016,7 @@ const ENTRY_PATTERNS=Object.freeze([
  // Different composition, same difficulty envelope: variation should create freshness, not chaos.
  {id:'WEST_SCRAPE',z:1560,side:-190,agl:62,aimZ:700,aimSide:-70,aimAgl:66,bank:-.07,speed:230},
  {id:'RIDGE_LINE',z:1710,side:60,agl:85,aimZ:680,aimSide:-25,aimAgl:70,bank:.04,speed:232},
- {id:'EAST_CUT',z:1620,side:180,agl:145,aimZ:670,aimSide:35,aimAgl:141,bank:.06,speed:234},
+ {id:'EAST_CUT',z:1620,side:180,agl:145,aimZ:670,aimSide:-70,aimAgl:141,bank:.06,speed:234},
  {id:'LOW_SLOT',z:1480,side:-105,agl:48,aimZ:700,aimSide:-80,aimAgl:58,bank:-.04,speed:228},
  {id:'CENTER_CROSS',z:1660,side:20,agl:112,aimZ:650,aimSide:90,aimAgl:100,bank:.03,speed:232}
 ]);
