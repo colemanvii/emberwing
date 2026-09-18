@@ -669,10 +669,10 @@ updateEnemy=function(dt){
  if(duel.state==='break'&&duel.age>(enemyRole==='ACE'?.52:1.65))duelState(enemyRole==='ACE'?'engage':'extend');
  if(duel.state==='press'&&(duel.age>(enemyRole==='ACE'?8.5:4.5)||(duel.age>2.2&&(range>(enemyRole==='ACE'?980:540)||behind<-.62))))duelState('extend');
  const intent=duel.intent,right=duel.right.crossVectors(pf,worldUp).normalize();
- let targetSpeed=enemyRole==='ROOKIE'?CRUISE_SPEED:enemyRole==='ACE'?TURBO_SPEED+20:CRUISE_SPEED+10,turn=enemyRole==='ROOKIE'?.9:enemyRole==='ACE'?1.82:1.12;
+ let targetSpeed=enemyRole==='ROOKIE'?CRUISE_SPEED:enemyRole==='ACE'?TURBO_SPEED-4:CRUISE_SPEED+10,turn=enemyRole==='ROOKIE'?.9:enemyRole==='ACE'?1.82:1.12;
  if(duel.state==='extend'){
   intent.copy(duel.course);
-  if(initiativeActive){targetSpeed=TURBO_SPEED-12;turn=.96;}else targetSpeed+=26;
+  if(initiativeActive){targetSpeed=TURBO_SPEED-12;turn=.96;}else targetSpeed+=enemyRole==='ACE'?4:26;
  }else if(duel.state==='break'){
   right.crossVectors(duel.course,worldUp).normalize();
   intent.copy(duel.course).multiplyScalar(.2).addScaledVector(right,duel.side);
@@ -683,7 +683,7 @@ updateEnemy=function(dt){
   duel.aim.copy(ship.position).addScaledVector(pf,Math.min(range/(targetSpeed+speed),.65)*speed).addScaledVector(right,offset);
   intent.copy(duel.aim).sub(enemy.position);
   if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=CRUISE_SPEED+18;
-  if(duel.state==='press'){targetSpeed=enemyRole==='ACE'?Math.min(TURBO_SPEED+28,Math.max(TURBO_SPEED+10,speed+(range>160?26:8))):Math.min(TURBO_SPEED-6,Math.max(CRUISE_SPEED+8,speed+(range>160?22:-3)));turn=enemyRole==='ACE'?2.05:1.25;}
+  if(duel.state==='press'){targetSpeed=enemyRole==='ACE'?Math.min(TURBO_SPEED+6,Math.max(TURBO_SPEED-4,speed+(range>160?18:6))):Math.min(TURBO_SPEED-6,Math.max(CRUISE_SPEED+8,speed+(range>160?22:-3)));turn=enemyRole==='ACE'?2.05:1.25;}
  }
  const clearance=enemyRole==='SKIMMER'?42:enemyRole==='CLIMBER'?90:62;
  // Stay in the player's altitude band; a climber's modest high-side pass is bounded.
