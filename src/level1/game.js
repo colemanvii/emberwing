@@ -1067,10 +1067,10 @@ terrainHeight=function(x,z){
 
  // 1. THE RIDGE CHOICE — the eastern wall ends in a long, blade-shaped spur.
  // Its low western toe can be cut closely; the wider west arc stays below the SAM shelf.
- const escarpment=480*terrainLobe(x,z,valleyCenter(220)+540,220,345,940,4);
- const escarpmentCrown=340*terrainLobe(x,z,valleyCenter(120)+440,120,175,570,5);
- const escarpmentToe=115*terrainLobe(x,z,valleyCenter(-40)+245,-40,180,660,4);
- const ridgeSpur=145*terrainLobe(x,z,valleyCenter(-100)+40,-100,130,320,4);
+ const escarpment=480*terrainLobe(x,z,valleyCenter(220)+625,220,345,940,4);
+ const escarpmentCrown=340*terrainLobe(x,z,valleyCenter(120)+525,120,175,570,5);
+ const escarpmentToe=115*terrainLobe(x,z,valleyCenter(-40)+330,-40,180,660,4);
+ const ridgeSpur=145*terrainLobe(x,z,valleyCenter(-100)+125,-100,130,320,4);
  const westernShelf=35*terrainLobe(x,z,valleyCenter(120)-550,120,300,740,4);
 
  // 2. THE NARROW THROAT — staggered sheer buttresses, with a low continuous slot.
@@ -1455,7 +1455,7 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(200)+190,200],[valleyCenter(-1450)-500,-1450],[valleyCenter(-3150)+500,-3150],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
+ const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-3150)+500,-3150],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  variant.sam.forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
