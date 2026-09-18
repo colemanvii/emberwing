@@ -59,11 +59,12 @@ window.scenario={
     const sight=(index,p)=>lineClear(sam.sites[index].position,p,8)&&!scenerySegmentHit(sam.sites[index].position,p,5,8,true);
     return {
       ridgeMasked:sight(0,point(-300,-220,40)),
-      ridgeExposed:sight(0,point(-300,-220,180)),
-      ridgeCut:sight(0,point(-300,100,40)),
       throat:[-1950,-2150,-2350].map(z=>({floor:terrainHeight(valleyCenter(z),z),west:terrainHeight(valleyCenter(z)-220,z),east:terrainHeight(valleyCenter(z)+220,z)})),
-      concealed:lineClear(point(-4400,-130,50),rocket.position),
-      revealed:lineClear(point(-4900,-130,50),rocket.position),
+      shadowMasked:sight(2,point(-3600,-320,55)),
+      shadowFast:sight(2,point(-3600,0,55)),
+      concealed:lineClear(point(-4550,-320,55),rocket.position),
+      fastReveal:lineClear(point(-5000,0,70),rocket.position),
+      safeReveal:lineClear(point(-5150,-320,55),rocket.position),
       escapeFloor:[-5700,-5900,-6100,-6300,-6500,-6800].map(z=>terrainHeight(valleyCenter(z),z)),
       terminalMasked:sight(3,point(-5100,-100)),
       terminalExposed:sight(3,point(-5500)),
@@ -116,11 +117,12 @@ window.scenario={
 
   const routing=await page.evaluate(()=>scenario.routing());
   assert.equal(routing.ridgeMasked,false,'Wide low ridge line must break SAM1 visibility');
-  assert.equal(routing.ridgeExposed,true,'Climbing above the ridge must surrender cover');
-  assert.equal(routing.ridgeCut,true,'Cutting over the spur must be an exposed alternative');
   assert.ok(routing.throat.every(p=>p.floor<0&&p.west-p.floor>170&&p.east-p.floor>170),'Throat must have a continuous low slot between substantial close faces');
-  assert.equal(routing.concealed,false,'Western ingress must conceal the target before the headland');
-  assert.equal(routing.revealed,true,'Rounding the western shoulder must leave room to acquire the target');
+  assert.equal(routing.shadowMasked,false,'West of the mid-valley spine must break SAM3 visibility');
+  assert.equal(routing.shadowFast,true,'The direct inside line must remain exposed to SAM3');
+  assert.equal(routing.concealed,false,'The masked western line must keep the target hidden before the basin shoulder');
+  assert.equal(routing.fastReveal,true,'The direct exposed line must acquire the target first');
+  assert.equal(routing.safeReveal,true,'Rounding the basin shoulder must reveal the target to the masked line');
   assert.ok(routing.escapeFloor.every(y=>y<40),'The strike axis must remain low through the escape spine');
   assert.equal(routing.terminalMasked,false,'Headland must mask SAM4 on low ingress');
   assert.equal(routing.terminalExposed,true,'SAM4 must see the exposed strike basin');
