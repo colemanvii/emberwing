@@ -50,15 +50,15 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
    if(z<1180&&z>-260)targetX=s.center-120;
    // Commit to the authored radar-shadow line after the throat. Stay west of the
    // mid-valley spine, then turn toward the installation only after rounding its basin shoulder.
-   if(z<-3150&&z>-5000)targetX=s.center-320;
+   if(z<-3150&&z>-5150)targetX=s.center-480;
    // Break west after impact: flying through the surviving launch tower is still a collision.
    if(s.destroyed&&z>-6100)targetX=s.center-180;
   }
-  if(z<=-4900&&z>-5900&&!s.destroyed)targetX=s.target[0];
+  if(z<=-5150&&z>-5900&&!s.destroyed)targetX=s.target[0];
   const altitude=Number(process.env.ALTITUDE||(reckless?110:50));
   let desiredY=s.aheadFloor+altitude;
   if(!reckless)desiredY=Math.max(desiredY,s.farFloor+Math.max(38,altitude-12));
-  if(z<-5150&&!s.destroyed)desiredY=s.target[1]+(reckless?95:65);
+  if(z<-5200&&!s.destroyed)desiredY=s.target[1]+(reckless?95:65);
   // The normal pilot reacts. The reckless regression pilot deliberately ignores every warning.
   const missileBreak=!reckless&&s.samMissile;
   // Range alone is not a threat. Break when the ACE is actually closing, with an emergency catch
@@ -66,7 +66,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const banditBreak=!reckless&&s.banditRange!==null&&s.banditRange<285&&(banditClosing||s.banditRange<170);
   let desiredPitch=clamp((desiredY-y)/480,-.21,.18);
 
-  const aiming=z<-4900&&z>-5480&&!s.destroyed;
+  const aiming=z<-5150&&z>-5530&&!s.destroyed;
   if(aiming)desiredPitch=clamp(Math.atan2(s.target[1]-y,Math.hypot(s.target[0]-x,s.target[2]-z)),-.21,.18);
   const desiredYaw=aiming?Math.atan2(s.target[0]-x,z-s.target[2]):Math.atan2(targetX-x,600),yawError=Math.atan2(Math.sin(desiredYaw-yaw),Math.cos(desiredYaw-yaw));
   let desiredBank=clamp(yawError*1.8,-.58,.58);
