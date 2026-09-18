@@ -1,14 +1,15 @@
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
-const LEVEL={startZ:1300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-8500};
+const LEVEL={startZ:2300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-8500};
 // Galaga lesson: the mission is learnable, but the entrance has choreography.
 // These cycle deterministically so runs feel different without turning difficulty into RNG.
 const ENTRY_PATTERNS=Object.freeze([
- // Different composition, same difficulty envelope: variation should create freshness, not chaos.
- {id:'WEST_SCRAPE',z:1560,side:-190,agl:62,aimZ:700,aimSide:-70,aimAgl:66,bank:-.07,speed:230},
- {id:'RIDGE_LINE',z:1710,side:60,agl:85,aimZ:680,aimSide:-25,aimAgl:70,bank:.04,speed:232},
- {id:'EAST_CUT',z:1620,side:180,agl:145,aimZ:670,aimSide:-70,aimAgl:141,bank:.06,speed:234},
- {id:'LOW_SLOT',z:1480,side:-105,agl:48,aimZ:700,aimSide:-80,aimAgl:58,bank:-.04,speed:228},
- {id:'CENTER_CROSS',z:1660,side:20,agl:112,aimZ:650,aimSide:90,aimAgl:100,bank:.03,speed:232}
+ // Open-air approaches: variation changes the silhouette and line into the valley,
+ // but every run begins with room to read the world before the terrain closes.
+ {id:'WEST_APPROACH',z:2320,side:-300,agl:105,aimZ:820,aimSide:-70,aimAgl:88,bank:-.025,speed:220},
+ {id:'HIGH_CENTER',z:2440,side:55,agl:150,aimZ:850,aimSide:-20,aimAgl:98,bank:.012,speed:222},
+ {id:'EAST_SWEEP',z:2350,side:310,agl:132,aimZ:840,aimSide:-55,aimAgl:96,bank:.025,speed:222},
+ {id:'LOW_WEST',z:2250,side:-165,agl:82,aimZ:800,aimSide:-65,aimAgl:82,bank:-.018,speed:218},
+ {id:'CENTER_APPROACH',z:2390,side:10,agl:118,aimZ:780,aimSide:55,aimAgl:92,bank:.01,speed:221}
 ]);
 function loadEntryRun(){try{const v=Number(sessionStorage.getItem('emberwingEntryRun'));return Number.isFinite(v)?v:-1}catch{return -1}}
 function saveEntryRun(v){try{sessionStorage.setItem('emberwingEntryRun',String(v))}catch{}}
@@ -16,10 +17,10 @@ let entryRun=loadEntryRun();
 // Level 1 is one authored mission, not a hidden difficulty lottery.
 // The player should be able to learn this valley, understand its threat geometry, and improve by mastery.
 const MISSION_VARIANTS=Object.freeze([
- {id:'VALLEY',sam:[1250,1600,1740,1950,2000],cooldown:2.8,bandit:{trigger:680,z:80,side:260,alt:108,delay:.30},escape:{trigger:-6000,z:-6600,side:-620,alt:155,delay:1.3}}
+ {id:'VALLEY',sam:[1250,1600,1740,1950,2000],cooldown:2.8,bandit:{trigger:500,z:80,side:260,alt:108,delay:.30},escape:{trigger:-6000,z:-6600,side:-620,alt:155,delay:1.3}}
 ]);
 let missionRun=-1;
-const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,entry:'WEST_SCRAPE',introUntil:2.35};
+const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,entry:'WEST_APPROACH',introUntil:1.55};
 let banditReattackClock=0,banditPass=0;
 function activeVariant(){return MISSION_VARIANTS[Math.max(0,mission.variant)%MISSION_VARIANTS.length];}
 const sam={sites:[],missiles:[],missile:null,lock:0,stage:0,cooldown:0,site:null,lastCue:-99,lastLaunch:-99,smokeClock:0};
@@ -48,12 +49,16 @@ terrainHeight=function(x,z){
  const basin=terrainPulse(z,-5650,1050);
  // Hold the valley closed through the escape beat, then release it quickly into northern air.
  const opening=1-THREE.MathUtils.smoothstep(z,-7350,-6500);
- const half=440-throat*225+basin*300+opening*1080;
+ // The mission begins outside the valley. Give the aircraft a broad apron of air,
+ // then let the walls close progressively as the player reaches the first ridge.
+ const ingressOpen=THREE.MathUtils.smoothstep(z,420,2200);
+ const half=440-throat*225+basin*300+opening*1080+ingressOpen*980;
  const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
  const wall=THREE.MathUtils.smoothstep(d,half,half+720);
  // Quiet the generic skyline so the four authored masses own the silhouette.
  const ridge=330+105*noiseLand(x*.0007,z*.0005)+throat*180;
  const foothills=THREE.MathUtils.smoothstep(d,half*.76,half+135)*(30+throat*24);
+ const ingressWallWeight=1-ingressOpen*.72;
 
  // 1. THE RIDGE CHOICE — the eastern wall ends in a long, blade-shaped spur.
  // Its low western toe can be cut closely; the wider west arc stays below the SAM shelf.
@@ -80,7 +85,7 @@ terrainHeight=function(x,z){
  const breakoutCrest=285*terrainLobe(x,z,valleyCenter(-6300)-505,-6300,155,570,5);
  const breakoutGate=150*terrainLobe(x,z,valleyCenter(-6560)+640,-6560,390,430,4);
 
- return floor+foothills+wall*ridge*(1-opening*.84)+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+throatWest+throatEast+headland+headlandCrown+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
+ return floor+foothills+wall*ridge*(1-opening*.84)*ingressWallWeight+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+throatWest+throatEast+headland+headlandCrown+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
 };
 function lineClear(a,b,clearance=3){
  const steps=Math.max(10,Math.ceil(a.distanceTo(b)/40));
@@ -364,13 +369,13 @@ function updateMission(dt){
  // Detection is the escalation event. A brief search sweep is survivable; staying exposed is not.
  // Break terrain contact and the detection clock falls away. Let the network hold you for roughly
  // three quarters of a second and the valley wakes up before the strike.
- const watched=sam.stage>=1&&!!sam.site;
+ const ingressArmed=ship.position.z<720;
+ const watched=ingressArmed&&sam.stage>=1&&!!sam.site;
  mission.detectClock=watched?Math.min(1.2,mission.detectClock+dt):Math.max(0,mission.detectClock-dt*2.4);
- if(!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile))mission.detected=true;
- // Air pressure is guaranteed. Good masking can delay the intercept, but it cannot turn the
- // strike into an empty sightseeing run. Detection brings the fighter early; otherwise the
- // defender commits as the player reaches the opening ridge.
- if(!mission.bandit&&(mission.detected||ship.position.z<variant.bandit.trigger)){
+ if(ingressArmed&&!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile))mission.detected=true;
+ // The first seconds belong to geography and orientation. Air pressure starts only after
+ // the aircraft has actually reached the valley mouth; detection may then accelerate it.
+ if(!mission.bandit&&ingressArmed&&(mission.detected||ship.position.z<variant.bandit.trigger)){
   mission.detected=true;mission.bandit=true;spawnDefender();
  }
  if(mission.destroyed&&!mission.escapeBandit&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
@@ -429,7 +434,7 @@ reset=function(){
  playerInitiativeUntil=-99;initiativeKind='';banditReattackClock=0;banditPass=0;
  banditKnown=false;banditRearSide=1;banditCueX=banditCueY=0;hideBanditCue();
  missionRun=(missionRun+1)%MISSION_VARIANTS.length;
- Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:2.35});
+ Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:1.55});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
  entryRun=(entryRun+1)%ENTRY_PATTERNS.length;saveEntryRun(entryRun);
@@ -451,7 +456,7 @@ reset=function(){
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
  rebuildTerrain(0,Math.round(entry.z/620)*620);positionDistantRidges(0,Math.round(entry.z/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
- camera.position.copy(ship.position).addScaledVector(entryForward,-12).addScaledVector(worldUp,5.3);resetCameraFrame();
+ camera.position.copy(ship.position).addScaledVector(entryForward,-16).addScaledVector(worldUp,6.4);resetCameraFrame();
  releaseInputs();audioCtx?.suspend();missionElapsed=0;briefing.hidden=false;document.body.dataset.state='flight';radio.hidden=true;targetUI.hidden=true;capture.hidden=true;
  updateWorld();updateCamera(1/60);renderer.render(scene,camera);
  updateObjectives();deploy.disabled=true;renderer.domElement.focus();
