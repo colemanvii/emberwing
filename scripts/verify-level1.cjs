@@ -89,7 +89,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const next=new Set();
   if(bank<desiredBank-.045)next.add('ArrowRight');else if(bank>desiredBank+.045)next.add('ArrowLeft');
   if(pitch<desiredPitch-.016)next.add('ArrowDown');else if(pitch>desiredPitch+.016)next.add('ArrowUp');
-  if(reckless||missileBreak||banditBreak||(z<-1900&&z>-3500)||(s.destroyed&&z<-5900))next.add('Shift');
+  if(reckless||((missileBreak||banditBreak)&&!terrainTight)||(z<-1900&&z>-3500)||(s.destroyed&&z<-5900))next.add('Shift');
   if(!s.destroyed&&s.geometry.state&&s.selected!=='ground'&&!s.seeker)next.add('KeyX');
   if(!s.destroyed&&s.geometry.state&&!s.missile&&s.elapsed-lastShot>2){
    if(s.lock===2&&s.selected==='ground'){lastShot=s.elapsed;}
