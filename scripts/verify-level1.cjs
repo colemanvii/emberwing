@@ -32,7 +32,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   lastBanditRange=s.banditRange;
   if(s.elapsed-lastLog>1){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),ahead:Math.round(s.aheadFloor),far:Math.round(s.farFloor),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,bandit:s.banditRange===null?null:Math.round(s.banditRange),closing:banditClosing,passes:s.banditPasses,destroyed:s.destroyed}));}
   const z=s.position[2];
-  if(reckless&&s.hp<=1&&z<-2200){
+  if(reckless&&s.hp<=1&&z<-1000){
    recklessPunished=true;
    await page.screenshot({path:path.join(output,'reckless-critical.png')});
    samples.push(s);
