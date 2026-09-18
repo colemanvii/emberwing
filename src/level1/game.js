@@ -1127,10 +1127,19 @@ terrainHeight=function(x,z){
  const throatWest=365*terrainLobe(x,z,valleyCenter(-1950)-380,-1950,260,700,5);
  const throatEast=525*terrainLobe(x,z,valleyCenter(-2350)+365,-2350,245,760,5);
 
- // 3. THE BASIN REVEAL — a high eastern headland with a low western rounding shoulder.
- // Keep its western foot and northern falloff: they govern concealment and the firing window.
- const headland=520*terrainLobe(x,z,valleyCenter(-4850)+365,-4850,350,300);
- const headlandCrown=310*terrainLobe(x,z,valleyCenter(-4850)+445,-4850,200,280,5);
+ // Past the throat, a long shoulder creates the first real line-choice in Level 1.
+ // WEST of it is the radar-shadow route: longer and closer to terrain, but the eastern
+ // batteries lose line of sight. EAST / inside is the direct attack line: faster, open,
+ // and deliberately exposed. The spine is low enough to cross, so this is a commitment,
+ // not a wall or a forced tunnel.
+ const shadowSpine=225*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
+ const shadowCrown=105*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
+
+ // 3. THE BASIN REVEAL — the shadow spine terminates in one monumental shoulder.
+ // The target sits behind this mass from the masked western line, then appears at once
+ // when the pilot rounds its north face. The eastern side remains the quicker exposed cut.
+ const headland=500*terrainLobe(x,z,valleyCenter(-4850)+70,-4850,265,420,4);
+ const headlandCrown=300*terrainLobe(x,z,valleyCenter(-4850)+105,-4850,150,300,5);
  const basinRim=220*terrainLobe(x,z,valleyCenter(-5750)+820,-5750,420,770,4);
 
  // 4. THE NORTH BREAKOUT — hug the inside of a western fin, then leave its blunt nose.
@@ -1139,7 +1148,7 @@ terrainHeight=function(x,z){
  const breakoutCrest=285*terrainLobe(x,z,valleyCenter(-6300)-505,-6300,155,570,5);
  const breakoutGate=150*terrainLobe(x,z,valleyCenter(-6560)+640,-6560,390,430,4);
 
- return floor+foothills+wall*ridge*(1-opening*.84)*ingressWallWeight+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+throatWest+throatEast+headland+headlandCrown+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
+ return floor+foothills+wall*ridge*(1-opening*.84)*ingressWallWeight+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+throatWest+throatEast+shadowSpine+shadowCrown+headland+headlandCrown+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
 };
 function lineClear(a,b,clearance=3){
  const steps=Math.max(10,Math.ceil(a.distanceTo(b)/40));
