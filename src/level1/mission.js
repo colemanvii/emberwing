@@ -86,6 +86,10 @@ terrainHeight=function(x,z){
  // when the pilot rounds its north face. The eastern side remains the quicker exposed cut.
  const headland=500*terrainLobe(x,z,valleyCenter(-4850)+70,-4850,265,420,4);
  const headlandCrown=300*terrainLobe(x,z,valleyCenter(-4850)+105,-4850,150,300,5);
+ // A low western wing prevents the safest wall-hug from seeing around the monument early.
+ // It does not close the route: the masked line stays low and wide enough to fly, but the
+ // launch complex only appears after the pilot has physically rounded the shoulder.
+ const headlandWing=260*terrainLobe(x,z,valleyCenter(-4920)-230,-4920,230,360,4);
  const basinRim=220*terrainLobe(x,z,valleyCenter(-5750)+820,-5750,420,770,4);
 
  // 4. THE NORTH BREAKOUT — hug the inside of a western fin, then leave its blunt nose.
@@ -94,7 +98,7 @@ terrainHeight=function(x,z){
  const breakoutCrest=285*terrainLobe(x,z,valleyCenter(-6300)-505,-6300,155,570,5);
  const breakoutGate=150*terrainLobe(x,z,valleyCenter(-6560)+640,-6560,390,430,4);
 
- return floor+foothills+wall*ridge*(1-opening*.84)*ingressWallWeight+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+throatWest+throatEast+shadowSpine+shadowCrown+headland+headlandCrown+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
+ return floor+foothills+wall*ridge*(1-opening*.84)*ingressWallWeight+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+throatWest+throatEast+shadowSpine+shadowCrown+headland+headlandCrown+headlandWing+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
 };
 function lineClear(a,b,clearance=3){
  const steps=Math.max(10,Math.ceil(a.distanceTo(b)/40));
