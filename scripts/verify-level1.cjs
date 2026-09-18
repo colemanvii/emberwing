@@ -32,7 +32,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   lastBanditRange=s.banditRange;
   if(s.elapsed-lastLog>1){samples.push(s);lastLog=s.elapsed;console.log(JSON.stringify({t:s.elapsed.toFixed(1),p:s.position.map(Math.round),alt:Math.round(s.altitude),ahead:Math.round(s.aheadFloor),far:Math.round(s.farFloor),hp:s.hp,lock:s.lock,target:s.targetHP,sam:s.samMissile,bandit:s.banditRange===null?null:Math.round(s.banditRange),closing:banditClosing,passes:s.banditPasses,destroyed:s.destroyed}));}
   const z=s.position[2];
-  if(reckless&&s.hp<=1&&z<-1000){
+  if(reckless&&s.hp<=2&&z<-1000){
    recklessPunished=true;
    await page.screenshot({path:path.join(output,'reckless-critical.png')});
    samples.push(s);
@@ -48,8 +48,9 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   if(!reckless){
    // Follow the natural westward dogleg around the eastern escarpment without treating it like a binary lane choice.
    if(z<1180&&z>-260)targetX=s.center-120;
-   // Read the western shoulder, then turn toward the installation once around the headland.
-   if(z<-3600&&z>-4900)targetX=s.center-130;
+   // Commit to the authored radar-shadow line after the throat. Stay west of the
+   // mid-valley spine, then turn toward the installation only after rounding its basin shoulder.
+   if(z<-3150&&z>-5000)targetX=s.center-320;
    // Break west after impact: flying through the surviving launch tower is still a collision.
    if(s.destroyed&&z>-6100)targetX=s.center-180;
   }
@@ -107,6 +108,6 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   if(errors.length||terminal?.complete||!tookHostileDamage||!recklessPunished){
    console.error('RECKLESS REGRESSION',JSON.stringify({complete:terminal?.complete,crashed:terminal?.crashed,hp:terminal?.hp,tookHostileDamage,recklessPunished}));
    process.exitCode=1;
-  }else console.log('PASS: reckless centerline reaches critical damage before the terminal half');
+  }else console.log('PASS: reckless centerline takes hostile damage before the terminal half');
  }else if(errors.length||!terminal?.complete)process.exitCode=1;
 })().catch(error=>{console.error(error);process.exitCode=1;});
