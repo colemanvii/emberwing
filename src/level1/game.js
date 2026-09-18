@@ -669,10 +669,10 @@ updateEnemy=function(dt){
  if(duel.state==='break'&&duel.age>(enemyRole==='ACE'?.52:1.65))duelState(enemyRole==='ACE'?'engage':'extend');
  if(duel.state==='press'&&(duel.age>(enemyRole==='ACE'?8.5:4.5)||(duel.age>2.2&&(range>(enemyRole==='ACE'?980:540)||behind<-.62))))duelState('extend');
  const intent=duel.intent,right=duel.right.crossVectors(pf,worldUp).normalize();
- let targetSpeed=enemyRole==='ROOKIE'?CRUISE_SPEED:enemyRole==='ACE'?TURBO_SPEED+20:CRUISE_SPEED+10,turn=enemyRole==='ROOKIE'?.9:enemyRole==='ACE'?1.82:1.12;
+ let targetSpeed=enemyRole==='ROOKIE'?CRUISE_SPEED:enemyRole==='ACE'?TURBO_SPEED-4:CRUISE_SPEED+10,turn=enemyRole==='ROOKIE'?.9:enemyRole==='ACE'?1.82:1.12;
  if(duel.state==='extend'){
   intent.copy(duel.course);
-  if(initiativeActive){targetSpeed=TURBO_SPEED-12;turn=.96;}else targetSpeed+=26;
+  if(initiativeActive){targetSpeed=TURBO_SPEED-12;turn=.96;}else targetSpeed+=enemyRole==='ACE'?4:26;
  }else if(duel.state==='break'){
   right.crossVectors(duel.course,worldUp).normalize();
   intent.copy(duel.course).multiplyScalar(.2).addScaledVector(right,duel.side);
@@ -683,7 +683,7 @@ updateEnemy=function(dt){
   duel.aim.copy(ship.position).addScaledVector(pf,Math.min(range/(targetSpeed+speed),.65)*speed).addScaledVector(right,offset);
   intent.copy(duel.aim).sub(enemy.position);
   if(duel.state==='engage'&&behind>.3&&range>400)targetSpeed=CRUISE_SPEED+18;
-  if(duel.state==='press'){targetSpeed=enemyRole==='ACE'?Math.min(TURBO_SPEED+28,Math.max(TURBO_SPEED+10,speed+(range>160?26:8))):Math.min(TURBO_SPEED-6,Math.max(CRUISE_SPEED+8,speed+(range>160?22:-3)));turn=enemyRole==='ACE'?2.05:1.25;}
+  if(duel.state==='press'){targetSpeed=enemyRole==='ACE'?Math.min(TURBO_SPEED+6,Math.max(TURBO_SPEED-4,speed+(range>160?18:6))):Math.min(TURBO_SPEED-6,Math.max(CRUISE_SPEED+8,speed+(range>160?22:-3)));turn=enemyRole==='ACE'?2.05:1.25;}
  }
  const clearance=enemyRole==='SKIMMER'?42:enemyRole==='CLIMBER'?90:62;
  // Stay in the player's altitude band; a climber's modest high-side pass is bounded.
@@ -1339,7 +1339,7 @@ function destroyTarget(){
    const intercept=ship.position.clone().addScaledVector(f,220).sub(enemy.position).normalize();
    enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),intercept);enemyCourse.copy(intercept);duel.forward.copy(intercept);
   }
-  duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED+18);enemyTime=Math.max(enemyTime,.8);resetEnemyAttack(.28);resetHostileThreat(.5);announce('BANDIT · SIX O\'CLOCK');
+  duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED+4);enemyTime=Math.max(enemyTime,.8);resetEnemyAttack(.28);resetHostileThreat(.5);announce('BANDIT · SIX O\'CLOCK');
  }else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
@@ -1379,7 +1379,7 @@ function spawnDefender(escape=false){
  const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?300:500);
  const direction=crossingPoint.sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
- duel.speed=escape?TURBO_SPEED+28:TURBO_SPEED+18;
+ duel.speed=escape?TURBO_SPEED+6:TURBO_SPEED;
  enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.38:.30));lastEnemy.copy(enemy.position);
  banditReattackClock=escape?.9:1.2;
 }
@@ -1601,7 +1601,9 @@ updateEnemy=function(dt){
  banditMissLead.y=Math.max(terrainHeight(banditMissLead.x,banditMissLead.z)+72,ship.position.y+10);
  enemyCourse.copy(banditMissLead.sub(enemy.position).normalize());
  duel.forward.copy(enemyCourse);duel.course.copy(enemyCourse);duelState('engage');
- duel.speed=Math.max(duel.speed,TURBO_SPEED+10);
+ // Hand the bandit into combat with retained energy, not an arcade speed jump.
+ // The duel AI can build speed from here, but the player should see acceleration rather than teleportation.
+ duel.speed=Math.max(duel.speed,CRUISE_SPEED+8);
  banditReattackClock=.6;
  resetEnemyAttack(.6);resetHostileThreat(1.2);
 };
