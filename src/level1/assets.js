@@ -96,7 +96,51 @@ function samExposure(s){
  const rangeQuality=THREE.MathUtils.clamp(1-(range/maxRange)*.24,.74,1);
  return{site:s,range,agl,exposure:clutter*centerLane*terrainTuck*highExposure*rangeQuality}
 }
-function updateSamNetwork(dt){if(mission.phase==='briefing'||worldIndex!==0||crashed||missionComplete||missionCompleteTimer>0){removeSamMissile();return}updateSamMissiles(dt);let leadSite=null,leadScore=-1;for(const s of sam.sites){if(s.disabled)continue;s.cooldown=Math.max(0,(s.cooldown||0)-dt);const c=samExposure(s);if(!c){s.lock=Math.max(0,(s.lock||0)-dt*(mission.detected?.88:1.25));if(s.lock<=.02)s.stage=0}else{const baseLock=mission.destroyed?.82:(s.index===0?1.08:(s.index>=3?.94:1.02));s.lock=Math.min(1,(s.lock||0)+dt/baseLock*c.exposure);if(s.stage===0){s.stage=1;if(missionElapsed-sam.lastCue>1.15){announce(c.agl<70?'RADAR SEARCH — STAY IN THE TERRAIN':'RADAR SEARCH — GET LOW / USE TERRAIN');sam.lastCue=missionElapsed}chirp(520,.045,.026);s.lastCue=missionElapsed}else if(s.lock>.46&&s.stage===1){s.stage=2;if(missionElapsed-sam.lastCue>.7){announce('RADAR TRACK — BREAK LINE OF SIGHT');sam.lastCue=missionElapsed}chirp(690,.05,.03);chirp(910,.05,.026,.1);s.lastCue=missionElapsed}if(s.lock>=1&&s.cooldown<=0&&sam.missiles.length<(mission.destroyed?2:1)&&missionElapsed-sam.lastLaunch>=.55)launchSam(s)}const score=(s.stage||0)*2+(s.lock||0);if(score>leadScore){leadScore=score;leadSite=s}}sam.site=leadSite&&leadSite.stage?leadSite:null;sam.lock=leadSite?.lock||0;sam.stage=leadSite?.stage||0}
+function updateSamNetwork(dt){
+ if(mission.phase==='briefing'||worldIndex!==0||crashed||missionComplete||missionCompleteTimer>0){removeSamMissile();return}
+ updateSamMissiles(dt);
+
+ // Preserve the new open-air approach. The first battery can be seen waking on the ridge,
+ // but the network does not begin accumulating a real track until the aircraft reaches
+ // the valley mouth. Once armed, retreating does not magically reset the encounter.
+ if(!mission.destroyed&&!mission.ingressArmed&&ship.position.z>=950){
+  for(const s of sam.sites){
+   if(s.disabled)continue;
+   s.cooldown=Math.max(0,(s.cooldown||0)-dt);
+   s.lock=Math.max(0,(s.lock||0)-dt*1.8);
+   s.stage=0;
+  }
+  sam.site=null;sam.lock=0;sam.stage=0;
+  return;
+ }
+
+ let leadSite=null,leadScore=-1;
+ for(const s of sam.sites){
+  if(s.disabled)continue;
+  s.cooldown=Math.max(0,(s.cooldown||0)-dt);
+  const c=samExposure(s);
+  if(!c){
+   s.lock=Math.max(0,(s.lock||0)-dt*(mission.detected?.88:1.25));
+   if(s.lock<=.02)s.stage=0;
+  }else{
+   const baseLock=mission.destroyed?.82:(s.index===0?1.08:(s.index>=3?.94:1.02));
+   s.lock=Math.min(1,(s.lock||0)+dt/baseLock*c.exposure);
+   if(s.stage===0){
+    s.stage=1;
+    if(missionElapsed-sam.lastCue>1.15){announce(c.agl<70?'RADAR SEARCH — STAY IN THE TERRAIN':'RADAR SEARCH — GET LOW / USE TERRAIN');sam.lastCue=missionElapsed}
+    chirp(520,.045,.026);s.lastCue=missionElapsed;
+   }else if(s.lock>.46&&s.stage===1){
+    s.stage=2;
+    if(missionElapsed-sam.lastCue>.7){announce('RADAR TRACK — BREAK LINE OF SIGHT');sam.lastCue=missionElapsed}
+    chirp(690,.05,.03);chirp(910,.05,.026,.1);s.lastCue=missionElapsed;
+   }
+   if(s.lock>=1&&s.cooldown<=0&&sam.missiles.length<(mission.destroyed?2:1)&&missionElapsed-sam.lastLaunch>=.55)launchSam(s);
+  }
+  const score=(s.stage||0)*2+(s.lock||0);
+  if(score>leadScore){leadScore=score;leadSite=s}
+ }
+ sam.site=leadSite&&leadSite.stage?leadSite:null;sam.lock=leadSite?.lock||0;sam.stage=leadSite?.stage||0;
+}
 
 const effects={samTrail:[],launchFx:[],launchFxActive:false,launchFxAge:0};
 const samTrailGeo=new THREE.IcosahedronGeometry(1,1);
