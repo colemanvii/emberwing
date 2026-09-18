@@ -285,7 +285,7 @@ function destroyTarget(){
    const intercept=ship.position.clone().addScaledVector(f,220).sub(enemy.position).normalize();
    enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),intercept);enemyCourse.copy(intercept);duel.forward.copy(intercept);
   }
-  duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED+18);enemyTime=Math.max(enemyTime,.8);resetEnemyAttack(.28);resetHostileThreat(.5);announce('BANDIT · SIX O\'CLOCK');
+  duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED+4);enemyTime=Math.max(enemyTime,.8);resetEnemyAttack(.28);resetHostileThreat(.5);announce('BANDIT · SIX O\'CLOCK');
  }else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
 }
 const airWeapons=updateWeapons;
@@ -325,7 +325,7 @@ function spawnDefender(escape=false){
  const crossingPoint=ship.position.clone().addScaledVector(heading(),escape?300:500);
  const direction=crossingPoint.sub(enemy.position).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);enemyCourse.copy(direction);duel.forward.copy(direction);duelState('engage');
- duel.speed=escape?TURBO_SPEED+28:TURBO_SPEED+18;
+ duel.speed=escape?TURBO_SPEED+6:TURBO_SPEED;
  enemyDetected=true;enemyTime=0;resetEnemyAttack(Math.min(spec.delay,escape?.38:.30));lastEnemy.copy(enemy.position);
  banditReattackClock=escape?.9:1.2;
 }
