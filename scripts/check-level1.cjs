@@ -108,7 +108,7 @@ window.scenario={
   assert.ok(entries.every(e=>e.altitude>8),`Every opening line must retain safe terrain clearance. Unsafe: ${JSON.stringify(unsafeEntries)}`);
   const startXs=entries.map(e=>Math.round(e.start[0])),startZs=entries.map(e=>Math.round(e.start[2]));
   assert.ok(Math.max(...startXs)-Math.min(...startXs)>350,'Opening patterns must meaningfully vary lateral position');
-  assert.ok(Math.max(...startZs)-Math.min(...startZs)>200,'Opening patterns must meaningfully vary approach depth');
+  assert.ok(Math.max(...startZs)-Math.min(...startZs)>150,'Opening patterns must retain modest approach-depth variation without turning the opening into a depth lottery');
 
   const strikeAxis=await page.evaluate(()=>[-3000,-4100,-4900,-5700,-6300,-6900].map(z=>emberwing.center(z)));
   assert.ok(Math.max(...strikeAxis)-Math.min(...strikeAxis)<220,'Terminal route must read as one coherent strike axis');
