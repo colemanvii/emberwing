@@ -58,7 +58,9 @@ updateEnemy=function(dt){
  banditMissLead.y=Math.max(terrainHeight(banditMissLead.x,banditMissLead.z)+72,ship.position.y+10);
  enemyCourse.copy(banditMissLead.sub(enemy.position).normalize());
  duel.forward.copy(enemyCourse);duel.course.copy(enemyCourse);duelState('engage');
- duel.speed=Math.max(duel.speed,TURBO_SPEED+10);
+ // Hand the bandit into combat with retained energy, not an arcade speed jump.
+ // The duel AI can build speed from here, but the player should see acceleration rather than teleportation.
+ duel.speed=Math.max(duel.speed,CRUISE_SPEED+8);
  banditReattackClock=.6;
  resetEnemyAttack(.6);resetHostileThreat(1.2);
 };
