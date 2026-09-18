@@ -50,7 +50,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
    if(z<1180&&z>-260)targetX=s.center-120;
    // Commit to the authored radar-shadow line after the throat. Stay west of the
    // mid-valley spine, then turn toward the installation only after rounding its basin shoulder.
-   if(z<-3150&&z>-5150)targetX=s.center-480;
+   if(z<-2400&&z>-5150)targetX=s.center-480;
    // Break west after impact: flying through the surviving launch tower is still a collision.
    if(s.destroyed&&z>-6100)targetX=s.center-180;
   }
