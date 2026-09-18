@@ -17,10 +17,10 @@ let entryRun=loadEntryRun();
 // Level 1 is one authored mission, not a hidden difficulty lottery.
 // The player should be able to learn this valley, understand its threat geometry, and improve by mastery.
 const MISSION_VARIANTS=Object.freeze([
- {id:'VALLEY',sam:[1250,1600,1740,1950,2000],cooldown:2.8,bandit:{trigger:500,z:80,side:260,alt:108,delay:.30},escape:{trigger:-6000,z:-6600,side:-620,alt:155,delay:1.3}}
+ {id:'VALLEY',sam:[1250,1600,1740,1950,2000],cooldown:2.8,bandit:{trigger:340,z:80,side:260,alt:108,delay:.30},escape:{trigger:-6000,z:-6600,side:-620,alt:155,delay:1.3}}
 ]);
 let missionRun=-1;
-const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,entry:'WEST_APPROACH',introUntil:1.55};
+const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,ingressArmed:false,approachCue:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,entry:'WEST_APPROACH',introUntil:1.55};
 let banditReattackClock=0,banditPass=0;
 function activeVariant(){return MISSION_VARIANTS[Math.max(0,mission.variant)%MISSION_VARIANTS.length];}
 const sam={sites:[],missiles:[],missile:null,lock:0,stage:0,cooldown:0,site:null,lastCue:-99,lastLaunch:-99,smokeClock:0};
@@ -366,16 +366,27 @@ function updateMission(dt){
  const variant=activeVariant();
  // Invisible spatial activation only paces opponents; nothing gates the target or route.
  if(ship.position.z<=LEVEL.entryZ)mission.penetrated=true;
- // Detection is the escalation event. A brief search sweep is survivable; staying exposed is not.
- // Break terrain contact and the detection clock falls away. Let the network hold you for roughly
- // three quarters of a second and the valley wakes up before the strike.
- const ingressArmed=ship.position.z<720;
- const watched=ingressArmed&&sam.stage>=1&&!!sam.site;
+ // The approach should turn into danger in layers, not through one invisible switch.
+ // First the eastern battery wakes visually; then its radar is allowed to search; only then
+ // does detection accelerate the fighter commitment.
+ const firstSam=sam.sites[0];
+ if(!mission.approachCue&&ship.position.z<1325){
+  mission.approachCue=true;
+  chirp(330,.055,.018);chirp(430,.07,.015,.09);
+ }
+ if(firstSam&&!firstSam.disabled){
+  if(mission.approachCue&&!mission.ingressArmed){
+   const pulse=.82+.72*(.5+.5*Math.sin(missionElapsed*5.4));
+   firstSam.light.visible=true;firstSam.light.scale.setScalar(pulse);
+  }else firstSam.light.scale.setScalar(1);
+ }
+ if(!mission.ingressArmed&&ship.position.z<950)mission.ingressArmed=true;
+ const watched=mission.ingressArmed&&sam.stage>=1&&!!sam.site;
  mission.detectClock=watched?Math.min(1.2,mission.detectClock+dt):Math.max(0,mission.detectClock-dt*2.4);
- if(ingressArmed&&!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile))mission.detected=true;
- // The first seconds belong to geography and orientation. Air pressure starts only after
- // the aircraft has actually reached the valley mouth; detection may then accelerate it.
- if(!mission.bandit&&ingressArmed&&(mission.detected||ship.position.z<variant.bandit.trigger)){
+ if(mission.ingressArmed&&!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile))mission.detected=true;
+ // Good masking can postpone the merge, but not erase it. A clean run gets several seconds
+ // of geography first; a detected run brings the defender in sooner.
+ if(!mission.bandit&&mission.ingressArmed&&(mission.detected||ship.position.z<variant.bandit.trigger)){
   mission.detected=true;mission.bandit=true;spawnDefender();
  }
  if(mission.destroyed&&!mission.escapeBandit&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
@@ -434,7 +445,7 @@ reset=function(){
  playerInitiativeUntil=-99;initiativeKind='';banditReattackClock=0;banditPass=0;
  banditKnown=false;banditRearSide=1;banditCueX=banditCueY=0;hideBanditCue();
  missionRun=(missionRun+1)%MISSION_VARIANTS.length;
- Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:1.55});
+ Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,ingressArmed:false,approachCue:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:1.55});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
  entryRun=(entryRun+1)%ENTRY_PATTERNS.length;saveEntryRun(entryRun);
