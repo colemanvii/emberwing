@@ -77,11 +77,26 @@ window.scenario={
     const results=[];
     for(let run=0;run<ENTRY_PATTERNS.length;run++){
       reset();mission.phase='test';crashed=false;
-      const start=ship.position.toArray();
-      for(let i=0;i<240&&!crashed;i++){updateFlight(1/60);updateWorld();}
-      results.push({entry:mission.entry,start,crashed,position:ship.position.toArray(),altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z)});
+      const start=ship.position.toArray();let clearance=Infinity;
+      for(let i=0;i<480&&!crashed;i++){updateFlight(1/60);updateWorld();clearance=Math.min(clearance,ship.position.y-terrainHeight(ship.position.x,ship.position.z));}
+      results.push({entry:mission.entry,start,crashed,clearance,position:ship.position.toArray(),forward:heading().toArray(),altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z)});
     }
     return results;
+  },
+  entrySelection(){
+    const random=Math.random,fresh=[],rotations=[],invalid=[];
+    try{
+      for(const value of [null,'4','-2','0.5','NaN']){
+        if(value===null)sessionStorage.removeItem('emberwingEntryRun');else sessionStorage.setItem('emberwingEntryRun',value);
+        invalid.push(loadEntryRun());
+      }
+      for(const value of [0,.5,.999]){
+        sessionStorage.removeItem('emberwingEntryRun');entryRun=loadEntryRun();
+        Math.random=()=>value;reset();fresh.push(mission.entry);
+      }
+    }finally{Math.random=random;}
+    for(let i=0;i<4;i++){reset();rotations.push(mission.entry);}
+    mission.phase='test';return {fresh,rotations,invalid};
   }
 };`
    });
@@ -102,14 +117,32 @@ window.scenario={
   assert.ok(traveled>15,'Aircraft must already be moving when Level 1 loads');
 
   const entries=await page.evaluate(()=>scenario.entrySafety());
-  assert.equal(entries.length,5,'Level 1 should ship five authored opening patterns');
-  assert.equal(new Set(entries.map(e=>e.entry)).size,5,'Every opening pattern must be distinct');
+  assert.equal(entries.length,3,'Level 1 should ship three authored opening patterns');
+  assert.equal(new Set(entries.map(e=>e.entry)).size,3,'Every opening pattern must be distinct');
   const unsafeEntries=entries.filter(e=>e.crashed||e.altitude<=8);
-  assert.ok(entries.every(e=>!e.crashed),`Every authored opening must survive four seconds hands-off. Unsafe: ${JSON.stringify(unsafeEntries)}`);
+  assert.ok(entries.every(e=>!e.crashed),`Every authored opening must survive eight seconds hands-off. Unsafe: ${JSON.stringify(unsafeEntries)}`);
+  assert.ok(entries.every(e=>e.clearance>25),'Every opening must retain reaction room throughout its first eight seconds');
   assert.ok(entries.every(e=>e.altitude>8),`Every opening line must retain safe terrain clearance. Unsafe: ${JSON.stringify(unsafeEntries)}`);
   const startXs=entries.map(e=>Math.round(e.start[0])),startZs=entries.map(e=>Math.round(e.start[2]));
   assert.ok(Math.max(...startXs)-Math.min(...startXs)>350,'Opening patterns must meaningfully vary lateral position');
-  assert.ok(Math.max(...startZs)-Math.min(...startZs)>150,'Opening patterns must retain modest approach-depth variation without turning the opening into a depth lottery');
+  assert.ok(Math.max(...startZs)-Math.min(...startZs)<=200,'Opening depth must stay bounded to preserve mission pacing');
+  for(let i=0;i<entries.length;i++)for(let j=i+1;j<entries.length;j++){
+   const a=entries[i],b=entries[j];
+   assert.ok(Math.hypot(a.position[0]-b.position[0],a.position[2]-b.position[2])>280,'Openings must remain spatially distinct at eight seconds');
+   assert.ok(Math.acos(Math.min(1,a.forward.reduce((sum,v,k)=>sum+v*b.forward[k],0)))>.35,'Openings must retain visibly different approach angles at eight seconds');
+  }
+
+  const selection=await page.evaluate(()=>scenario.entrySelection());
+  assert.deepEqual(selection.invalid,[-1,-1,-1,-1,-1],'Missing or obsolete session indices must request a fresh selection');
+  assert.deepEqual(selection.fresh,['LOW_WEST','HIGH_CENTER','EAST_SWEEP'],'Fresh sessions must be able to select every authored opening');
+  assert.equal(new Set(selection.rotations.slice(0,3)).size,3,'Resets must visit all openings without immediate repeats');
+  assert.equal(selection.rotations[0],selection.rotations[3],'Rotation must wrap after three openings');
+  await page.keyboard.down('r');
+  const firstReset=await page.evaluate(()=>emberwing.snapshot().entry);
+  await page.keyboard.down('r');await page.keyboard.down('r');
+  assert.equal(await page.evaluate(()=>emberwing.snapshot().entry),firstReset,'Held R must not cycle through additional openings');
+  await page.keyboard.up('r');await page.keyboard.press('r');
+  assert.notEqual(await page.evaluate(()=>emberwing.snapshot().entry),firstReset,'A new R press must still restart into the next opening');
 
   const strikeAxis=await page.evaluate(()=>[-3000,-4100,-4900,-5700,-6300,-6900].map(z=>emberwing.center(z)));
   assert.ok(Math.max(...strikeAxis)-Math.min(...strikeAxis)<220,'Terminal route must read as one coherent strike axis');
@@ -163,6 +196,10 @@ window.scenario={
    assert.equal(reset.sams,5);
    assert.equal(reset.time,0);
   }
+
+  const beforeReload=await page.evaluate(()=>emberwing.snapshot().entry);
+  await page.reload({waitUntil:'networkidle'});await page.waitForFunction(()=>window.scenario);
+  assert.notEqual(await page.evaluate(()=>emberwing.snapshot().entry),beforeReload,'Reload in the same tab must advance the saved opening');
 
   assert.deepEqual(errors,[]);
   console.log(`PASS: airborne start, transient mission title, mission boundary at ${exitZ}, strike authority, physical SAM cover, concealment, and replay cleanup.`);

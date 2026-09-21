@@ -1054,18 +1054,17 @@ function updateLaunchVapor(){
 
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
 const LEVEL={startZ:2300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-8500};
-// Galaga lesson: the mission is learnable, but the entrance has choreography.
-// These cycle deterministically so runs feel different without turning difficulty into RNG.
+// Three authored entrances share the same mission. Only the first selection is random;
+// subsequent resets rotate, so adjacent runs never repeat an entrance.
 const ENTRY_PATTERNS=Object.freeze([
- // Open-air approaches: variation changes the silhouette and line into the valley,
- // but every run begins with room to read the world before the terrain closes.
- {id:'WEST_APPROACH',z:2320,side:-300,agl:105,aimZ:820,aimSide:-70,aimAgl:88,bank:-.025,speed:220},
- {id:'HIGH_CENTER',z:2440,side:55,agl:150,aimZ:850,aimSide:-20,aimAgl:98,bank:.012,speed:222},
- {id:'EAST_SWEEP',z:2350,side:310,agl:132,aimZ:840,aimSide:-55,aimAgl:96,bank:.025,speed:222},
- {id:'LOW_WEST',z:2250,side:-165,agl:82,aimZ:800,aimSide:-65,aimAgl:82,bank:-.018,speed:218},
- {id:'CENTER_APPROACH',z:2390,side:10,agl:118,aimZ:780,aimSide:55,aimAgl:92,bank:.01,speed:221}
+ // Skim the western apron; the closing western wall invites a gentle rightward correction.
+ {id:'LOW_WEST',z:2300,side:-1150,agl:42,aimZ:100,aimSide:-210,aimAgl:42,bank:.10,speed:218},
+ // An elevated, nearly central approach gives time to read the ridge and choose a line.
+ {id:'HIGH_CENTER',z:2400,side:0,agl:180,aimZ:650,aimSide:-20,aimAgl:110,bank:0,speed:222},
+ // Cross from the eastern apron, then roll toward north as the valley mouth comes around.
+ {id:'EAST_SWEEP',z:2300,side:850,agl:115,aimZ:650,aimSide:-110,aimAgl:90,bank:-.12,speed:222}
 ]);
-function loadEntryRun(){try{const v=Number(sessionStorage.getItem('emberwingEntryRun'));return Number.isFinite(v)?v:-1}catch{return -1}}
+function loadEntryRun(){try{const raw=sessionStorage.getItem('emberwingEntryRun'),v=Number(raw);return raw!==null&&Number.isInteger(v)&&v>=0&&v<ENTRY_PATTERNS.length?v:-1}catch{return -1}}
 function saveEntryRun(v){try{sessionStorage.setItem('emberwingEntryRun',String(v))}catch{}}
 let entryRun=loadEntryRun();
 // Level 1 is one authored mission, not a hidden difficulty lottery.
@@ -1074,7 +1073,7 @@ const MISSION_VARIANTS=Object.freeze([
  {id:'VALLEY',sam:[1250,1600,1740,1950,2000],cooldown:2.8,bandit:{trigger:340,z:80,side:260,alt:108,delay:.30},escape:{trigger:-6000,z:-6600,side:-620,alt:155,delay:1.3}}
 ]);
 let missionRun=-1;
-const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,ingressArmed:false,approachCue:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,entry:'WEST_APPROACH',introUntil:1.55};
+const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,ingressArmed:false,approachCue:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,entry:'LOW_WEST',introUntil:1.55};
 let banditReattackClock=0,banditPass=0;
 function activeVariant(){return MISSION_VARIANTS[Math.max(0,mission.variant)%MISSION_VARIANTS.length];}
 const sam={sites:[],missiles:[],missile:null,lock:0,stage:0,cooldown:0,site:null,lastCue:-99,lastLaunch:-99,smokeClock:0};
@@ -1132,8 +1131,11 @@ terrainHeight=function(x,z){
  // batteries lose line of sight. EAST / inside is the direct attack line: faster, open,
  // and deliberately exposed. The spine is low enough to cross, so this is a commitment,
  // not a wall or a forced tunnel.
- const shadowSpine=225*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
- const shadowCrown=105*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
+ // One shallow saddle opens a brief sightline from SAM3 to the wide western line.
+ // Tucking against the inside foot keeps the pilot below that sightline.
+ const shadowSaddle=1-.8*terrainPulse(z,-3650,200);
+ const shadowSpine=225*shadowSaddle*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
+ const shadowCrown=105*shadowSaddle*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
 
  // 3. THE BASIN REVEAL — the shadow spine terminates in one monumental shoulder.
  // The target sits behind this mass from the masked western line, then appears at once
@@ -1193,7 +1195,7 @@ addEventListener('blur',releaseInputs);document.addEventListener('visibilitychan
 const flightKey=key;
 key=function(e,down){
  if(mission.phase==='briefing'){if(down&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();if(!deploy.disabled)startMission();}return;}
- if(e.code==='KeyR'&&down){e.preventDefault();reset();return;}
+ if(e.code==='KeyR'&&down){e.preventDefault();if(!e.repeat)reset();return;}
  if(e.metaKey||e.ctrlKey){releaseInputs();return;}
  flightKey(e,down);
 };
@@ -1515,7 +1517,7 @@ reset=function(){
  Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,ingressArmed:false,approachCue:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:1.55});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
- entryRun=(entryRun+1)%ENTRY_PATTERNS.length;saveEntryRun(entryRun);
+ entryRun=entryRun<0?Math.floor(Math.random()*ENTRY_PATTERNS.length):(entryRun+1)%ENTRY_PATTERNS.length;saveEntryRun(entryRun);
  const entry=ENTRY_PATTERNS[entryRun],x=valleyCenter(entry.z)+entry.side;
  const aimX=valleyCenter(entry.aimZ)+entry.aimSide,startY=terrainHeight(x,entry.z)+entry.agl,aimY=terrainHeight(aimX,entry.aimZ)+entry.aimAgl;
  ship.position.set(x,startY,entry.z);
@@ -1535,6 +1537,8 @@ reset=function(){
  rebuildTerrain(0,Math.round(entry.z/620)*620);positionDistantRidges(0,Math.round(entry.z/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
  camera.position.copy(ship.position).addScaledVector(entryForward,-16).addScaledVector(worldUp,6.4);resetCameraFrame();
+ // Start the existing chase camera on this entrance's heading, including the oblique sweep.
+ camera.lookAt(look.copy(ship.position).addScaledVector(entryForward,42).addScaledVector(worldUp,-10));viewRight.set(1,0,0).applyQuaternion(camera.quaternion);
  releaseInputs();audioCtx?.suspend();missionElapsed=0;briefing.hidden=false;document.body.dataset.state='flight';radio.hidden=true;targetUI.hidden=true;capture.hidden=true;
  updateWorld();updateCamera(1/60);renderer.render(scene,camera);
  updateObjectives();deploy.disabled=true;renderer.domElement.focus();
@@ -1553,6 +1557,7 @@ reset();requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 // Read-only diagnostics support repeatable browser verification without an alternate simulation.
 window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,entry:mission.entry,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:sam.missiles.length>0,samMissiles:sam.missiles.length,samTracking:sam.stage,samTracks:sam.sites.map(s=>s.stage||0),samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,banditPasses:banditPass,banditKnown,banditCue:banditCueActive&&!banditCue.hidden?[Math.round(banditCueX),Math.round(banditCueY),banditCue.dataset.rear==='true']:null,geometry:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE)}),height:terrainHeight,center:valleyCenter});
+
 
 // Level 1 bandit flow: target opportunity first, threat second.
 // The first ingress defender is staged visibly in the forward hemisphere so the
