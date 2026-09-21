@@ -4,11 +4,11 @@ const LEVEL={startZ:2300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-8500};
 // subsequent resets rotate, so adjacent runs never repeat an entrance.
 const ENTRY_PATTERNS=Object.freeze([
  // Skim the western apron; the closing western wall invites a gentle rightward correction.
- {id:'LOW_WEST',z:2300,side:-1150,agl:42,aimZ:100,aimSide:-210,aimAgl:42,bank:.10,speed:218},
+ {id:'LOW_WEST',z:2300,side:-1150,agl:42,aimZ:100,aimSide:-210,aimAgl:42,bank:.10,speed:248},
  // An elevated, nearly central approach gives time to read the ridge and choose a line.
- {id:'HIGH_CENTER',z:2400,side:0,agl:180,aimZ:650,aimSide:-20,aimAgl:110,bank:0,speed:222},
+ {id:'HIGH_CENTER',z:2400,side:0,agl:180,aimZ:650,aimSide:-20,aimAgl:110,bank:0,speed:252},
  // Cross from the eastern apron, then roll toward north as the valley mouth comes around.
- {id:'EAST_SWEEP',z:2300,side:850,agl:115,aimZ:650,aimSide:-110,aimAgl:90,bank:-.12,speed:222}
+ {id:'EAST_SWEEP',z:2300,side:850,agl:115,aimZ:650,aimSide:-110,aimAgl:90,bank:-.12,speed:250}
 ]);
 function loadEntryRun(){try{const raw=sessionStorage.getItem('emberwingEntryRun'),v=Number(raw);return raw!==null&&Number.isInteger(v)&&v>=0&&v<ENTRY_PATTERNS.length?v:-1}catch{return -1}}
 function saveEntryRun(v){try{sessionStorage.setItem('emberwingEntryRun',String(v))}catch{}}
@@ -52,7 +52,7 @@ terrainHeight=function(x,z){
  // then let the walls close progressively as the player reaches the first ridge.
  const ingressOpen=THREE.MathUtils.smoothstep(z,420,2200);
  const playground=terrainPulse(z,-4050,1900);
- const half=440-throat*225+basin*300+opening*1080+ingressOpen*980+720*playground;
+ const half=440-throat*210+basin*520+opening*1080+ingressOpen*980+1180*playground;
  const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
  const wall=THREE.MathUtils.smoothstep(d,half,half+720);
  // Quiet the generic skyline so the four authored masses own the silhouette.
@@ -81,8 +81,8 @@ terrainHeight=function(x,z){
  // A shallow saddle preserves the shoulder silhouette without exposing a low western
  // aircraft to the approach battery; climbing above the spine still gives up that cover.
  const shadowSaddle=1-.25*terrainPulse(z,-3650,200);
- const shadowSpine=82*shadowSaddle*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
- const shadowCrown=38*shadowSaddle*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
+ const shadowSpine=42*shadowSaddle*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
+ const shadowCrown=18*shadowSaddle*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
 
  // 3. THE BASIN REVEAL — the shadow spine terminates in one monumental shoulder.
  // The target sits behind this mass from the masked western line, then appears at once
@@ -396,7 +396,7 @@ function updateMission(dt){
  mission.detectClock=watched?Math.min(1.2,mission.detectClock+dt):Math.max(0,mission.detectClock-dt*2.4);
  if(mission.ingressArmed&&!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile))mission.detected=true;
  // Fun lab: present the optional bandit while the entrance is still open, before threats.
- if(!mission.bandit&&!mission.destroyed&&missionElapsed>=3.5){
+ if(!mission.bandit&&!mission.destroyed&&missionElapsed>=1.7){
   mission.detected=true;mission.bandit=true;spawnDefender();
  }
  if(mission.destroyed&&!mission.escapeBandit&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
@@ -455,7 +455,7 @@ reset=function(){
  playerInitiativeUntil=-99;initiativeKind='';banditReattackClock=0;banditPass=0;
  banditKnown=false;banditRearSide=1;banditCueX=banditCueY=0;hideBanditCue();
  missionRun=(missionRun+1)%MISSION_VARIANTS.length;
- Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,ingressArmed:false,approachCue:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:1.55});
+ Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,ingressArmed:false,approachCue:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:.8});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
  entryRun=entryRun<0?Math.floor(Math.random()*ENTRY_PATTERNS.length):(entryRun+1)%ENTRY_PATTERNS.length;saveEntryRun(entryRun);
@@ -467,13 +467,13 @@ reset=function(){
  ship.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),entryForward);
  ship.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,-1),entry.bank));
  speed=entry.speed;burner=0;mission.entry=entry.id;
- launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1.18);
+ launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1.32);
  for(const child of launchSite.children)child.rotation.z=0;
- rocket.scale.setScalar(1.12);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
+ rocket.scale.setScalar(1.22);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-3600)+520,-3600],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
+ const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-3250)+650,-3250],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
- variant.sam.forEach((range,i)=>{const site=sam.sites[i];site.range=i===2?1500:range;site.disabled=i!==2;site.light.visible=i===2;if(i===2)site.group.scale.setScalar(2.15);});
+ variant.sam.forEach((range,i)=>{const site=sam.sites[i];site.range=i===2?1650:range;site.disabled=i!==2;site.light.visible=i===2;if(i===2)site.group.scale.setScalar(2.65);});
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
  rebuildTerrain(0,Math.round(entry.z/620)*620);positionDistantRidges(0,Math.round(entry.z/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
