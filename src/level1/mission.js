@@ -51,7 +51,8 @@ terrainHeight=function(x,z){
  // The mission begins outside the valley. Give the aircraft a broad apron of air,
  // then let the walls close progressively as the player reaches the first ridge.
  const ingressOpen=THREE.MathUtils.smoothstep(z,420,2200);
- const playground=terrainPulse(z,-4050,1900);\n const half=440-throat*225+basin*300+opening*1080+ingressOpen*980+720*playground;
+ const playground=terrainPulse(z,-4050,1900);
+ const half=440-throat*225+basin*300+opening*1080+ingressOpen*980+720*playground;
  const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
  const wall=THREE.MathUtils.smoothstep(d,half,half+720);
  // Quiet the generic skyline so the four authored masses own the silhouette.
