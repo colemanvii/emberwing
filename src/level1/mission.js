@@ -51,7 +51,7 @@ terrainHeight=function(x,z){
  // The mission begins outside the valley. Give the aircraft a broad apron of air,
  // then let the walls close progressively as the player reaches the first ridge.
  const ingressOpen=THREE.MathUtils.smoothstep(z,420,2200);
- const half=440-throat*225+basin*300+opening*1080+ingressOpen*980+260*terrainPulse(z,-4200,1100);
+ const playground=terrainPulse(z,-4050,1900);\n const half=440-throat*225+basin*300+opening*1080+ingressOpen*980+720*playground;
  const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
  const wall=THREE.MathUtils.smoothstep(d,half,half+720);
  // Quiet the generic skyline so the four authored masses own the silhouette.
@@ -80,8 +80,8 @@ terrainHeight=function(x,z){
  // A shallow saddle preserves the shoulder silhouette without exposing a low western
  // aircraft to the approach battery; climbing above the spine still gives up that cover.
  const shadowSaddle=1-.25*terrainPulse(z,-3650,200);
- const shadowSpine=130*shadowSaddle*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
- const shadowCrown=60*shadowSaddle*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
+ const shadowSpine=82*shadowSaddle*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
+ const shadowCrown=38*shadowSaddle*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
 
  // 3. THE BASIN REVEAL — the shadow spine terminates in one monumental shoulder.
  // The target sits behind this mass from the masked western line, then appears at once
@@ -466,13 +466,13 @@ reset=function(){
  ship.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),entryForward);
  ship.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,-1),entry.bank));
  speed=entry.speed;burner=0;mission.entry=entry.id;
- launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1);
+ launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1.18);
  for(const child of launchSite.children)child.rotation.z=0;
- rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
+ rocket.scale.setScalar(1.12);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-4300)+200,-4300],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
+ const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-3600)+520,-3600],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
- variant.sam.forEach((range,i)=>{const site=sam.sites[i];site.range=i===2?1400:range;site.disabled=i!==2;site.light.visible=i===2;if(i===2)site.group.scale.setScalar(1.5);});
+ variant.sam.forEach((range,i)=>{const site=sam.sites[i];site.range=i===2?1500:range;site.disabled=i!==2;site.light.visible=i===2;if(i===2)site.group.scale.setScalar(2.15);});
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
  rebuildTerrain(0,Math.round(entry.z/620)*620);positionDistantRidges(0,Math.round(entry.z/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
