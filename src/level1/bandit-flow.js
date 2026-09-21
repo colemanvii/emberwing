@@ -12,18 +12,18 @@ spawnDefender=function(escape=false){
  spawnEnemy(true);
  enemyRole='ACE';
  const f=banditOfferForward.copy(heading()).normalize(),r=banditOfferRight.crossVectors(f,worldUp).normalize();
- const side=(entryRun%2?1:-1)*90;
+ const side=(entryRun%2?1:-1)*220;
  // Put the jet where the player can actually see and shoot it: roughly 11/1 o'clock,
  // not on a crossing vector that immediately flashes through six.
- enemy.position.copy(ship.position).addScaledVector(f,440).addScaledVector(r,side);
+ enemy.position.copy(ship.position).addScaledVector(f,340).addScaledVector(r,side);
  enemy.position.y=Math.max(terrainHeight(enemy.position.x,enemy.position.z)+82,ship.position.y+18);
- banditOfferDir.copy(f).addScaledVector(r,-Math.sign(side)*.23).normalize();
+ banditOfferDir.copy(f).addScaledVector(r,-Math.sign(side)*.58).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),banditOfferDir);
  enemyCourse.copy(banditOfferDir);duel.forward.copy(banditOfferDir);duel.course.copy(banditOfferDir);
- duel.state='extend';duel.age=0;duel.speed=185;duel.side=-Math.sign(side)||1;
+ duel.state='extend';duel.age=0;duel.speed=205;duel.side=-Math.sign(side)||1;
  enemyDetected=true;enemyTime=0;enemyHP=enemyMaxHP=2;lastEnemy.copy(enemy.position);
  resetEnemyAttack(8);resetHostileThreat(99);
- banditOfferActive=true;banditOfferClock=5.5;banditReattackClock=6;
+ banditOfferActive=true;banditOfferClock=4.4;banditReattackClock=5.2;
  announce('BANDIT AHEAD');
 };
 
@@ -41,7 +41,7 @@ updateEnemy=function(dt){
  banditOfferDir.normalize();
  banditOfferQ.setFromUnitVectors(new THREE.Vector3(0,0,-1),banditOfferDir);
  enemy.quaternion.rotateTowards(banditOfferQ,.72*dt);
- duel.speed=THREE.MathUtils.lerp(duel.speed,188,1-Math.exp(-dt/.45));
+ duel.speed=THREE.MathUtils.lerp(duel.speed,210,1-Math.exp(-dt/.35));
  enemy.position.addScaledVector(banditOfferForward.set(0,0,-1).applyQuaternion(enemy.quaternion),duel.speed*dt);
  enemy.position.y=Math.max(enemy.position.y,terrainHeight(enemy.position.x,enemy.position.z)+18);
  separateEnemyFromObstacles();
