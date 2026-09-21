@@ -77,21 +77,21 @@ terrainHeight=function(x,z){
  // batteries lose line of sight. EAST / inside is the direct attack line: faster, open,
  // and deliberately exposed. The spine is low enough to cross, so this is a commitment,
  // not a wall or a forced tunnel.
- // One shallow saddle opens a brief sightline from SAM3 to the wide western line.
- // Tucking against the inside foot keeps the pilot below that sightline.
- const shadowSaddle=1-.8*terrainPulse(z,-3650,200);
+ // A shallow saddle preserves the shoulder silhouette without exposing a low western
+ // aircraft to the approach battery; climbing above the spine still gives up that cover.
+ const shadowSaddle=1-.25*terrainPulse(z,-3650,200);
  const shadowSpine=225*shadowSaddle*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
  const shadowCrown=105*shadowSaddle*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
 
  // 3. THE BASIN REVEAL — the shadow spine terminates in one monumental shoulder.
  // The target sits behind this mass from the masked western line, then appears at once
  // when the pilot rounds its north face. The eastern side remains the quicker exposed cut.
- const headland=500*terrainLobe(x,z,valleyCenter(-4850)+70,-4850,265,420,4);
- const headlandCrown=300*terrainLobe(x,z,valleyCenter(-4850)+105,-4850,150,300,5);
+ const headland=500*terrainLobe(x,z,valleyCenter(-4850)-140,-4850,190,420,4);
+ const headlandCrown=300*terrainLobe(x,z,valleyCenter(-4850)-140,-4850,110,300,5);
  // A low western wing prevents the safest wall-hug from seeing around the monument early.
  // It does not close the route: the masked line stays low and wide enough to fly, but the
  // launch complex only appears after the pilot has physically rounded the shoulder.
- const headlandWing=260*terrainLobe(x,z,valleyCenter(-4920)-230,-4920,230,360,4);
+ const headlandWing=260*terrainLobe(x,z,valleyCenter(-4920)-300,-4920,160,360,4);
  const basinRim=220*terrainLobe(x,z,valleyCenter(-5750)+820,-5750,420,770,4);
 
  // 4. THE NORTH BREAKOUT — hug the inside of a western fin, then leave its blunt nose.
@@ -476,7 +476,7 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-3150)+500,-3150],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
+ const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-4250)+380,-4250],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  variant.sam.forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();

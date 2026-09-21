@@ -33,7 +33,7 @@ window.scenario={
     return {destroyed:mission.destroyed,bandit:enemyAlive,hp:mission.hp};
   },
   missileBlocked(){
-    reset();mission.phase='test';ship.position.set(240,terrainHeight(240,-4000)+60,-4000);
+    reset();mission.phase='test';ship.position.set(valleyCenter(-4550)-480,terrainHeight(valleyCenter(-4550)-480,-4550)+55,-4550);
     return projectedGeometry(rocket.position,20000);
   },
   samCover(){
@@ -66,7 +66,7 @@ window.scenario={
       fastReveal:lineClear(point(-5000,0,70),rocket.position),
       safeReveal:lineClear(point(-5250,-480,55),rocket.position),
       escapeFloor:[-5700,-5900,-6100,-6300,-6500,-6800].map(z=>terrainHeight(valleyCenter(z),z)),
-      terminalMasked:sight(3,point(-5100,-100)),
+      terminalMasked:sight(3,point(-5100,-480)),
       terminalExposed:sight(3,point(-5500)),
       escapeMasked:sight(4,point(-5500,-100)),
       escapeClimb:sight(4,point(-5500,-100,160)),
