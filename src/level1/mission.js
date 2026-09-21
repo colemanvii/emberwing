@@ -51,7 +51,7 @@ terrainHeight=function(x,z){
  // The mission begins outside the valley. Give the aircraft a broad apron of air,
  // then let the walls close progressively as the player reaches the first ridge.
  const ingressOpen=THREE.MathUtils.smoothstep(z,420,2200);
- const half=440-throat*225+basin*300+opening*1080+ingressOpen*980;
+ const half=440-throat*225+basin*300+opening*1080+ingressOpen*980+260*terrainPulse(z,-4200,1100);
  const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
  const wall=THREE.MathUtils.smoothstep(d,half,half+720);
  // Quiet the generic skyline so the four authored masses own the silhouette.
@@ -80,8 +80,8 @@ terrainHeight=function(x,z){
  // A shallow saddle preserves the shoulder silhouette without exposing a low western
  // aircraft to the approach battery; climbing above the spine still gives up that cover.
  const shadowSaddle=1-.25*terrainPulse(z,-3650,200);
- const shadowSpine=225*shadowSaddle*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
- const shadowCrown=105*shadowSaddle*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
+ const shadowSpine=130*shadowSaddle*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
+ const shadowCrown=60*shadowSaddle*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
 
  // 3. THE BASIN REVEAL — the shadow spine terminates in one monumental shoulder.
  // The target sits behind this mass from the masked western line, then appears at once
@@ -177,7 +177,7 @@ function updateInstruments(){
 }
 function projectedGeometry(pos,maxRange){
  const dist=pos.distanceTo(ship.position),p=pos.clone().project(camera),onscreen=p.z>-1&&p.z<1&&Math.abs(p.x)<1&&Math.abs(p.y)<1;
- const trackR=Math.min(innerWidth,innerHeight)*.28;
+ const trackR=Math.min(innerWidth,innerHeight)*.40;
  if(!onscreen||dist>maxRange||!lineClear(ship.position,pos))return {state:0,hard:false,onscreen:false,dist,d:99999,trackR};
  const d=Math.hypot(p.x*.5*innerWidth,(-p.y*.5+.08)*innerHeight);
  return {state:d<trackR?1:0,hard:d<trackR*.7,onscreen,dist,d,trackR};
@@ -216,7 +216,7 @@ function updateBanditCue(dt){
  banditCue.hidden=false;banditCueActive=true;banditCue.style.left=banditCueX+'px';banditCue.style.top=banditCueY+'px';banditCue.style.opacity=opacity.toFixed(3);banditCue.style.transform=`translate(-50%,-50%) rotate(${angle.toFixed(1)}deg)`;
  banditCue.dataset.rear=behind?'true':'false';
 }
-const STRIKE_LOCK_RANGE=700,SAM_COUNTER_RANGE=700;
+const STRIKE_LOCK_RANGE=1050,SAM_COUNTER_RANGE=1100;
 const airGeometry=geometry;
 geometry=function(){
  const air=enemyAlive?airGeometry():{state:0,hard:false,d:99999,onscreen:false};
@@ -224,7 +224,7 @@ geometry=function(){
  let next=ground.state&&(!air.state||ground.d<air.d)?'ground':'air',best=next==='ground'?ground:air;
  for(const site of sam.sites){
   if(site.disabled)continue;
-  const retaliatory=site.stage>=2||missionElapsed<(site.hotUntil||-99);
+  const retaliatory=true; // Fun lab: a visible launcher is always a valid missile target.
   if(!retaliatory)continue;
   const candidate=projectedGeometry(site.position,SAM_COUNTER_RANGE);
   if(candidate.state&&(!best.state||candidate.d<best.d)){next='sam:'+site.index;best=candidate;}
@@ -237,7 +237,7 @@ function updateTargeting(dt){
  const t=geometry();capture.hidden=false;
  const airReversal=mission.selected==='air'&&playerInitiativeUntil>missionElapsed;
  const counterSite=selectedSam(),samReversal=!!counterSite&&missionElapsed<(counterSite.hotUntil||-99);
- const qualified=t.state&&!keys.Space,need=mission.selected==='ground'?.72:(mission.selected.startsWith('sam:')?(samReversal?.34:.78):(airReversal?.22:(firstTarget?.3:.55)));
+ const qualified=t.state&&!keys.Space,need=mission.selected==='ground'?.38:(mission.selected.startsWith('sam:')?.30:(airReversal?.16:.25));
  lockTimer=qualified?Math.min(1,lockTimer+dt*(t.hard?1.8:1)):Math.max(0,lockTimer-dt*.7);
  lockState=qualified?(lockTimer>=need?2:1):0;
  if(lockState===2&&lastLock!==2){chirp(980,.09,.045);chirp(1240,.12,.035,.07);}
@@ -291,17 +291,12 @@ function destroyTarget(){
   site.stage=Math.max(site.stage||0,1);
  }
  lockState=lockTimer=0;setSeeker(false);
- if(enemyAlive){
-  enemyRole='ACE';
-  const escapeRange=enemy.position.distanceTo(ship.position);
-  if(escapeRange>720){
-   const f=heading().clone(),r=new THREE.Vector3().crossVectors(f,worldUp).normalize(),rear=ship.position.clone().addScaledVector(f,-430).addScaledVector(r,duel.side*150);
-   rear.y=Math.max(terrainHeight(rear.x,rear.z)+95,ship.position.y+45);enemy.position.copy(rear);
-   const intercept=ship.position.clone().addScaledVector(f,220).sub(enemy.position).normalize();
-   enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),intercept);enemyCourse.copy(intercept);duel.forward.copy(intercept);
-  }
-  duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED+4);enemyTime=Math.max(enemyTime,.8);resetEnemyAttack(.28);resetHostileThreat(.5);announce('BANDIT · SIX O\'CLOCK');
- }else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
+ // Fun lab: the blast is the climax. No fresh pursuer or unseen six-o'clock reset.
+ mission.escapeBandit=true;
+ removeSamMissile();
+ for(const site of sam.sites){site.disabled=true;site.light.visible=false;site.stage=site.lock=0;}
+ sam.stage=sam.lock=0;sam.site=null;
+ resetEnemyAttack(99);resetHostileThreat(99);
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -347,7 +342,7 @@ function spawnDefender(escape=false){
 // Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
 // but widen the firing solution enough that an oblique crossing pass is a real threat.
 enemyFireSolution=function(){
- if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<.35||duel.state==='extend'||duel.state==='break')return false;
+ if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<8||mission.destroyed||!banditKnown||!airGeometry().onscreen||duel.state==='extend'||duel.state==='break')return false;
  const aim=ship.position.clone().sub(enemy.position),range=aim.length();
  if(range<50||range>(mission.destroyed?820:760))return false;
  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();
@@ -399,9 +394,8 @@ function updateMission(dt){
  const watched=mission.ingressArmed&&sam.stage>=1&&!!sam.site;
  mission.detectClock=watched?Math.min(1.2,mission.detectClock+dt):Math.max(0,mission.detectClock-dt*2.4);
  if(mission.ingressArmed&&!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile))mission.detected=true;
- // Good masking can postpone the merge, but not erase it. A clean run gets several seconds
- // of geography first; a detected run brings the defender in sooner.
- if(!mission.bandit&&mission.ingressArmed&&(mission.detected||ship.position.z<variant.bandit.trigger)){
+ // Fun lab: present the optional bandit while the entrance is still open, before threats.
+ if(!mission.bandit&&!mission.destroyed&&missionElapsed>=3.5){
   mission.detected=true;mission.bandit=true;spawnDefender();
  }
  if(mission.destroyed&&!mission.escapeBandit&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
@@ -476,9 +470,9 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-4250)+380,-4250],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
+ const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-4300)+200,-4300],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
- variant.sam.forEach((range,i)=>sam.sites[i].range=range);
+ variant.sam.forEach((range,i)=>{const site=sam.sites[i];site.range=i===2?1400:range;site.disabled=i!==2;site.light.visible=i===2;if(i===2)site.group.scale.setScalar(1.5);});
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
  rebuildTerrain(0,Math.round(entry.z/620)*620);positionDistantRidges(0,Math.round(entry.z/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();

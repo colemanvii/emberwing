@@ -33,7 +33,7 @@ function updateCombatFX(dt){smokeClock-=dt;if(enemyAlive&&enemyHP<enemyMaxHP&&en
 function removeMissile(){if(!missile)return;missile.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))for(const m of o.material)m.dispose();else o.material.dispose()}});scene.remove(missile.mesh);missile=null}
 function spawnEnemy(first=false){firstTarget=first&&kills===0;const roles=worldIndex===2?['SKIMMER','CLIMBER','ACE']:worldIndex?['SKIMMER','CLIMBER','ACE']:['ROOKIE','SKIMMER','CLIMBER'];enemyRole=roles[Math.min(kills,2)];enemyAlive=true;enemy.visible=true;enemyTime=0;enemyHP=firstTarget?3:5;enemyMaxHP=enemyHP;smokeClock=0;for(const m of enemy.userData.hitMats||[]){m.emissive.setHex(0x000000);m.emissiveIntensity=1}const f=heading().clone(),r=new THREE.Vector3().crossVectors(f,worldUp).normalize(),dist=firstTarget?165:enemyRole==='ACE'?250:220+kills*15,side=firstTarget?12:(Math.random()>.5?1:-1)*(enemyRole==='SKIMMER'?135:enemyRole==='ACE'?150:105);enemy.position.copy(ship.position).addScaledVector(f,dist).addScaledVector(r,side);enemy.position.y=Math.max(ship.position.y+8,terrainHeight(enemy.position.x,enemy.position.z)+(worldIndex?62:48));enemyCourse.copy(f);enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),enemyCourse);lastEnemy.copy(enemy.position);lastRangeWorld=enemy.position.distanceTo(ship.position);rangeFeet=displayRangeFeet=lastRangeWorld*FEET_PER_UNIT;closureFps=0;enemyTailTimer=enemyCounter=enemyManeuverCooldown=enemyReaimTimer=0;enemyLockReacted=false;resetEnemyAttack(enemyRole==='ACE'?1.05:enemyRole==='CLIMBER'?1.45:99);announce(firstTarget&&!worldIndex?'BANDIT AHEAD':`${enemyRole} INBOUND`)}
 const spawnEnemyBase=spawnEnemy;function enemySpawnClear(p){if(p.y<terrainHeight(p.x,p.z)+28)return false;for(const m of scenery){if(!m.visible)continue;const dx=p.x-m.position.x,dz=p.z-m.position.z,r=(m.userData.collisionR||8)+24;if(dx*dx+dz*dz<r*r&&Math.abs(p.y-m.position.y)<(m.userData.collisionH||8)+18)return false}return true}spawnEnemy=function(first=false){spawnEnemyBase(first);if(enemySpawnClear(enemy.position))return;const f=heading().clone(),r=new THREE.Vector3().crossVectors(f,worldUp).normalize(),clearance=enemyRole==='SKIMMER'?(worldIndex?50:40):enemyRole==='CLIMBER'?(worldIndex?108:88):enemyRole==='ACE'?(worldIndex?82:68):(worldIndex?68:54),baseDist=firstTarget?165:enemyRole==='ACE'?250:220+kills*15;for(let i=0;i<16;i++){const dist=baseDist+(i%4)*14-(i<4?0:8),side=(i%2?-1:1)*((firstTarget?12:(enemyRole==='SKIMMER'?135:enemyRole==='ACE'?150:105))+Math.floor(i/2)*16),candidate=ship.position.clone().addScaledVector(f,dist).addScaledVector(r,side);candidate.y=Math.max(ship.position.y+8,terrainHeight(candidate.x,candidate.z)+clearance);if(!enemySpawnClear(candidate))continue;enemy.position.copy(candidate);lastEnemy.copy(candidate);lastRangeWorld=candidate.distanceTo(ship.position);rangeFeet=displayRangeFeet=lastRangeWorld*FEET_PER_UNIT;closureFps=0;return}function liftAboveObstacles(p){let y=Math.max(p.y,terrainHeight(p.x,p.z)+clearance);for(const m of scenery){if(!m.visible)continue;const dx=p.x-m.position.x,dz=p.z-m.position.z,rad=(m.userData.collisionR||8)+24;if(dx*dx+dz*dz<rad*rad)y=Math.max(y,m.position.y+(m.userData.collisionH||8)+18)}p.y=y;return p}const tryPlace=p=>{if(!enemySpawnClear(p))return false;enemy.position.copy(p);lastEnemy.copy(p);lastRangeWorld=p.distanceTo(ship.position);rangeFeet=displayRangeFeet=lastRangeWorld*FEET_PER_UNIT;closureFps=0;return true};const primary=liftAboveObstacles(ship.position.clone().addScaledVector(f,baseDist));if(tryPlace(primary))return;for(let i=1;i<=12;i++){for(const sign of[1,-1]){const p=liftAboveObstacles(ship.position.clone().addScaledVector(f,baseDist).addScaledVector(r,sign*(40+i*28)));if(tryPlace(p))return}}for(let i=1;i<=10;i++){for(const sign of[1,-1]){const p=liftAboveObstacles(ship.position.clone().addScaledVector(f,baseDist+60+i*20).addScaledVector(r,sign*(120+i*35)));if(tryPlace(p))return}}}
-function geometry(){if(!enemyAlive)return{state:0,hard:false,onscreen:false,dist:0,d:999,trackR:0};const dist=enemy.position.distanceTo(ship.position),p=enemy.position.clone().project(camera),onscreen=p.z>-1&&p.z<1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.1;if(!onscreen||dist>1100)return{state:0,hard:false,onscreen:false,dist,d:999,trackR:0};const sx=(p.x*.5+.5)*innerWidth,sy=(-p.y*.5+.5)*innerHeight,rx=innerWidth*.5,ry=innerHeight*.42,d=Math.hypot(sx-rx,sy-ry),v=Math.min(innerWidth,innerHeight),trackR=v*(firstTarget?.39:.34),lockR=v*(firstTarget?.31:.27);return{state:d<trackR?1:0,hard:d<lockR,onscreen,dist,d,trackR}}
+function geometry(){if(!enemyAlive)return{state:0,hard:false,onscreen:false,dist:0,d:999,trackR:0};const dist=enemy.position.distanceTo(ship.position),p=enemy.position.clone().project(camera),onscreen=p.z>-1&&p.z<1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.1;if(!onscreen||dist>1100)return{state:0,hard:false,onscreen:false,dist,d:999,trackR:0};const sx=(p.x*.5+.5)*innerWidth,sy=(-p.y*.5+.5)*innerHeight,rx=innerWidth*.5,ry=innerHeight*.42,d=Math.hypot(sx-rx,sy-ry),v=Math.min(innerWidth,innerHeight),trackR=v*.48,lockR=v*.40;return{state:d<trackR?1:0,hard:d<lockR,onscreen,dist,d,trackR}}
 function makeTracer(side,salvo){const localMuzzle=new THREE.Vector3(side*4.8,-.13,-2.5),forward=new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).normalize(),start=ship.position.clone().add(localMuzzle.clone().applyQuaternion(ship.quaternion)),dir=forward.clone();if(enemyAlive){const range=start.distanceTo(enemy.position),lead=enemy.position.clone().addScaledVector(enemyVel,range/640*.55),assisted=lead.sub(start).normalize();if(range<300&&forward.angleTo(assisted)<.11)dir.lerp(assisted,.34).normalize()}const material=new THREE.MeshBasicMaterial({color:0xffe3a0,transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false}),bolt=new THREE.Mesh(new THREE.SphereGeometry(.48,8,6),material);bolt.scale.set(.24,.24,5.2);bolt.position.copy(start);bolt.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),dir);scene.add(bolt);tracers.push({mesh:bolt,velocity:dir.multiplyScalar(640+speed*.3),age:0,life:.85,salvo,friendly:true,near:false});const flare=new THREE.Mesh(new THREE.SphereGeometry(.9,8,6),new THREE.MeshBasicMaterial({color:0xffe6bd,transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false}));flare.scale.set(.32,.32,1.2);flare.position.copy(localMuzzle);ship.add(flare);setTimeout(()=>{ship.remove(flare);flare.geometry.dispose();flare.material.dispose()},48)}
 function fireGun(){if(crashed||missionComplete||missionCompleteTimer>0)return;gunSalvo++;makeTracer(-1,gunSalvo);makeTracer(1,gunSalvo);gunKick=Math.min(1,gunKick+.65);flashScreen(.035);chirp(175,.035,.03);chirp(88,.05,.02,.006)}
 function makeEnemyTracer(){if(!enemyAlive||crashed)return;const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize(),start=enemy.position.clone().addScaledVector(forward,4.8),range=start.distanceTo(ship.position),shipForward=new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).normalize(),lead=ship.position.clone().addScaledVector(shipForward,speed*(range/540)*.56),right=new THREE.Vector3().crossVectors(forward,worldUp).normalize(),up=new THREE.Vector3().crossVectors(right,forward).normalize(),nearBias=Math.random()<.72,sideError=nearBias?(Math.random()<.5?-1:1)*(6+Math.random()*(enemyRole==='ACE'?8:11)):(Math.random()-.5)*4,verticalError=(Math.random()-.5)*(nearBias?8:4);lead.addScaledVector(right,sideError).addScaledVector(up,verticalError);const dir=lead.sub(start).normalize(),material=new THREE.MeshBasicMaterial({color:0xff6545,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false}),bolt=new THREE.Mesh(new THREE.SphereGeometry(.42,8,6),material);bolt.scale.set(.55,.55,4.2);bolt.position.copy(start);bolt.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),dir);scene.add(bolt);tracers.push({mesh:bolt,velocity:dir.multiplyScalar(enemyRole==='ACE'?565:530),age:0,life:1.15,salvo:0,friendly:false,near:false});chirp(146,.028,.012)}
@@ -49,7 +49,7 @@ function fireMissile(){if(crashed||missionComplete||missionCompleteTimer>0||!ene
 function removeHostileMissile(){if(!hostileMissile)return;hostileMissile.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))for(const m of o.material)m.dispose();else o.material.dispose()}});scene.remove(hostileMissile.mesh);hostileMissile=null}
 function resetHostileThreat(delay=4){removeHostileMissile();hostileLock=0;hostileLockStage=0;hostileLaunchDelay=0;hostileMissileCooldown=delay}
 function hostileMissileBurst(pos){for(let i=0;i<12;i++){const mesh=new THREE.Mesh(new THREE.SphereGeometry(.14+Math.random()*.24,5,4),new THREE.MeshBasicMaterial({color:i%3?0xff5738:0xffffff,transparent:true,opacity:.92,blending:THREE.AdditiveBlending,depthWrite:false}));mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*2.4,(Math.random()-.5)*2.4,(Math.random()-.5)*2.4));scene.add(mesh);const v=new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize().multiplyScalar(18+Math.random()*25),life=.28+Math.random()*.18;combatFX.push({mesh,v,life,maxLife:life,smoke:false})}}
-function hostileLockSolution(){if((worldIndex===0&&!mission.detected)||enemyRole!=='ACE'||!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<.85)return false;const toShip=ship.position.clone().sub(enemy.position),range=toShip.length();if(range<115||range>760)return false;const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();return forward.dot(toShip.multiplyScalar(1/Math.max(range,.001)))>.68&&enemyLOS()}
+function hostileLockSolution(){if(worldIndex===0)return false;if((worldIndex===0&&!mission.detected)||enemyRole!=='ACE'||!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<.85)return false;const toShip=ship.position.clone().sub(enemy.position),range=toShip.length();if(range<115||range>760)return false;const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();return forward.dot(toShip.multiplyScalar(1/Math.max(range,.001)))>.68&&enemyLOS()}
 function playerBreakingLock(){const up=worldUp.clone().applyQuaternion(ship.quaternion),bank=Math.abs(Math.atan2(up.x,up.y)),pulling=keys.ArrowUp||keys.ArrowDown;return bank>.52&&(pulling||burner>.52)}
 function launchHostileMissile(){const m=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.17,.22,2.7,8),new THREE.MeshStandardMaterial({color:0x2b3036,metalness:.55,roughness:.38})),tip=new THREE.Mesh(new THREE.ConeGeometry(.2,.7,8),new THREE.MeshBasicMaterial({color:0xff4b32})),flame=new THREE.Mesh(new THREE.ConeGeometry(.18,1.8,8),new THREE.MeshBasicMaterial({color:0xff3b24,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false}));body.rotation.x=Math.PI/2;tip.rotation.x=-Math.PI/2;tip.position.z=-1.7;flame.rotation.x=-Math.PI/2;flame.position.z=2.1;m.add(body,tip,flame);const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();m.position.copy(enemy.position).addScaledVector(forward,5.4);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),forward);scene.add(m);hostileMissile={mesh:m,v:forward.multiplyScalar(292),life:6.4,age:0,trailClock:0,warnClock:0,near:false};hostileLock=0;hostileLockStage=0;hostileLaunchDelay=0;hostileMissileCooldown=4.8;announce('MISSILE INBOUND · '+clockBearing(enemy.position)+" O'CLOCK — BREAK");flashScreen(.12);chirp(1120,.08,.045);chirp(1480,.12,.04,.09)}
 function updateHostileMissileFlight(dt){const h=hostileMissile;h.life-=dt;h.age+=dt;h.trailClock-=dt;h.warnClock-=dt;if(h.warnClock<=0){chirp(980,.045,.026);h.warnClock=.38}if(h.trailClock<=0){spawnMissileTrail(h.mesh.position,h.v);h.trailClock=.035}const previous=h.mesh.position.clone(),shipForward=new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).normalize(),up=worldUp.clone().applyQuaternion(ship.quaternion),bank=Math.abs(Math.atan2(up.x,up.y)),hardBreak=THREE.MathUtils.clamp((bank-.58)/.38,0,1)*((keys.ArrowUp||keys.ArrowDown)?1:.25),lead=ship.position.clone().addScaledVector(shipForward,speed*.10),desired=lead.sub(h.mesh.position).normalize().multiplyScalar(348),turn=1-Math.exp(-dt*(3.35*(1-hardBreak*.52)));h.v.lerp(desired,turn);h.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),h.v.clone().normalize());h.mesh.position.addScaledVector(h.v,dt);const travel=h.mesh.position.clone().sub(previous),toShip=ship.position.clone().sub(previous),u=THREE.MathUtils.clamp(toShip.dot(travel)/Math.max(travel.lengthSq(),.001),0,1),closest=previous.clone().addScaledVector(travel,u),hit=closest.distanceToSquared(ship.position)<49;if(!h.near&&!hit&&closest.distanceToSquared(ship.position)<400){h.near=true;hostileNearMiss()}let blocked=h.mesh.position.y<=terrainHeight(h.mesh.position.x,h.mesh.position.z)+1;for(const m of scenery){if(blocked||!m.visible)continue;const dx=h.mesh.position.x-m.position.x,dz=h.mesh.position.z-m.position.z,r=(m.userData.collisionR||0)+1;if(dx*dx+dz*dz<r*r&&Math.abs(h.mesh.position.y-m.position.y)<(m.userData.collisionH||8)+1)blocked=true}if(hit){const p=h.mesh.position.clone();removeHostileMissile();hostileMissileBurst(p);hitKick=Math.max(hitKick,1);flashScreen(.34);chirp(58,.15,.06);hitPlayer();return}if(blocked||h.life<=0){
@@ -780,8 +780,8 @@ function removeSamMissile(target=null){if(target){const i=sam.missiles.indexOf(t
 function clearSamNetwork(){removeSamMissile();for(const s of sam.sites){s.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&!([samConcrete,samSteel,samDark].includes(o.material)))try{o.material.dispose()}catch{}});scene.remove(s.group)}sam.sites.length=0;sam.lock=0;sam.stage=0;sam.site=null;sam.lastLaunch=-99}
 function setupSamNetwork(){clearSamNetwork();const specs=[[-560,510],[540,190],[120,-520]];sam.sites=specs.map((p,i)=>makeSamSite(p[0],p[1],i));sam.lock=0;sam.stage=0;sam.site=null;sam.lastCue=-99;sam.lastLaunch=-99}
 function samLineClear(site){const a=site.position,b=ship.position;for(let i=1;i<=9;i++){const t=i/10,x=THREE.MathUtils.lerp(a.x,b.x,t),z=THREE.MathUtils.lerp(a.z,b.z,t),y=THREE.MathUtils.lerp(a.y,b.y,t);if(terrainHeight(x,z)+18>y)return false}return true}
-function launchSam(site){if(sam.missiles.length>=(mission.destroyed?2:1)||missionElapsed-sam.lastLaunch<.75)return;samLaunchBurst(site);const m=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.19,.26,3.2,8),new THREE.MeshStandardMaterial({color:0xc9c5b6,metalness:.38,roughness:.44}));body.rotation.x=Math.PI/2;m.add(body);const nose=new THREE.Mesh(new THREE.ConeGeometry(.25,.75,8),new THREE.MeshBasicMaterial({color:0xff633a}));nose.rotation.x=-Math.PI/2;nose.position.z=-1.95;m.add(nose);const flame=new THREE.Mesh(new THREE.ConeGeometry(.23,2.1,8),new THREE.MeshBasicMaterial({color:0xff6b31,transparent:true,opacity:.94,blending:THREE.AdditiveBlending,depthWrite:false}));flame.rotation.x=-Math.PI/2;flame.position.z=2.45;m.add(flame);const start=site.position.clone().addScaledVector(worldUp,4),initial=ship.position.clone().addScaledVector(worldUp,95).sub(start).normalize();m.position.copy(start);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),initial);scene.add(m);const h={mesh:m,v:initial.multiplyScalar(238),life:8,trail:0,warn:0,smoke:0,near:false,site};sam.missiles.push(h);syncSamMissileAlias();sam.lastLaunch=missionElapsed;site.lock=0;site.stage=0;site.hotUntil=missionElapsed+2.4;site.cooldown=mission.destroyed?1.05:(site.index===2?6.5:1.55);sam.site=site;announce('SAM LAUNCH — '+clockBearing(start)+" O'CLOCK");flashScreen(.1);chirp(1060,.07,.045);chirp(1450,.11,.04,.07)}
-function updateOneSamMissile(h,dt){h.life-=dt;h.trail-=dt;h.warn-=dt;h.smoke-=dt;if(h.warn<=0){chirp(960,.04,.024);h.warn=.36}if(h.trail<=0){spawnMissileTrail(h.mesh.position,h.v);h.trail=.035}if(h.smoke<=0){spawnV43SamSmoke(h.mesh.position,h.v);h.smoke=.065}const previous=h.mesh.position.clone(),up=worldUp.clone().applyQuaternion(ship.quaternion),bank=Math.abs(Math.atan2(up.x,up.y));const defensive=THREE.MathUtils.clamp((bank-.55)/.45,0,1)*((keys.ArrowUp||keys.ArrowDown)?1:.25)*(burner>.48?1:.7);const lead=ship.position.clone().addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion),speed*.09),desired=lead.sub(h.mesh.position).normalize().multiplyScalar(mission.destroyed?326:308),turnRate=(mission.destroyed?3.05:2.78)*(1-defensive*.58);h.v.lerp(desired,1-Math.exp(-dt*turnRate));h.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),h.v.clone().normalize());h.mesh.position.addScaledVector(h.v,dt);const travel=h.mesh.position.clone().sub(previous),toShip=ship.position.clone().sub(previous),u=THREE.MathUtils.clamp(toShip.dot(travel)/Math.max(.001,travel.lengthSq()),0,1),closest=previous.clone().addScaledVector(travel,u),hit=closest.distanceToSquared(ship.position)<72;if(!h.near&&!hit&&closest.distanceToSquared(ship.position)<440){h.near=true;hostileNearMiss()}const sceneryHit=scenerySegmentHit(previous,h.mesh.position,1.5,2,false),blocked=h.mesh.position.y<=terrainHeight(h.mesh.position.x,h.mesh.position.z)+4||!!sceneryHit;if(hit&&!blocked){const p=h.mesh.position.clone();removeSamMissile(h);hostileMissileBurst(p);hitKick=Math.max(hitKick,1.15);flashScreen(.42);chirp(48,.18,.075);hitPlayer();return}if(blocked||h.life<=0){
+function launchSam(site){if(sam.missiles.length>=(mission.destroyed?2:1)||missionElapsed-sam.lastLaunch<.75)return;samLaunchBurst(site);const m=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.19,.26,3.2,8),new THREE.MeshStandardMaterial({color:0xc9c5b6,metalness:.38,roughness:.44}));body.rotation.x=Math.PI/2;m.add(body);const nose=new THREE.Mesh(new THREE.ConeGeometry(.25,.75,8),new THREE.MeshBasicMaterial({color:0xff633a}));nose.rotation.x=-Math.PI/2;nose.position.z=-1.95;m.add(nose);const flame=new THREE.Mesh(new THREE.ConeGeometry(.23,2.1,8),new THREE.MeshBasicMaterial({color:0xff6b31,transparent:true,opacity:.94,blending:THREE.AdditiveBlending,depthWrite:false}));flame.rotation.x=-Math.PI/2;flame.position.z=2.45;m.add(flame);const start=site.position.clone().addScaledVector(worldUp,4),initial=ship.position.clone().addScaledVector(worldUp,95).sub(start).normalize();m.position.copy(start);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),initial);scene.add(m);const h={mesh:m,v:initial.multiplyScalar(150),age:0,life:8,trail:0,warn:0,smoke:0,near:false,site};sam.missiles.push(h);syncSamMissileAlias();sam.lastLaunch=missionElapsed;site.lock=0;site.stage=0;site.hotUntil=missionElapsed+2.4;site.cooldown=12;sam.site=site;announce('SAM LAUNCH — '+clockBearing(start)+" O'CLOCK");flashScreen(.1);chirp(1060,.07,.045);chirp(1450,.11,.04,.07)}
+function updateOneSamMissile(h,dt){h.age+=dt;h.life-=dt;h.trail-=dt;h.warn-=dt;h.smoke-=dt;if(h.warn<=0){chirp(960,.04,.024);h.warn=.36}if(h.trail<=0){spawnMissileTrail(h.mesh.position,h.v);h.trail=.035}if(h.smoke<=0){spawnV43SamSmoke(h.mesh.position,h.v);h.smoke=.065}const previous=h.mesh.position.clone(),up=worldUp.clone().applyQuaternion(ship.quaternion),bank=Math.abs(Math.atan2(up.x,up.y));const defensive=THREE.MathUtils.clamp((bank-.55)/.45,0,1)*((keys.ArrowUp||keys.ArrowDown)?1:.25)*(burner>.48?1:.7);const lead=ship.position.clone().addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion),speed*.09),desired=lead.sub(h.mesh.position).normalize().multiplyScalar(h.age<1.2?180:265),turnRate=.95*(1-defensive*.58);h.v.lerp(desired,1-Math.exp(-dt*turnRate));h.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),h.v.clone().normalize());h.mesh.position.addScaledVector(h.v,dt);const travel=h.mesh.position.clone().sub(previous),toShip=ship.position.clone().sub(previous),u=THREE.MathUtils.clamp(toShip.dot(travel)/Math.max(.001,travel.lengthSq()),0,1),closest=previous.clone().addScaledVector(travel,u),hit=h.age>1.75&&closest.distanceToSquared(ship.position)<72;if(!h.near&&!hit&&closest.distanceToSquared(ship.position)<440){h.near=true;hostileNearMiss()}const sceneryHit=scenerySegmentHit(previous,h.mesh.position,1.5,2,false),blocked=h.mesh.position.y<=terrainHeight(h.mesh.position.x,h.mesh.position.z)+4||!!sceneryHit;if(hit&&!blocked){const p=h.mesh.position.clone();removeSamMissile(h);hostileMissileBurst(p);hitKick=Math.max(hitKick,1.15);flashScreen(.42);chirp(48,.18,.075);hitPlayer();return}if(blocked||h.life<=0){
  const p=sceneryHit||h.mesh.position.clone(),site=h.site;removeSamMissile(h);hostileMissileBurst(p);
  if(blocked&&site&&!site.disabled){
   site.hotUntil=missionElapsed+3.25;
@@ -796,16 +796,9 @@ function updateSamMissiles(dt){for(const h of [...sam.missiles])updateOneSamMiss
 function samExposure(s){
  if(s.disabled)return null;
  const agl=Math.max(0,ship.position.y-terrainHeight(ship.position.x,ship.position.z)),range=s.position.distanceTo(ship.position),maxRange=s.range||(mission.destroyed?1550:1900);
- if(range>maxRange||!samLineClear(s))return null;
- // The valley floor is the radar-clean kill lane. Low flight only buys safety when the pilot
- // deliberately tucks toward authored terrain; dead-center penetration is fast but exposed.
- const crossTrack=Math.abs(ship.position.x-valleyCenter(ship.position.z));
- const clutter=.30+.70*THREE.MathUtils.smoothstep(agl,16,95);
- const centerLane=1+.68*(1-THREE.MathUtils.smoothstep(crossTrack,110,310));
- const terrainTuck=.70+.30*THREE.MathUtils.smoothstep(crossTrack,210,430);
- const highExposure=1+THREE.MathUtils.smoothstep(agl,105,195)*1.05;
- const rangeQuality=THREE.MathUtils.clamp(1-(range/maxRange)*.24,.74,1);
- return{site:s,range,agl,exposure:clutter*centerLane*terrainTuck*highExposure*rangeQuality}
+ if(range>maxRange||!samLineClear(s)||!projectedGeometry(s.position,maxRange).onscreen)return null;
+ // Fun lab: readable on-screen acquisition, not altitude/clutter punishment.
+ return{site:s,range,agl,exposure:1}
 }
 function updateSamNetwork(dt){
  if(mission.phase==='briefing'||worldIndex!==0||crashed||missionComplete||missionCompleteTimer>0){removeSamMissile();return}
@@ -834,7 +827,7 @@ function updateSamNetwork(dt){
    s.lock=Math.max(0,(s.lock||0)-dt*(mission.detected?.88:1.25));
    if(s.lock<=.02)s.stage=0;
   }else{
-   const baseLock=mission.destroyed?.82:(s.index===0?1.08:(s.index>=3?.94:1.02));
+   const baseLock=2.2;
    s.lock=Math.min(1,(s.lock||0)+dt/baseLock*c.exposure);
    if(s.stage===0){
     s.stage=1;
@@ -845,7 +838,7 @@ function updateSamNetwork(dt){
     if(missionElapsed-sam.lastCue>.7){announce('RADAR TRACK — BREAK LINE OF SIGHT');sam.lastCue=missionElapsed}
     chirp(690,.05,.03);chirp(910,.05,.026,.1);s.lastCue=missionElapsed;
    }
-   if(s.lock>=1&&s.cooldown<=0&&sam.missiles.length<(mission.destroyed?2:1)&&missionElapsed-sam.lastLaunch>=.55)launchSam(s);
+   if(c.range>550&&s.lock>=1&&s.cooldown<=0&&sam.missiles.length<(mission.destroyed?2:1)&&missionElapsed-sam.lastLaunch>=.55)launchSam(s);
   }
   const score=(s.stage||0)*2+(s.lock||0);
   if(score>leadScore){leadScore=score;leadSite=s}
@@ -858,7 +851,7 @@ const samTrailGeo=new THREE.IcosahedronGeometry(1,1);
 
 function spawnV43SamSmoke(pos,velocity){
  const mat=new THREE.MeshBasicMaterial({color:0xd9d7ce,transparent:true,opacity:.52,depthWrite:false,fog:true});
- const mesh=new THREE.Mesh(samTrailGeo,mat);mesh.position.copy(pos);mesh.scale.setScalar(2.4+Math.random()*.9);scene.add(mesh);
+ const mesh=new THREE.Mesh(samTrailGeo,mat);mesh.position.copy(pos);mesh.scale.setScalar(3.2+Math.random()*.9);scene.add(mesh);
  const life=4.2+Math.random()*1.15;
  effects.samTrail.push({mesh,life,maxLife:life,v:velocity.clone().multiplyScalar(.012).add(new THREE.Vector3((Math.random()-.5)*.7,.7+Math.random()*.8,(Math.random()-.5)*.7))});
 }
@@ -1105,7 +1098,7 @@ terrainHeight=function(x,z){
  // The mission begins outside the valley. Give the aircraft a broad apron of air,
  // then let the walls close progressively as the player reaches the first ridge.
  const ingressOpen=THREE.MathUtils.smoothstep(z,420,2200);
- const half=440-throat*225+basin*300+opening*1080+ingressOpen*980;
+ const half=440-throat*225+basin*300+opening*1080+ingressOpen*980+260*terrainPulse(z,-4200,1100);
  const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
  const wall=THREE.MathUtils.smoothstep(d,half,half+720);
  // Quiet the generic skyline so the four authored masses own the silhouette.
@@ -1134,8 +1127,8 @@ terrainHeight=function(x,z){
  // A shallow saddle preserves the shoulder silhouette without exposing a low western
  // aircraft to the approach battery; climbing above the spine still gives up that cover.
  const shadowSaddle=1-.25*terrainPulse(z,-3650,200);
- const shadowSpine=225*shadowSaddle*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
- const shadowCrown=105*shadowSaddle*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
+ const shadowSpine=130*shadowSaddle*terrainLobe(x,z,valleyCenter(-3700)-175,-3700,155,1120,4);
+ const shadowCrown=60*shadowSaddle*terrainLobe(x,z,valleyCenter(-3950)-190,-3950,95,760,5);
 
  // 3. THE BASIN REVEAL — the shadow spine terminates in one monumental shoulder.
  // The target sits behind this mass from the masked western line, then appears at once
@@ -1231,7 +1224,7 @@ function updateInstruments(){
 }
 function projectedGeometry(pos,maxRange){
  const dist=pos.distanceTo(ship.position),p=pos.clone().project(camera),onscreen=p.z>-1&&p.z<1&&Math.abs(p.x)<1&&Math.abs(p.y)<1;
- const trackR=Math.min(innerWidth,innerHeight)*.28;
+ const trackR=Math.min(innerWidth,innerHeight)*.40;
  if(!onscreen||dist>maxRange||!lineClear(ship.position,pos))return {state:0,hard:false,onscreen:false,dist,d:99999,trackR};
  const d=Math.hypot(p.x*.5*innerWidth,(-p.y*.5+.08)*innerHeight);
  return {state:d<trackR?1:0,hard:d<trackR*.7,onscreen,dist,d,trackR};
@@ -1270,7 +1263,7 @@ function updateBanditCue(dt){
  banditCue.hidden=false;banditCueActive=true;banditCue.style.left=banditCueX+'px';banditCue.style.top=banditCueY+'px';banditCue.style.opacity=opacity.toFixed(3);banditCue.style.transform=`translate(-50%,-50%) rotate(${angle.toFixed(1)}deg)`;
  banditCue.dataset.rear=behind?'true':'false';
 }
-const STRIKE_LOCK_RANGE=700,SAM_COUNTER_RANGE=700;
+const STRIKE_LOCK_RANGE=1050,SAM_COUNTER_RANGE=1100;
 const airGeometry=geometry;
 geometry=function(){
  const air=enemyAlive?airGeometry():{state:0,hard:false,d:99999,onscreen:false};
@@ -1278,7 +1271,7 @@ geometry=function(){
  let next=ground.state&&(!air.state||ground.d<air.d)?'ground':'air',best=next==='ground'?ground:air;
  for(const site of sam.sites){
   if(site.disabled)continue;
-  const retaliatory=site.stage>=2||missionElapsed<(site.hotUntil||-99);
+  const retaliatory=true; // Fun lab: a visible launcher is always a valid missile target.
   if(!retaliatory)continue;
   const candidate=projectedGeometry(site.position,SAM_COUNTER_RANGE);
   if(candidate.state&&(!best.state||candidate.d<best.d)){next='sam:'+site.index;best=candidate;}
@@ -1291,7 +1284,7 @@ function updateTargeting(dt){
  const t=geometry();capture.hidden=false;
  const airReversal=mission.selected==='air'&&playerInitiativeUntil>missionElapsed;
  const counterSite=selectedSam(),samReversal=!!counterSite&&missionElapsed<(counterSite.hotUntil||-99);
- const qualified=t.state&&!keys.Space,need=mission.selected==='ground'?.72:(mission.selected.startsWith('sam:')?(samReversal?.34:.78):(airReversal?.22:(firstTarget?.3:.55)));
+ const qualified=t.state&&!keys.Space,need=mission.selected==='ground'?.38:(mission.selected.startsWith('sam:')?.30:(airReversal?.16:.25));
  lockTimer=qualified?Math.min(1,lockTimer+dt*(t.hard?1.8:1)):Math.max(0,lockTimer-dt*.7);
  lockState=qualified?(lockTimer>=need?2:1):0;
  if(lockState===2&&lastLock!==2){chirp(980,.09,.045);chirp(1240,.12,.035,.07);}
@@ -1345,17 +1338,12 @@ function destroyTarget(){
   site.stage=Math.max(site.stage||0,1);
  }
  lockState=lockTimer=0;setSeeker(false);
- if(enemyAlive){
-  enemyRole='ACE';
-  const escapeRange=enemy.position.distanceTo(ship.position);
-  if(escapeRange>720){
-   const f=heading().clone(),r=new THREE.Vector3().crossVectors(f,worldUp).normalize(),rear=ship.position.clone().addScaledVector(f,-430).addScaledVector(r,duel.side*150);
-   rear.y=Math.max(terrainHeight(rear.x,rear.z)+95,ship.position.y+45);enemy.position.copy(rear);
-   const intercept=ship.position.clone().addScaledVector(f,220).sub(enemy.position).normalize();
-   enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),intercept);enemyCourse.copy(intercept);duel.forward.copy(intercept);
-  }
-  duelState('engage');duel.speed=Math.max(duel.speed,TURBO_SPEED+4);enemyTime=Math.max(enemyTime,.8);resetEnemyAttack(.28);resetHostileThreat(.5);announce('BANDIT · SIX O\'CLOCK');
- }else if(!mission.escapeBandit){mission.escapeBandit=true;spawnDefender(true);}
+ // Fun lab: the blast is the climax. No fresh pursuer or unseen six-o'clock reset.
+ mission.escapeBandit=true;
+ removeSamMissile();
+ for(const site of sam.sites){site.disabled=true;site.light.visible=false;site.stage=site.lock=0;}
+ sam.stage=sam.lock=0;sam.site=null;
+ resetEnemyAttack(99);resetHostileThreat(99);
 }
 const airWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -1401,7 +1389,7 @@ function spawnDefender(escape=false){
 // Level 1 bandits should be able to punish a straight strike line. Keep terrain LOS authoritative,
 // but widen the firing solution enough that an oblique crossing pass is a real threat.
 enemyFireSolution=function(){
- if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<.35||duel.state==='extend'||duel.state==='break')return false;
+ if(!enemyAlive||crashed||missionComplete||missionCompleteTimer>0||enemyTime<8||mission.destroyed||!banditKnown||!airGeometry().onscreen||duel.state==='extend'||duel.state==='break')return false;
  const aim=ship.position.clone().sub(enemy.position),range=aim.length();
  if(range<50||range>(mission.destroyed?820:760))return false;
  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(enemy.quaternion).normalize();
@@ -1453,9 +1441,8 @@ function updateMission(dt){
  const watched=mission.ingressArmed&&sam.stage>=1&&!!sam.site;
  mission.detectClock=watched?Math.min(1.2,mission.detectClock+dt):Math.max(0,mission.detectClock-dt*2.4);
  if(mission.ingressArmed&&!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile))mission.detected=true;
- // Good masking can postpone the merge, but not erase it. A clean run gets several seconds
- // of geography first; a detected run brings the defender in sooner.
- if(!mission.bandit&&mission.ingressArmed&&(mission.detected||ship.position.z<variant.bandit.trigger)){
+ // Fun lab: present the optional bandit while the entrance is still open, before threats.
+ if(!mission.bandit&&!mission.destroyed&&missionElapsed>=3.5){
   mission.detected=true;mission.bandit=true;spawnDefender();
  }
  if(mission.destroyed&&!mission.escapeBandit&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
@@ -1530,9 +1517,9 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-4250)+380,-4250],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
+ const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-4300)+200,-4300],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
- variant.sam.forEach((range,i)=>sam.sites[i].range=range);
+ variant.sam.forEach((range,i)=>{const site=sam.sites[i];site.range=i===2?1400:range;site.disabled=i!==2;site.light.visible=i===2;if(i===2)site.group.scale.setScalar(1.5);});
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
  rebuildTerrain(0,Math.round(entry.z/620)*620);positionDistantRidges(0,Math.round(entry.z/620)*620);
  for(const m of scenery)place(m,true,false);clearSpawnCorridor();
@@ -1573,18 +1560,18 @@ spawnDefender=function(escape=false){
  spawnEnemy(true);
  enemyRole='ACE';
  const f=banditOfferForward.copy(heading()).normalize(),r=banditOfferRight.crossVectors(f,worldUp).normalize();
- const side=(entryRun%2?1:-1)*125;
+ const side=(entryRun%2?1:-1)*90;
  // Put the jet where the player can actually see and shoot it: roughly 11/1 o'clock,
  // not on a crossing vector that immediately flashes through six.
- enemy.position.copy(ship.position).addScaledVector(f,390).addScaledVector(r,side);
+ enemy.position.copy(ship.position).addScaledVector(f,440).addScaledVector(r,side);
  enemy.position.y=Math.max(terrainHeight(enemy.position.x,enemy.position.z)+82,ship.position.y+18);
  banditOfferDir.copy(f).addScaledVector(r,-Math.sign(side)*.23).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),banditOfferDir);
  enemyCourse.copy(banditOfferDir);duel.forward.copy(banditOfferDir);duel.course.copy(banditOfferDir);
  duel.state='extend';duel.age=0;duel.speed=185;duel.side=-Math.sign(side)||1;
  enemyDetected=true;enemyTime=0;enemyHP=enemyMaxHP=2;lastEnemy.copy(enemy.position);
- resetEnemyAttack(3.2);resetHostileThreat(3.2);
- banditOfferActive=true;banditOfferClock=2.65;banditReattackClock=2.8;
+ resetEnemyAttack(8);resetHostileThreat(99);
+ banditOfferActive=true;banditOfferClock=5.5;banditReattackClock=6;
  announce('BANDIT AHEAD');
 };
 
@@ -1623,7 +1610,7 @@ updateEnemy=function(dt){
  // The duel AI can build speed from here, but the player should see acceleration rather than teleportation.
  duel.speed=Math.max(duel.speed,CRUISE_SPEED+8);
  banditReattackClock=.6;
- resetEnemyAttack(.6);resetHostileThreat(1.2);
+ resetEnemyAttack(3);resetHostileThreat(99);
 };
 
 // Make cannon work feel generous without turning it into an aimbot. If the bandit is
@@ -1639,8 +1626,8 @@ makeTracer=function(side,salvo){
   const desired=leadPoint.clone().sub(t.mesh.position),range=desired.length();
   if(range<30||range>560)continue;
   desired.normalize();const current=t.velocity.clone().normalize(),angle=current.angleTo(desired);
-  if(angle>.17)continue;
-  const assist=THREE.MathUtils.lerp(.58,.30,THREE.MathUtils.smoothstep(range,140,560));
+  if(angle>.22)continue;
+  const assist=THREE.MathUtils.lerp(.70,.42,THREE.MathUtils.smoothstep(range,140,560));
   const speedNow=t.velocity.length();t.velocity.copy(current.lerp(desired,assist).normalize().multiplyScalar(speedNow));
   t.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),t.velocity.clone().normalize());
  }
