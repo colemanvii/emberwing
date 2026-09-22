@@ -4,9 +4,9 @@ const LEVEL={startZ:2300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-8500};
 // subsequent resets rotate, so adjacent runs never repeat an entrance.
 const ENTRY_PATTERNS=Object.freeze([
  // Three open-air approaches face north. The pilot chooses the first turn.
- {id:'LOW_WEST',z:2300,side:-530,agl:85,aimZ:1250,aimSide:-530,aimAgl:82,bank:.12,speed:218},
+ {id:'LOW_WEST',z:2300,side:-530,agl:85,aimZ:1250,aimSide:-900,aimAgl:82,bank:.12,speed:218},
  {id:'HIGH_CENTER',z:2400,side:0,agl:145,aimZ:1250,aimSide:0,aimAgl:125,bank:0,speed:222},
- {id:'EAST_SWEEP',z:2300,side:530,agl:620,aimZ:900,aimSide:530,aimAgl:620,bank:-.12,speed:222}
+ {id:'EAST_SWEEP',z:2300,side:530,agl:620,aimZ:900,aimSide:900,aimAgl:620,bank:-.12,speed:222}
 ]);
 function loadEntryRun(){try{const raw=sessionStorage.getItem('emberwingEntryRun'),v=Number(raw);return raw!==null&&Number.isInteger(v)&&v>=0&&v<ENTRY_PATTERNS.length?v:-1}catch{return -1}}
 function saveEntryRun(v){try{sessionStorage.setItem('emberwingEntryRun',String(v))}catch{}}
