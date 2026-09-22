@@ -905,11 +905,19 @@ function spawnLaunchClimax(pos){
   const child=launchSite.children[i];
   if(i%5===1)child.rotation.z+=(i%2?1:-1)*(.025+Math.random()*.035);
  }
- hitKick=Math.max(hitKick,1.35);flashScreen(.92);
+ hitKick=Math.max(hitKick,1.05);flashScreen(.38);
  chirp(46,.28,.075);chirp(118,.22,.055,.06);chirp(310,.13,.035,.13);
 }
 
 function updateLaunchClimax(dt){
+ if(mission.destroyed){
+  const collapse=THREE.MathUtils.smoothstep(missionElapsed-mission.hitAt,.12,1.25);
+  // Break the shell's defining roof line, leaving the burning cradle visible.
+  relicCrown.position.set(9*collapse,64-79*collapse,1+10*collapse);
+  relicCrown.rotation.z=.57*collapse;
+  relicRight.rotation.z=.024+.20*collapse;
+  relicLeft.rotation.z=-.024-.10*collapse;
+ }
  for(let i=effects.launchFx.length-1;i>=0;i--){
   const fx=effects.launchFx[i];fx.life-=dt;const t=1-THREE.MathUtils.clamp(fx.life/fx.maxLife,0,1);
   if(fx.kind==='primary'){
@@ -962,7 +970,7 @@ function v44SecondaryBlast(pos,scale=1){
  const light=new THREE.PointLight(0xff8c42,95*scale,650*scale,1.6);
  light.position.copy(pos).addScaledVector(worldUp,8);scene.add(light);
  firestorm.secondaries.push({mesh,light,life:.7,maxLife:.7,scale});
- flashScreen(.28*scale);hitKick=Math.max(hitKick,.45*scale);
+ flashScreen(.08*scale);hitKick=Math.max(hitKick,.32*scale);
  chirp(58,.14,.045);chirp(190,.08,.025,.035);
 }
 
@@ -1052,17 +1060,16 @@ function updateLaunchVapor(){
  }
 }
 
+
 // One owner for Level 1 geography, targeting and lifecycle. North is negative Z.
 const LEVEL={startZ:2300,entryZ:-3000,targetX:-300,targetZ:-5700,exitZ:-8500};
 // Three authored entrances share the same mission. Only the first selection is random;
 // subsequent resets rotate, so adjacent runs never repeat an entrance.
 const ENTRY_PATTERNS=Object.freeze([
- // Skim the western apron; the closing western wall invites a gentle rightward correction.
- {id:'LOW_WEST',z:2300,side:-1150,agl:42,aimZ:100,aimSide:-210,aimAgl:42,bank:.10,speed:218},
- // An elevated, nearly central approach gives time to read the ridge and choose a line.
- {id:'HIGH_CENTER',z:2400,side:0,agl:180,aimZ:650,aimSide:-20,aimAgl:110,bank:0,speed:222},
- // Cross from the eastern apron, then roll toward north as the valley mouth comes around.
- {id:'EAST_SWEEP',z:2300,side:850,agl:115,aimZ:650,aimSide:-110,aimAgl:90,bank:-.12,speed:222}
+ // Three open-air approaches face north. The pilot chooses the first turn.
+ {id:'LOW_WEST',z:2300,side:-530,agl:85,aimZ:1250,aimSide:-900,aimAgl:82,bank:.12,speed:218},
+ {id:'HIGH_CENTER',z:2400,side:0,agl:145,aimZ:1250,aimSide:0,aimAgl:125,bank:0,speed:222},
+ {id:'EAST_SWEEP',z:2300,side:530,agl:620,aimZ:900,aimSide:900,aimAgl:620,bank:-.12,speed:222}
 ]);
 function loadEntryRun(){try{const raw=sessionStorage.getItem('emberwingEntryRun'),v=Number(raw);return raw!==null&&Number.isInteger(v)&&v>=0&&v<ENTRY_PATTERNS.length?v:-1}catch{return -1}}
 function saveEntryRun(v){try{sessionStorage.setItem('emberwingEntryRun',String(v))}catch{}}
@@ -1104,8 +1111,8 @@ terrainHeight=function(x,z){
  const opening=1-THREE.MathUtils.smoothstep(z,-7350,-6500);
  // The mission begins outside the valley. Give the aircraft a broad apron of air,
  // then let the walls close progressively as the player reaches the first ridge.
- const ingressOpen=THREE.MathUtils.smoothstep(z,420,2200);
- const half=440-throat*225+basin*300+opening*1080+ingressOpen*980;
+ const ingressOpen=THREE.MathUtils.smoothstep(z,-450,1800);
+ const half=440-throat*225+basin*300+opening*1080+ingressOpen*1120;
  const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
  const wall=THREE.MathUtils.smoothstep(d,half,half+720);
  // Quiet the generic skyline so the four authored masses own the silhouette.
@@ -1120,6 +1127,10 @@ terrainHeight=function(x,z){
  const escarpmentToe=115*terrainLobe(x,z,valleyCenter(-40)+330,-40,180,660,4);
  const ridgeSpur=145*terrainLobe(x,z,valleyCenter(-100)+125,-100,130,320,4);
  const westernShelf=35*terrainLobe(x,z,valleyCenter(120)-550,120,300,740,4);
+ // Two isolated landmarks give the opening scale and a first voluntary line:
+ // skim outside, thread the broad middle, or climb across their low shoulders.
+ const westMesa=155*terrainLobe(x,z,valleyCenter(900)-850,900,180,310,5);
+ const eastMesa=190*terrainLobe(x,z,valleyCenter(620)+850,620,190,330,5);
 
  // 2. THE NARROW THROAT — staggered sheer buttresses, with a low continuous slot.
  // The west prow arrives first; the taller east face fills the forward view on entry.
@@ -1154,7 +1165,7 @@ terrainHeight=function(x,z){
  const breakoutCrest=285*terrainLobe(x,z,valleyCenter(-6300)-505,-6300,155,570,5);
  const breakoutGate=150*terrainLobe(x,z,valleyCenter(-6560)+640,-6560,390,430,4);
 
- return floor+foothills+wall*ridge*(1-opening*.84)*ingressWallWeight+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+throatWest+throatEast+shadowSpine+shadowCrown+headland+headlandCrown+headlandWing+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
+ return floor+foothills+wall*ridge*(1-opening*.84)*ingressWallWeight+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+westMesa+eastMesa+throatWest+throatEast+shadowSpine+shadowCrown+headland+headlandCrown+headlandWing+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
 };
 function lineClear(a,b,clearance=3){
  const steps=Math.max(10,Math.ceil(a.distanceTo(b)/40));
@@ -1492,7 +1503,7 @@ function relicSlab(w,h,d,x,y,z,mat=relicStoneMat){
 relicSlab(98,11,78,0,-85,1);
 const relicLeft=relicSlab(14,154,19,-37,-8,1),relicRight=relicSlab(14,154,19,37,-8,1);
 relicLeft.rotation.z=-.024;relicRight.rotation.z=.024;
-relicSlab(84,12,19,0,64,1);
+const relicCrown=relicSlab(84,12,19,0,64,1);
 relicSlab(58,126,4,0,-10,-14,relicVoidMat);
 relicSlab(44,4,8,0,20,-8,relicStoneMat);
 function seatServiceRoad(){
@@ -1514,7 +1525,7 @@ reset=function(){
  playerInitiativeUntil=-99;initiativeKind='';banditReattackClock=0;banditPass=0;
  banditKnown=false;banditRearSide=1;banditCueX=banditCueY=0;hideBanditCue();
  missionRun=(missionRun+1)%MISSION_VARIANTS.length;
- Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,ingressArmed:false,approachCue:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:1.55});
+ Object.assign(mission,{phase:'flight',penetrated:false,detected:false,detectClock:0,ingressArmed:false,approachCue:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:missionRun,introUntil:.65});
  const variant=activeVariant();
  enemyAlive=false;enemy.visible=false;respawn=999999;missionCompleteTimer=0;
  entryRun=entryRun<0?Math.floor(Math.random()*ENTRY_PATTERNS.length):(entryRun+1)%ENTRY_PATTERNS.length;saveEntryRun(entryRun);
@@ -1528,6 +1539,8 @@ reset=function(){
  speed=entry.speed;burner=0;mission.entry=entry.id;
  launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1);
  for(const child of launchSite.children)child.rotation.z=0;
+ relicLeft.rotation.z=-.024;relicRight.rotation.z=.024;
+ relicCrown.position.set(0,64,1);relicCrown.rotation.set(0,0,0);
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
  const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-4250)+380,-4250],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
