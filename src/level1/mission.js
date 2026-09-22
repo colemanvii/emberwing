@@ -438,7 +438,7 @@ function relicSlab(w,h,d,x,y,z,mat=relicStoneMat){
 relicSlab(98,11,78,0,-85,1);
 const relicLeft=relicSlab(14,154,19,-37,-8,1),relicRight=relicSlab(14,154,19,37,-8,1);
 relicLeft.rotation.z=-.024;relicRight.rotation.z=.024;
-relicSlab(84,12,19,0,64,1);
+const relicCrown=relicSlab(84,12,19,0,64,1);
 relicSlab(58,126,4,0,-10,-14,relicVoidMat);
 relicSlab(44,4,8,0,20,-8,relicStoneMat);
 function seatServiceRoad(){
@@ -474,6 +474,8 @@ reset=function(){
  speed=entry.speed;burner=0;mission.entry=entry.id;
  launchSite.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+90,LEVEL.targetZ);launchSite.scale.setScalar(1);
  for(const child of launchSite.children)child.rotation.z=0;
+ relicLeft.rotation.z=-.024;relicRight.rotation.z=.024;
+ relicCrown.position.set(0,64,1);relicCrown.rotation.set(0,0,0);
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
  const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-4250)+380,-4250],[valleyCenter(-5300)+470,-5300],[-560,-6400]];

@@ -194,11 +194,19 @@ function spawnLaunchClimax(pos){
   const child=launchSite.children[i];
   if(i%5===1)child.rotation.z+=(i%2?1:-1)*(.025+Math.random()*.035);
  }
- hitKick=Math.max(hitKick,1.35);flashScreen(.92);
+ hitKick=Math.max(hitKick,1.05);flashScreen(.38);
  chirp(46,.28,.075);chirp(118,.22,.055,.06);chirp(310,.13,.035,.13);
 }
 
 function updateLaunchClimax(dt){
+ if(mission.destroyed){
+  const collapse=THREE.MathUtils.smoothstep(missionElapsed-mission.hitAt,.12,1.25);
+  // Break the shell's defining roof line, leaving the burning cradle visible.
+  relicCrown.position.set(9*collapse,64-79*collapse,1+10*collapse);
+  relicCrown.rotation.z=.57*collapse;
+  relicRight.rotation.z=.024+.20*collapse;
+  relicLeft.rotation.z=-.024-.10*collapse;
+ }
  for(let i=effects.launchFx.length-1;i>=0;i--){
   const fx=effects.launchFx[i];fx.life-=dt;const t=1-THREE.MathUtils.clamp(fx.life/fx.maxLife,0,1);
   if(fx.kind==='primary'){
@@ -251,7 +259,7 @@ function v44SecondaryBlast(pos,scale=1){
  const light=new THREE.PointLight(0xff8c42,95*scale,650*scale,1.6);
  light.position.copy(pos).addScaledVector(worldUp,8);scene.add(light);
  firestorm.secondaries.push({mesh,light,life:.7,maxLife:.7,scale});
- flashScreen(.28*scale);hitKick=Math.max(hitKick,.45*scale);
+ flashScreen(.08*scale);hitKick=Math.max(hitKick,.32*scale);
  chirp(58,.14,.045);chirp(190,.08,.025,.035);
 }
 
