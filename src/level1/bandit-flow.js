@@ -12,18 +12,18 @@ spawnDefender=function(escape=false){
  spawnEnemy(true);
  enemyRole='ACE';
  const f=banditOfferForward.copy(heading()).normalize(),r=banditOfferRight.crossVectors(f,worldUp).normalize();
- const side=(entryRun%2?1:-1)*125;
+ const side=(entryRun%2?1:-1)*100;
  // Put the jet where the player can actually see and shoot it: roughly 11/1 o'clock,
  // not on a crossing vector that immediately flashes through six.
- enemy.position.copy(ship.position).addScaledVector(f,390).addScaledVector(r,side);
+ enemy.position.copy(ship.position).addScaledVector(f,330).addScaledVector(r,side);
  enemy.position.y=Math.max(terrainHeight(enemy.position.x,enemy.position.z)+82,ship.position.y+18);
  banditOfferDir.copy(f).addScaledVector(r,-Math.sign(side)*.23).normalize();
  enemy.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),banditOfferDir);
  enemyCourse.copy(banditOfferDir);duel.forward.copy(banditOfferDir);duel.course.copy(banditOfferDir);
  duel.state='extend';duel.age=0;duel.speed=185;duel.side=-Math.sign(side)||1;
  enemyDetected=true;enemyTime=0;enemyHP=enemyMaxHP=2;lastEnemy.copy(enemy.position);
- resetEnemyAttack(3.2);resetHostileThreat(3.2);
- banditOfferActive=true;banditOfferClock=2.65;banditReattackClock=2.8;
+ resetEnemyAttack(4.2);resetHostileThreat(4.2);
+ banditOfferActive=true;banditOfferClock=3.6;banditReattackClock=3.8;
  announce('BANDIT AHEAD');
 };
 

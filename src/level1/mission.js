@@ -447,10 +447,10 @@ function updateMission(dt){
  const watched=mission.ingressArmed&&sam.stage>=1&&!!sam.site;
  mission.detectClock=watched?Math.min(1.2,mission.detectClock+dt):Math.max(0,mission.detectClock-dt*2.4);
  if(mission.ingressArmed&&!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile))mission.detected=true;
- // Good masking can postpone the merge, but not erase it. A clean run gets several seconds
- // of geography first; a detected run brings the defender in sooner.
- if(!mission.bandit&&mission.ingressArmed&&(mission.detected||ship.position.z<variant.bandit.trigger)){
-  mission.detected=true;mission.bandit=true;spawnDefender();
+ // Offer a visible chase after the serene opening, before the radar network wakes.
+ // The pilot can bank toward it or stay low and keep choosing terrain cover.
+ if(!mission.bandit&&missionElapsed>=2.2){
+  mission.bandit=true;spawnDefender();
  }
  if(mission.destroyed&&!mission.escapeBandit&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
  if(mission.destroyed&&ship.position.z<=LEVEL.exitZ){
