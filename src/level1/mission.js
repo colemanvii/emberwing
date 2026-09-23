@@ -51,7 +51,10 @@ terrainHeight=function(x,z){
  // The mission begins outside the valley. Give the aircraft a broad apron of air,
  // then let the walls close progressively as the player reaches the first ridge.
  const ingressOpen=THREE.MathUtils.smoothstep(z,420,2200);
- const half=440-throat*225+basin*300+opening*1080+ingressOpen*980;
+ // Open the eastern basin into a broad amphitheatre; keep the western
+ // shoulder and its radar-shadow line exactly where pilots learned them.
+ const basinApron=basin*THREE.MathUtils.smoothstep(x-center,180,650);
+ const half=440-throat*225+basin*300+basinApron*850+opening*1550+ingressOpen*980;
  const floor=-40+entry*205+noiseLand(x*.002,z*.0018)*11+4*Math.sin(z/590);
  const wall=THREE.MathUtils.smoothstep(d,half,half+720);
  // Quiet the generic skyline so the four authored masses own the silhouette.
@@ -100,8 +103,53 @@ terrainHeight=function(x,z){
  const breakoutCrest=285*terrainLobe(x,z,valleyCenter(-6300)-505,-6300,155,570,5);
  const breakoutGate=150*terrainLobe(x,z,valleyCenter(-6560)+640,-6560,390,430,4);
 
- return floor+foothills+wall*ridge*(1-opening*.84)*ingressWallWeight+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+throatWest+throatEast+shadowSpine+shadowCrown+headland+headlandCrown+headlandWing+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
+ // Separate distant massifs from the playable slopes with a broad saddle.
+ // These fixed landmarks remain visible through turns and the north release.
+ const distant=THREE.MathUtils.smoothstep(d,1900,3100)*(.72+.48*noiseLand(x*.0011,z*.00085))*(
+  1150*terrainLobe(x,z,-3900,-1600,1400,2800,2)+
+  1650*terrainLobe(x,z,4300,-4800,1700,2300,2)+
+  1350*terrainLobe(x,z,-2600,-11300,1800,1800,2)+
+  1850*terrainLobe(x,z,2900,-13200,1700,2100,2));
+ const skylineBreak=1-.48*terrainPulse(z,-900,950)-.55*basin;
+ return floor+distant+foothills+wall*ridge*skylineBreak*(1-opening*.92)*ingressWallWeight+escarpment+escarpmentCrown+escarpmentToe+ridgeSpur+westernShelf+throatWest+throatEast+shadowSpine+shadowCrown+headland+headlandCrown+headlandWing+basinRim+breakoutSpine+breakoutCrest+breakoutGate;
 };
+// One static height atlas casts the authored landscape's long sun shadows.
+// It is shared by the ground and aircraft; no additional scene render per frame.
+const reliefWidth=256,reliefHeight=384,reliefData=new Float32Array(reliefWidth*reliefHeight);
+for(let row=0;row<reliefHeight;row++)for(let col=0;col<reliefWidth;col++){
+ const x=-6000+(col+.5)/reliefWidth*12000,z=-14000+(row+.5)/reliefHeight*18000;
+ reliefData[row*reliefWidth+col]=terrainHeight(x,z);
+}
+const reliefAtlas=new THREE.DataTexture(reliefData,reliefWidth,reliefHeight,THREE.RedFormat,THREE.FloatType);
+reliefAtlas.minFilter=reliefAtlas.magFilter=THREE.LinearFilter;reliefAtlas.needsUpdate=true;
+const reliefGLSL=`
+uniform sampler2D reliefAtlas;uniform vec3 reliefSun;
+varying vec3 reliefPosition;
+float reliefShadow(vec3 p){
+ float shade=1.;
+ for(int i=0;i<12;i++){
+  float t=24.+float(i*i)*24.;vec3 q=p+reliefSun*t;
+  vec2 uv=(q.xz-vec2(-6000.,-14000.))/vec2(12000.,18000.);
+  if(uv.x>0.&&uv.x<1.&&uv.y>0.&&uv.y<1.){
+   float h=texture2D(reliefAtlas,uv).r;
+   shade=min(shade,smoothstep(-12.,18.+t*.009,q.y+32.-h));
+  }
+ }
+ return mix(.12,1.,shade);
+}`;
+for(const material of [landMaterial,prototypeHull,prototypeWing,prototypeControl,prototypeEdge,prototypeGlass]){
+ const previousCompile=material.onBeforeCompile;
+ material.onBeforeCompile=function(shader,renderer){
+  previousCompile.call(this,shader,renderer);
+  shader.uniforms.reliefAtlas={value:reliefAtlas};shader.uniforms.reliefSun=weather.sunDir;
+  shader.vertexShader='varying vec3 reliefPosition;\n'+shader.vertexShader.replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nreliefPosition=(modelMatrix*vec4(transformed,1.)).xyz;');
+  shader.fragmentShader=reliefGLSL+'\n'+shader.fragmentShader;
+  shader.fragmentShader=shader.fragmentShader.replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
+   float terrainSun=reliefShadow(reliefPosition);
+   reflectedLight.directDiffuse*=terrainSun;reflectedLight.directSpecular*=terrainSun;`);
+ };
+ material.customProgramCacheKey=()=> 'emberwing-mineral-relief-v1';material.needsUpdate=true;
+}
 function lineClear(a,b,clearance=3){
  const steps=Math.max(10,Math.ceil(a.distanceTo(b)/40));
  for(let i=1;i<steps;i++){const t=i/steps,x=THREE.MathUtils.lerp(a.x,b.x,t),z=THREE.MathUtils.lerp(a.z,b.z,t);if(terrainHeight(x,z)+clearance>THREE.MathUtils.lerp(a.y,b.y,t))return false;}
@@ -128,7 +176,7 @@ samLineClear=site=>lineClear(site.position,ship.position,6)&&!scenerySegmentHit(
 function clockBearing(pos){const p=pos.clone().sub(ship.position).applyQuaternion(ship.quaternion.clone().invert());return ((Math.round(Math.atan2(p.x,-p.z)*6/Math.PI)+12)%12)||12;}
 function announce(text){
  if(mission.phase!=='flight')return;
- const message=/SAM LAUNCH/.test(text)?'MISSILE INBOUND · '+(sam.site?clockBearing(sam.site.position)+" O'CLOCK":'BREAK'):/BANDIT OVERSHOOT/.test(text)?'BANDIT OVERSHOOT · FOX':/SAM EXPOSED/.test(text)?'SAM EXPOSED · COUNTER':/MISSILE INBOUND/.test(text)?text:/RADAR TRACK|SAM TRACK/.test(text)?'SAM TRACKING':/BANDIT AHEAD|(?:ROOKIE|SKIMMER|CLIMBER|ACE) INBOUND/.test(text)?'BANDIT · '+clockBearing(enemy.position)+" O'CLOCK":/HOSTILE GUNS/.test(text)?'HOSTILE GUNS · BREAK':/TARGET DESTROYED/.test(text)?'TARGET DESTROYED · EXIT NORTH':null;
+ const message=/SAM LAUNCH/.test(text)?'MISSILE INBOUND · '+(sam.site?clockBearing(sam.site.position)+" O'CLOCK":'BREAK'):/BANDIT OVERSHOOT/.test(text)?'BANDIT OVERSHOOT · FOX':/SAM EXPOSED/.test(text)?'SAM EXPOSED · COUNTER':/MISSILE INBOUND/.test(text)?text:/RADAR TRACK|SAM TRACK/.test(text)?'THEY HAVE A TRACK':/BANDIT AHEAD|(?:ROOKIE|SKIMMER|CLIMBER|ACE) INBOUND/.test(text)?'BANDIT · '+clockBearing(enemy.position)+" O'CLOCK":/HOSTILE GUNS/.test(text)?'HOSTILE GUNS · BREAK':/TARGET DESTROYED/.test(text)?'TARGET DESTROYED · EXIT NORTH':null;
  if(!message)return;
  if(/BANDIT|HOSTILE GUNS/.test(message))banditKnown=true;
  const gap=/OVERSHOOT|EXPOSED/.test(message)?.35:/TARGET|INBOUND|BANDIT|HOSTILE GUNS/.test(message)?1.1:4;
@@ -421,7 +469,7 @@ const worldSpectacle=updateV34Spectacle;
 updateV34Spectacle=function(){worldSpectacle();rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=!mission.destroyed;rocketFlame.visible=false;updateLaunchVapor();};
 const flightCrash=crashNow;
 crashNow=function(reason){flightCrash(reason);audioCtx?.suspend();releaseInputs();};
-const roadMaterial=new THREE.MeshStandardMaterial({color:0x655d4c,roughness:1});
+const roadMaterial=new THREE.MeshStandardMaterial({color:0x737975,roughness:1});
 const serviceRoad=new THREE.Mesh(new THREE.BufferGeometry(),roadMaterial);scene.add(serviceRoad);
 
 // The launch assignment reads as one severe object in the basin: part weapon,

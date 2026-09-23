@@ -142,7 +142,7 @@ for(let i=scenery.length-1;i>=0;i--){const m=scenery[i];if(!m.userData.city){sce
 for(const m of scenery.splice(14))scene.remove(m);
 const cityPositions=scenery.map((m,i)=>{
   const hangar=i<6,row=hangar?Math.floor(i/3):Math.floor((i-6)/4),col=hangar?i%3:(i-6)%4;
-  const x=hangar?850+col*92:835+col*54,z=hangar?-7520-row*118:-7770-row*62;
+  const x=hangar?850+col*92:835+col*54,z=hangar?-5600-row*118:-5900-row*62;
   m.scale.set(hangar?1.55:.64,hangar?.4:.56,hangar?1.2:.7);
   m.userData.raise*=m.scale.y;m.userData.collisionH*=m.scale.y;m.userData.collisionR*=Math.max(m.scale.x,m.scale.z);
   return [x,z];
@@ -219,7 +219,7 @@ vec3 skyLight(vec3 ray){
     vec3 light=realm>1.5?vec3(.36,.42,.44):vec3(.91,.89,.81);
     vec3 cl=mix(shadow,light,clamp(.28+(cloud-lit)*1.6,0.,1.));
     cl+=sunTint*pow(sd,12.)*max(cloud-thick,0.)*2.;
-    col=mix(col,cl,cloud*smoothstep(.025,.16,h)*(realm>1.5?.9:.48));
+    col=mix(col,cl,cloud*smoothstep(.025,.16,h)*(realm>1.5?.9:realm>.5?.48:.16));
   }
   return col;
 }
@@ -237,9 +237,15 @@ landMaterial.onBeforeCompile=shader=>{
   shader.fragmentShader='varying vec3 landWorld,landNormal;\n'+atmosphereGLSL+'\nfloat landFbm(vec2 p){return noise2(p)*.57+noise2(p*2.03+17.1)*.29+noise2(p*4.12+29.3)*.14;}\n'+shader.fragmentShader;
   shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
     float macro=landFbm(landWorld.xz*.002),grain=noise2(landWorld.xz*.065),slope=1.-max(normalize(landNormal).y,0.);
-    float layers=.5+.5*sin(landWorld.y*.11+macro*13.);
-    vec3 rock=mix(vec3(.16,.105,.067),vec3(.46,.32,.18),macro);
-    rock*=.86+grain*.1+layers*.08;float wash=pow(noise2(landWorld.xz*.007+vec2(macro*2.,0.)),3.);rock=mix(rock,vec3(.36,.29,.2),wash*.5);
+    // Pale sediment, exposed cool stone and restrained horizontal bedding.
+    float bedding=landWorld.y*.16+macro*4.;
+    float layers=smoothstep(.82,.98,.5+.5*sin(bedding));
+    float resolved=1.-smoothstep(.4,1.8,fwidth(bedding));
+    vec3 rock=mix(vec3(.39,.405,.40),vec3(.66,.65,.60),macro);
+    rock=mix(rock,vec3(.30,.33,.34),slope*.30);
+    rock*=.95+grain*.06-layers*resolved*slope*.14;
+    float wash=pow(noise2(landWorld.xz*.007+vec2(macro*2.,0.)),3.);
+    rock=mix(rock,vec3(.73,.71,.65),wash*.35);
     if(realm>.5){rock=mix(vec3(.11,.15,.17),vec3(.3,.34,.34),macro);float snowline=140.+macro*210.;float snow=smoothstep(snowline,snowline+170.,landWorld.y);snow*=smoothstep(.25,.85,normalize(landNormal).y+grain*.24);rock=mix(rock,vec3(.82,.87,.86)*(.9+grain*.06),snow);}
     diffuseColor.rgb=rock;`);
   shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
@@ -301,14 +307,14 @@ const farSea=new THREE.Mesh(farGeo.clone(),ocean.material);farSea.geometry.setIn
 const themeV37=setWorldTheme,tempestV37=setTempestTheme;
 function applyDistantTheme(){
   const realm=worldIndex;weather.realm.value=realm;
-  const palettes=[{top:0x243d50,horizon:0xc3b9a4,fog:0xaab0aa,sun:0xffe5c2,density:.00023},
+  const palettes=[{top:0x526f85,horizon:0xd4dbdc,fog:0xb8c9d0,sun:0xffe3b8,density:.000115},
     {top:0x243d52,horizon:0xc5cfd0,fog:0x9dabb3,sun:0xffedcf,density:.00018},
     {top:0x273845,horizon:0x9da5a2,fog:0x788b91,sun:0xf1dfbb,density:.00022}];
   const p=palettes[realm];weather.skyTop.value.setHex(p.top);weather.skyHorizon.value.setHex(p.horizon);weather.sunTint.value.setHex(p.sun);
   scene.fog.color.setHex(p.fog);scene.fog.density=p.density;weather.density.value=p.density;
-  weather.sunDir.value.set(realm===2?-.32:-.48,realm===1?.36:realm===2?.085:.24,realm===2?-.94:-.84).normalize();
-  hemi.color.setHex(realm===2?0xb0c0cc:0xdce9ec);hemi.groundColor.setHex(realm===0?0x715441:0x435766);hemi.intensity=realm===2?1.25:realm===0?1.15:1.55;
-  sun.color.setHex(p.sun);sun.intensity=realm===2?3.1:3.5;
+  weather.sunDir.value.set(realm===2?-.32:-.48,realm===1?.36:realm===2?.085:.19,realm===2?-.94:-.84).normalize();
+  hemi.color.setHex(realm===2?0xb0c0cc:0xdce9ec);hemi.groundColor.setHex(realm===0?0x465765:0x435766);hemi.intensity=realm===2?1.25:realm===0?.85:1.55;
+  sun.color.setHex(p.sun);sun.intensity=realm===2?3.1:3.8;
   if(realm===2)snow.material.color.setHex(0xc7d2d6);
   sandMat.color.setHex(0x9b8d75);cityDarkMat.color.setHex(0x61625c);rockMat.color.setHex(0x655849);
   ground.visible=farLand.visible=realm!==2;farSea.visible=realm===2;
@@ -360,8 +366,8 @@ snow.material.map=new THREE.CanvasTexture(moistureCanvas);snow.material.needsUpd
 for(const child of [...ship.children]){ship.remove(child);child.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
 ship.userData.engines=[];ship.userData.plumes=[];
 const airframeControls=[];
-const prototypeHull=new THREE.MeshStandardMaterial({color:0x343d42,roughness:.56,metalness:.42});
-const prototypeWing=new THREE.MeshStandardMaterial({color:0x414b51,roughness:.61,metalness:.34});
+const prototypeHull=new THREE.MeshStandardMaterial({color:0x737b7c,roughness:.43,metalness:.46});
+const prototypeWing=new THREE.MeshStandardMaterial({color:0x929793,roughness:.47,metalness:.38});
 const prototypeEdge=new THREE.MeshStandardMaterial({color:0x687176,roughness:.48,metalness:.55});
 const prototypeControl=new THREE.MeshStandardMaterial({color:0x39444b,roughness:.53,metalness:.4});
 const prototypeHot=new THREE.MeshStandardMaterial({color:0x292e32,roughness:.57,metalness:.66});
@@ -495,7 +501,7 @@ for(const plume of ship.userData.plumes){
 speedGeo.setDrawRange(0,72);speedMat.color.setHex(0xc9d7dc);
 const cinematicSpeedBase=updateSpeedFX;
 updateSpeedFX=function(dt){
-  cinematicSpeedBase(dt);speedMat.opacity*=.62;
+  cinematicSpeedBase(dt);speedMat.opacity*=.18;
   for(const e of ship.userData.engines)e.material.color.setRGB(1,.68,.4);
 };
 // A single brief flash accompanies the existing impact particles and cleanup.
@@ -520,7 +526,7 @@ function updateCamera(dt){
   const bank=Math.atan2(-cameraShipRight.y,shipUpCamera.y),pi=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),
     pull=Math.abs(pi)*THREE.MathUtils.smoothstep(Math.abs(bank),.26,.78),
     alt=Math.max(0,ship.position.y-terrainHeight(ship.position.x,ship.position.z)),
-    velocity=THREE.MathUtils.clamp((speed-CRUISE_SPEED)/(TURBO_SPEED-CRUISE_SPEED),0,1),a=1-Math.exp(-dt/.075);
+    velocity=THREE.MathUtils.clamp((speed-CRUISE_SPEED)/(TURBO_SPEED-CRUISE_SPEED),0,1),a=1-Math.exp(-dt/(.085+pull*.025));
   speedFXClock+=dt*(2+velocity*8);
   camBank=THREE.MathUtils.lerp(camBank,Math.sin(bank)*.055,1-Math.exp(-dt/.19));
   camPos.copy(ship.position).addScaledVector(camF,-12.4-velocity*4.2-pull*1.3-Math.max(0,1/camera.aspect-1)*12).addScaledVector(worldUp,4.8+pull*.45);
@@ -553,7 +559,7 @@ function updateCamera(dt){
   camera.quaternion.slerp(viewRotation,1-Math.exp(-dt/.09));
   const groundRush=THREE.MathUtils.clamp((105-alt)/105,0,1),shake=(velocity*.038+groundRush*.014)*(crashed?0:1);
   if(shake>.002){camera.translateX(Math.sin(speedFXClock*31)*shake);camera.translateY(Math.sin(speedFXClock*43)*shake*.72);}
-  camera.fov=THREE.MathUtils.lerp(camera.fov,66+velocity*20+pull*2+groundRush*3.5+gunKick*.6+hitKick*.4,1-Math.exp(-dt/.15));
+  camera.fov=THREE.MathUtils.lerp(camera.fov,66+velocity*9+pull*2+groundRush*2+gunKick*.6+hitKick*.4,1-Math.exp(-dt/.15));
   camera.updateProjectionMatrix();sky.position.copy(camera.position);
 }
 
