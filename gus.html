@@ -62,19 +62,63 @@ function installIpadCockpit(){
   const doc=game.contentDocument;
   if(!doc)return;
   doc.body.dataset.handheld='ipad';
+
+  const style=doc.createElement('style');
+  style.id='gus-handheld-layout';
+  style.textContent=`
+    #touchControls{display:block!important}
+    #touchControls #stick{
+      left:auto!important;
+      right:max(28px,env(safe-area-inset-right))!important;
+      top:50%!important;
+      bottom:auto!important;
+      transform:translateY(-50%)!important;
+      width:190px!important;
+      height:190px!important;
+    }
+    #touchControls #touchFire{
+      left:max(30px,env(safe-area-inset-left))!important;
+      right:auto!important;
+      top:50%!important;
+      bottom:auto!important;
+      transform:translateY(48%)!important;
+    }
+    #touchControls #touchMissile{
+      left:max(130px,calc(env(safe-area-inset-left) + 130px))!important;
+      right:auto!important;
+      top:50%!important;
+      bottom:auto!important;
+      transform:translateY(-44%)!important;
+    }
+    #touchControls #touchBoost{
+      left:max(42px,calc(env(safe-area-inset-left) + 42px))!important;
+      right:auto!important;
+      top:50%!important;
+      bottom:auto!important;
+      transform:translateY(-154%)!important;
+    }
+    @media (max-height:560px){
+      #touchControls #stick{width:174px!important;height:174px!important;right:max(24px,env(safe-area-inset-right))!important}
+      #touchControls #touchFire{left:max(24px,env(safe-area-inset-left))!important}
+      #touchControls #touchMissile{left:max(116px,calc(env(safe-area-inset-left) + 116px))!important}
+      #touchControls #touchBoost{left:max(34px,calc(env(safe-area-inset-left) + 34px))!important}
+    }
+  `;
+  doc.head.appendChild(style);
+
   const fire=doc.getElementById('touchFire');
   const missile=doc.getElementById('touchMissile');
   const boost=doc.getElementById('touchBoost');
   const stick=doc.getElementById('stick');
-  if(stick)stick.setAttribute('aria-label','Left thumb flight control');
-  if(fire)fire.setAttribute('aria-label','Right thumb cannon');
-  if(missile)missile.setAttribute('aria-label','Right thumb missile: hold to lock, release to fire');
-  if(boost)boost.setAttribute('aria-label','Right thumb boost');
+  if(stick)stick.setAttribute('aria-label','Right thumb flight control');
+  if(fire)fire.setAttribute('aria-label','Left thumb cannon');
+  if(missile)missile.setAttribute('aria-label','Left thumb missile: hold to lock, release to fire');
+  if(boost)boost.setAttribute('aria-label','Left thumb boost');
 }
 function launch(){
   if(started || matchMedia('(orientation:portrait)').matches)return;
   started=true;
-  game.src='./play.html?gus=ipad-hotas-v1';
+  game.src='./play.html?gus=ipad-handheld-v3';
   glass.classList.add('hide');
   game.addEventListener('load',()=>{
     installIpadCockpit();
