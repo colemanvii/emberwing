@@ -40,10 +40,10 @@ h1{margin:0 0 17px;font-size:clamp(31px,5vw,48px);font-weight:500;letter-spacing
     <h1 id="title">VALLEY STRIKE</h1>
     <p class="mission">Fly low. Destroy the launch site. Get out north.</p>
     <div class="controls">
-      <div><b>LEFT HAND — THROTTLE</b>Hold for afterburner.</div>
-      <div><b>RIGHT HAND — STICK</b>Push, pull, and bank the jet.</div>
-      <div><b>TRIGGER — CANNON</b>Tap or hold fire.</div>
-      <div><b>MISSILE — TRACK</b>Hold to lock. Release to fire.</div>
+      <div><b>LEFT THUMB — FLY</b>Bank and pitch without changing your grip.</div>
+      <div><b>RIGHT THUMB — FIGHT</b>Cannon, missile, and boost live under one thumb.</div>
+      <div><b>CANNON</b>Tap or hold with your right thumb.</div>
+      <div><b>MISSILE</b>Hold to lock. Release to fire. Boost sits above.</div>
     </div>
     <p class="start">TAP TO ENTER COCKPIT <span>landscape only</span></p>
   </div>
@@ -61,119 +61,16 @@ let started=false;
 function installIpadCockpit(){
   const doc=game.contentDocument;
   if(!doc)return;
-  const style=doc.createElement('style');
-  style.textContent=`
-    @media (pointer:coarse){
-      #briefing{display:none!important}
-      #touchControls{display:block!important;position:fixed!important;inset:0!important;z-index:12!important;pointer-events:none!important}
-      #touchControls button,#stick{font-family:ui-monospace,SFMono-Regular,Menlo,monospace!important;-webkit-user-select:none!important;user-select:none!important}
-
-      /* RIGHT-HAND FLIGHT STICK */
-      #stick{
-        left:auto!important;
-        right:max(46px,env(safe-area-inset-right))!important;
-        bottom:max(34px,env(safe-area-inset-bottom))!important;
-        width:190px!important;
-        height:190px!important;
-        border:1px solid rgba(236,233,223,.38)!important;
-        background:radial-gradient(circle at 50% 50%,rgba(236,233,223,.05) 0 34%,rgba(11,14,13,.10) 35% 100%)!important;
-        box-shadow:inset 0 0 0 12px rgba(11,14,13,.13)!important;
-      }
-      #stick:before{
-        content:'FLIGHT STICK'!important;
-        top:auto!important;
-        bottom:-19px!important;
-        color:rgba(236,233,223,.50)!important;
-        font-size:7px!important;
-        letter-spacing:.18em!important;
-      }
-      #stick:after{
-        content:'';position:absolute;left:50%;top:50%;width:1px;height:76%;background:rgba(236,233,223,.10);transform:translate(-50%,-50%);
-      }
-      #stickDot{
-        left:65px!important;
-        top:65px!important;
-        width:60px!important;
-        height:60px!important;
-        border:1px solid rgba(236,233,223,.72)!important;
-        background:rgba(24,28,27,.72)!important;
-        box-shadow:0 7px 22px rgba(0,0,0,.28),inset 0 0 0 5px rgba(236,233,223,.06)!important;
-      }
-
-      /* LEFT-HAND THROTTLE: hold = afterburner */
-      #touchBoost{
-        left:max(42px,env(safe-area-inset-left))!important;
-        right:auto!important;
-        bottom:max(42px,env(safe-area-inset-bottom))!important;
-        width:92px!important;
-        height:190px!important;
-        border-radius:16px!important;
-        border:1px solid rgba(236,233,223,.38)!important;
-        background:linear-gradient(180deg,rgba(236,233,223,.08),rgba(11,14,13,.32))!important;
-        color:transparent!important;
-      }
-      #touchBoost:before{
-        content:'THROTTLE';position:absolute;left:0;right:0;bottom:20px;color:rgba(236,233,223,.52);font-size:7px;letter-spacing:.17em;
-      }
-      #touchBoost:after{
-        content:'AFTERBURNER';position:absolute;left:50%;top:18px;transform:translateX(-50%);writing-mode:vertical-rl;color:rgba(236,233,223,.82);font-size:8px;letter-spacing:.15em;
-      }
-      #touchBoost.active{
-        background:linear-gradient(180deg,rgba(255,112,56,.34),rgba(49,20,12,.42))!important;
-        border-color:rgba(255,190,140,.82)!important;
-      }
-
-      /* WEAPONS LIVE AROUND THE RIGHT-HAND STICK */
-      #touchFire{
-        right:max(255px,calc(env(safe-area-inset-right) + 255px))!important;
-        bottom:max(52px,calc(env(safe-area-inset-bottom) + 52px))!important;
-        width:82px!important;height:82px!important;
-        border-radius:50%!important;
-        background:rgba(11,14,13,.38)!important;
-        border:1px solid rgba(236,233,223,.50)!important;
-        font-size:9px!important;letter-spacing:.14em!important;
-      }
-      #touchFire:before{content:'CANNON';}
-      #touchFire{font-size:0!important}
-      #touchFire:before{font-size:8px!important;color:#ece9df!important}
-      #touchFire.active{background:rgba(236,233,223,.22)!important;border-color:#fff!important}
-
-      #touchMissile{
-        right:max(250px,calc(env(safe-area-inset-right) + 250px))!important;
-        bottom:max(150px,calc(env(safe-area-inset-bottom) + 150px))!important;
-        width:92px!important;height:66px!important;
-        border-radius:13px!important;
-        background:rgba(11,14,13,.38)!important;
-        border:1px solid rgba(236,233,223,.42)!important;
-        font-size:0!important;
-      }
-      #touchMissile:before{content:'MISSILE';font-size:8px;color:#ece9df;letter-spacing:.13em}
-      #touchMissile:after{content:'HOLD / RELEASE';position:absolute;left:0;right:0;bottom:9px;font-size:5px;color:rgba(236,233,223,.46);letter-spacing:.08em}
-      #touchMissile.active{background:rgba(190,117,72,.25)!important;border-color:rgba(255,212,170,.82)!important}
-
-      #touchReset{
-        right:max(22px,env(safe-area-inset-right))!important;
-        top:max(22px,env(safe-area-inset-top))!important;
-        width:62px!important;height:34px!important;border-radius:5px!important;
-        opacity:.5!important;background:rgba(11,14,13,.28)!important;
-      }
-
-      /* Give the mission center stage on iPad. */
-      #objectives{left:max(24px,env(safe-area-inset-left))!important;top:max(58px,calc(env(safe-area-inset-top) + 38px))!important}
-      #runClock{right:max(24px,env(safe-area-inset-right))!important;top:max(60px,calc(env(safe-area-inset-top) + 40px))!important}
-      #health{right:50%!important;transform:translateX(50%)!important;bottom:max(18px,env(safe-area-inset-bottom))!important}
-    }
-  `;
-  doc.head.appendChild(style);
-
+  doc.body.dataset.handheld='ipad';
   const fire=doc.getElementById('touchFire');
   const missile=doc.getElementById('touchMissile');
   const boost=doc.getElementById('touchBoost');
-  if(fire)fire.setAttribute('aria-label','Cannon trigger');
-  if(missile)missile.setAttribute('aria-label','Missile: hold to lock, release to fire');
-  if(boost)boost.setAttribute('aria-label','Throttle: hold for afterburner');
+  const stick=doc.getElementById('stick');
+  if(stick)stick.setAttribute('aria-label','Left thumb flight control');
+  if(fire)fire.setAttribute('aria-label','Right thumb cannon');
+  if(missile)missile.setAttribute('aria-label','Right thumb missile: hold to lock, release to fire');
+  if(boost)boost.setAttribute('aria-label','Right thumb boost');
 }
-
 function launch(){
   if(started || matchMedia('(orientation:portrait)').matches)return;
   started=true;
