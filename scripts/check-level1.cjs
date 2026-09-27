@@ -21,6 +21,7 @@ const {startStaticServer}=require('./static-server.cjs');
     body:await response.text()+`
 window.scenario={
   exitZ:LEVEL.exitZ,
+  inputs(){return {keys:{...keys},tracers:tracers.length,seeker,missile:!!missile,turboBurst};},
   variants(){return MISSION_VARIANTS.map(v=>({id:v.id,sam:[...v.sam],bandit:{...v.bandit},escape:{...v.escape},cooldown:v.cooldown}));},
   boundary(destroyed,z,dt=1){
     reset();mission.phase='test';mission.destroyed=destroyed;ship.position.set(2000,800,z);updateMission(dt);
@@ -109,12 +110,49 @@ window.scenario={
   assert.equal(await page.locator('#realmCard,#missionBrief,#headingTape,#coach,#objective,#score,#readout').count(),0);
 
   const opening=await page.evaluate(()=>emberwing.snapshot());
-  assert.equal(opening.phase,'flight','Level 1 must begin in live flight');
-  assert.equal(await page.locator('#deploy').isHidden(),true,'Level 1 must not present a launch button');
-  await page.waitForFunction(()=>emberwing.snapshot().elapsed>.25,{timeout:6000});
+  assert.equal(opening.phase,'briefing','First load must pause for the briefing');
+  assert.equal(await page.locator('#deploy').isVisible(),true);
+  for(const key of ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','x','Shift','r'])await page.keyboard.press(key);
+  await page.waitForTimeout(400);
+  const paused=await page.evaluate(()=>emberwing.snapshot());
+  assert.deepEqual(paused.position,opening.position,'Briefing inputs must not move the aircraft');
+  assert.deepEqual(paused.quaternion,opening.quaternion);
+  assert.equal(paused.elapsed,0);
+  assert.equal(paused.entry,opening.entry,'R must not reset during briefing');
+  const idle=await page.evaluate(()=>scenario.inputs());
+  assert.equal(idle.tracers,0);assert.equal(idle.seeker,false);assert.equal(idle.missile,false);assert.equal(idle.turboBurst,0);
+  await page.keyboard.down('Space');await page.keyboard.down('x');await page.keyboard.down('ArrowUp');await page.keyboard.down('Shift');
+  await page.evaluate(()=>{
+   window.launchMarks=[];
+   new MutationObserver(()=>launchMarks.push({text:document.querySelector('#countdown').textContent,time:performance.now()})).observe(document.querySelector('#countdown'),{childList:true});
+   window.launchStart=performance.now();
+  });
+  await page.keyboard.down('Enter');
+  assert.equal(await page.evaluate(()=>emberwing.snapshot().phase),'countdown');
+  await page.waitForTimeout(750);await page.keyboard.down('Enter');
+  assert.equal(await page.locator('#countdown').textContent(),'2','Repeated Enter must not restart launch');
+  assert.deepEqual((await page.evaluate(()=>emberwing.snapshot())).position,opening.position,'Countdown must preserve the starting position');
+  await page.waitForFunction(()=>emberwing.snapshot().phase==='flight',null,{timeout:5000});
+  const handoff=await page.evaluate(()=>({duration:performance.now()-launchStart,marks:launchMarks.map(m=>m.text)}));
+  assert.ok(handoff.duration>=2000&&handoff.duration<3000,`Launch took ${handoff.duration}ms`);
+  assert.deepEqual([...new Set(handoff.marks)],['3','2','1','GO']);
+  for(const key of ['Space','x','ArrowUp','Shift'])await page.keyboard.down(key);
+  const held=await page.evaluate(()=>scenario.inputs());
+  assert.equal(held.tracers,0);assert.equal(held.seeker,false);assert.equal(held.turboBurst,0);
+  assert.ok(Object.values(held.keys).every(v=>!v),'Held opening keys must remain blocked through handoff');
+  for(const key of ['Enter','Space','x','ArrowUp','Shift'])await page.keyboard.up(key);
+  await page.keyboard.down('Space');
+  assert.ok((await page.evaluate(()=>scenario.inputs())).tracers>0,'Gun must work after handoff');
+  await page.keyboard.up('Space');await page.keyboard.down('x');
+  assert.equal((await page.evaluate(()=>scenario.inputs())).seeker,true,'Missile tracking must work after handoff');
+  await page.keyboard.up('x');await page.keyboard.down('ArrowRight');await page.keyboard.down('Shift');
+  const active=await page.evaluate(()=>scenario.inputs());
+  assert.equal(active.keys.ArrowRight,true);assert.equal(active.keys.ShiftLeft,true);
+  await page.keyboard.up('ArrowRight');await page.keyboard.up('Shift');
+  await page.waitForFunction(()=>document.querySelector('#countdown').hidden);
+  assert.equal(await page.locator('#briefing').isHidden(),true);
   const moving=await page.evaluate(()=>emberwing.snapshot());
-  const traveled=Math.hypot(...moving.position.map((v,i)=>v-opening.position[i]));
-  assert.ok(traveled>15,'Aircraft must already be moving when Level 1 loads');
+  assert.ok(Math.hypot(...moving.position.map((v,i)=>v-opening.position[i]))>15,'Flight must resume after GO');
 
   const entries=await page.evaluate(()=>scenario.entrySafety());
   assert.equal(entries.length,3,'Level 1 should ship three authored opening patterns');
@@ -200,9 +238,15 @@ window.scenario={
   const beforeReload=await page.evaluate(()=>emberwing.snapshot().entry);
   await page.reload({waitUntil:'networkidle'});await page.waitForFunction(()=>window.scenario);
   assert.notEqual(await page.evaluate(()=>emberwing.snapshot().entry),beforeReload,'Reload in the same tab must advance the saved opening');
+  assert.equal(await page.evaluate(()=>emberwing.snapshot().phase),'briefing');
+  await page.keyboard.press('Enter');await page.waitForFunction(()=>emberwing.snapshot().phase==='flight');
+  await page.goto(target.replace('/play.html','/index.html'),{waitUntil:'networkidle'});
+  await page.waitForFunction(()=>window.scenario);
+  assert.equal(await page.evaluate(()=>emberwing.snapshot().phase),'briefing');
+  await page.keyboard.press('Enter');await page.waitForFunction(()=>emberwing.snapshot().phase==='flight');
 
   assert.deepEqual(errors,[]);
-  console.log(`PASS: airborne start, transient mission title, mission boundary at ${exitZ}, strike authority, physical SAM cover, concealment, and replay cleanup.`);
+  console.log(`PASS: paused briefing, input isolation, 2.1s countdown, Enter on both entries, mission boundary at ${exitZ}, strike authority, physical SAM cover, concealment, and replay cleanup.`);
  }finally{
   if(browser)await browser.close();
   if(local)await local.close();

@@ -5,7 +5,7 @@ canvas{transition:filter .35s ease}
 .eyebrow{font-size:7px;letter-spacing:.26em;color:#d2cebbb0;margin:0 0 8px}
 h1{font-weight:500;font-size:18px;letter-spacing:.22em;line-height:1.15;margin:0 0 8px;color:#f0ede3}
 .orders{font-size:8px;line-height:1.5;letter-spacing:.15em;margin:0;color:#d5d1c5b8}
-#deploy{display:none!important}
+
 #again{display:block;border:1px solid #d5cfad8a;border-radius:0;background:#0b0e0c38;font-size:10px;letter-spacing:.18em;padding:14px 22px;margin:30px auto;backdrop-filter:blur(3px)}
 #again:hover{background:#d6cfaa12;border-color:#e4dec2b8}
 button:disabled{opacity:.42;cursor:wait}.controls{font-size:6px;line-height:1.6;color:#b0b1a468;letter-spacing:.07em;max-width:560px;margin:10px 0 0}.mobile{display:none}#loadError{font-size:11px;line-height:1.6;color:#dab39e}
@@ -411,3 +411,19 @@ html,body{
 
 #radio[data-tone=status]{color:var(--ew-bone)}
 #radio[data-tone=status]:before{background:var(--ew-bone);box-shadow:none}
+
+/* Opening briefing projects over the unchanged entrance frame. */
+#briefing{inset:0;display:grid;place-items:center;padding:24px;background:rgba(9,13,12,.58);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:auto;overflow:auto;transition:opacity .3s ease}
+#briefing .brief{width:min(460px,100%);margin:auto}
+#briefing h1{font-size:clamp(28px,4vw,42px);letter-spacing:.14em;margin:0 0 32px}
+#briefing .eyebrow{font-size:10px;letter-spacing:.2em;color:var(--ew-ash);margin:0 0 10px}
+#briefing .orders{font-size:17px;line-height:1.5;letter-spacing:.02em;color:var(--ew-bone);margin:0}
+#briefing .controls{display:block;font-size:12px;line-height:2;letter-spacing:0;color:var(--ew-ash);margin:26px 0 0;max-width:none}
+#briefing .controls strong{font-weight:500;color:var(--ew-bone)}
+#deploy{display:block;border:0;background:none;padding:0;margin:32px 0 0;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;color:var(--ew-bone);text-align:left}
+body[data-state=countdown] #briefing{opacity:0;pointer-events:none}
+body[data-state=briefing] #touchControls,body[data-state=countdown] #touchControls{visibility:hidden}
+#countdown{position:fixed;inset:0;z-index:21;display:grid;place-items:center;pointer-events:none;font:400 36px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ew-bone);text-shadow:0 2px 16px #0009}
+@media(max-width:420px){#briefing .controls{font-size:10px}}
+@media(max-height:480px){#briefing h1{font-size:26px;margin-bottom:18px}#briefing .controls{margin-top:16px}#deploy{margin-top:18px}}
+@media(prefers-reduced-motion:reduce){#briefing{transition:none}}

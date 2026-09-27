@@ -138,18 +138,31 @@ function announce(text){
 function releaseInputs(){for(const k in keys)keys[k]=false;releaseTouch();silence();}
 addEventListener('blur',releaseInputs);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseInputs();});
 // Base flight/audio/rendering stay intact. There is no simulated time during briefing.
+const countdown=document.getElementById('countdown'),blockedOpeningKeys=new Set();
+let launchElapsed=0;
 const flightKey=key;
 key=function(e,down){
- if(mission.phase==='briefing'){if(down&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();if(!deploy.disabled)startMission();}return;}
+ if(mission.phase==='briefing'||mission.phase==='countdown'){
+  if(!e.metaKey&&!e.ctrlKey&&['Enter','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyX','KeyZ','ShiftLeft','ShiftRight','KeyR'].includes(e.code))e.preventDefault();
+  if(down)blockedOpeningKeys.add(e.code);else blockedOpeningKeys.delete(e.code);
+  if(down&&!e.repeat&&e.code==='Enter'&&!deploy.disabled)startMission();
+  return;
+ }
+ // A key held during launch must be released before it can fly or fire.
+ if(blockedOpeningKeys.has(e.code)){
+  if(!down)blockedOpeningKeys.delete(e.code);
+  if(!down||e.repeat)return;
+  blockedOpeningKeys.delete(e.code);
+ }
  if(e.code==='KeyR'&&down){e.preventDefault();if(!e.repeat)reset();return;}
  if(e.metaKey||e.ctrlKey){releaseInputs();return;}
  flightKey(e,down);
 };
 function startMission(){
  if(mission.phase!=='briefing')return;
- releaseInputs();mission.phase='flight';missionElapsed=0;clock.getDelta();
- audio();updateWorld();updateCamera(1/60);renderer.render(scene,camera);
- document.body.dataset.state='flight';briefing.hidden=true;renderer.domElement.focus();
+ releaseInputs();mission.phase='countdown';launchElapsed=0;clock.getDelta();
+ audio();document.body.dataset.state='countdown';
+ countdown.textContent='3';countdown.hidden=false;deploy.disabled=true;renderer.domElement.focus();
 }
 deploy.addEventListener('click',startMission);
 const compassMarks=[];
@@ -485,21 +498,31 @@ reset=function(){
  camera.position.copy(ship.position).addScaledVector(entryForward,-16).addScaledVector(worldUp,6.4);resetCameraFrame();
  // Start the existing chase camera on this entrance's heading, including the oblique sweep.
  camera.lookAt(look.copy(ship.position).addScaledVector(entryForward,42).addScaledVector(worldUp,-10));viewRight.set(1,0,0).applyQuaternion(camera.quaternion);
- releaseInputs();audioCtx?.suspend();missionElapsed=0;briefing.hidden=false;document.body.dataset.state='flight';radio.hidden=true;targetUI.hidden=true;capture.hidden=true;
+ releaseInputs();audioCtx?.suspend();missionElapsed=0;briefing.hidden=true;countdown.hidden=true;document.body.dataset.state='flight';radio.hidden=true;targetUI.hidden=true;capture.hidden=true;
  updateWorld();updateCamera(1/60);renderer.render(scene,camera);
  updateObjectives();deploy.disabled=true;renderer.domElement.focus();
 };
 const clock=new THREE.Clock();
 function loop(){
- requestAnimationFrame(loop);const rawDt=Math.min(clock.getDelta(),.033);
- if(mission.phase!=='flight'||document.hidden)return;
+ requestAnimationFrame(loop);const elapsed=clock.getDelta(),rawDt=Math.min(elapsed,.033);
+ if(document.hidden)return;
+ if(mission.phase==='countdown'){
+  launchElapsed+=elapsed;
+  if(launchElapsed>=.3)briefing.hidden=true;
+  const cue=launchElapsed<.7?'3':launchElapsed<1.4?'2':launchElapsed<2.1?'1':'GO';
+  if(countdown.textContent!==cue)countdown.textContent=cue;
+  updateV34Spectacle();renderer.render(scene,camera);
+  if(launchElapsed<2.1)return;
+  releaseInputs();mission.phase='flight';document.body.dataset.state='flight';
+ }
+ if(mission.phase!=='flight')return;
+ if(!countdown.hidden&&missionElapsed>=.35)countdown.hidden=true;
  const dt=rawDt*(killSlow>0?.42:1);killSlow=Math.max(0,killSlow-rawDt);
  if(!crashed)missionElapsed+=rawDt;
- if(!briefing.hidden&&missionElapsed>=mission.introUntil)briefing.hidden=true;
  if(!crashed){updateTouchFlight();updateFlight(dt);updateDanger(dt);updateWorld();if(enemyAlive)updateEnemy(dt);updateEnemyAttack(dt);updateSamNetwork(dt);updateMission(dt);updateRange(dt);updateCamera(dt);updateSpeedFX(dt);updateCombatFX(dt);updateWeapons(dt);updateV43SamSmoke(dt);updateLaunchClimax(dt);v44UpdateFirestorm(dt);updateTargeting(dt);updateGuidance();updateBanditCue(dt);updateInstruments();}
  renderer.render(scene,camera);
 }
-reset();requestAnimationFrame(loop);
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+reset();mission.phase='briefing';briefing.hidden=false;deploy.disabled=false;document.body.dataset.state='briefing';requestAnimationFrame(loop);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);if(mission.phase==='briefing')renderer.render(scene,camera);});
 // Read-only diagnostics support repeatable browser verification without an alternate simulation.
 window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,entry:mission.entry,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:sam.missiles.length>0,samMissiles:sam.missiles.length,samTracking:sam.stage,samTracks:sam.sites.map(s=>s.stage||0),samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,banditPasses:banditPass,banditKnown,banditCue:banditCueActive&&!banditCue.hidden?[Math.round(banditCueX),Math.round(banditCueY),banditCue.dataset.rear==='true']:null,geometry:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE)}),height:terrainHeight,center:valleyCenter});

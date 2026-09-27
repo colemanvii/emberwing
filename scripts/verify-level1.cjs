@@ -15,7 +15,9 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  // Level 1 is deliberately one authored mission. Repeat runs test mastery, not hidden encounter variants.
  const reckless=process.env.RECKLESS==='1';
  const opening=await page.evaluate(()=>emberwing.snapshot());
- if(opening.phase!=='flight')throw Error('Level 1 did not begin in live flight');
+ if(opening.phase!=='briefing')throw Error('Level 1 did not show the briefing');
+ await page.keyboard.press('Enter');
+ await page.waitForFunction(()=>emberwing.snapshot().phase==='flight');
  await page.waitForTimeout(350);
  await page.screenshot({path:path.join(output,'opening.png')});
  async function keys(next){for(const k of held)if(!next.has(k)){await page.keyboard.up(k);held.delete(k)}for(const k of next)if(!held.has(k)){await page.keyboard.down(k);held.add(k)}}
