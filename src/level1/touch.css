@@ -34,3 +34,54 @@
 @media(pointer:coarse) and (orientation:portrait){
   #touchControls{display:none}
 }
+
+
+/* IPAD HANDHELD — authoritative layout */
+@media(pointer:coarse) and (orientation:landscape){
+  #touchControls #stick{
+    left:auto!important;
+    right:max(28px,env(safe-area-inset-right))!important;
+    top:50%!important;
+    bottom:auto!important;
+    transform:translateY(-50%)!important;
+    width:190px!important;
+    height:190px!important;
+  }
+  #touchControls #touchFire{
+    left:max(30px,env(safe-area-inset-left))!important;
+    right:auto!important;
+    top:50%!important;
+    bottom:auto!important;
+    transform:translateY(48%)!important;
+  }
+  #touchControls #touchMissile{
+    left:max(128px,calc(env(safe-area-inset-left) + 128px))!important;
+    right:auto!important;
+    top:50%!important;
+    bottom:auto!important;
+    transform:translateY(-44%)!important;
+  }
+  #touchControls #touchBoost{
+    left:max(42px,calc(env(safe-area-inset-left) + 42px))!important;
+    right:auto!important;
+    top:50%!important;
+    bottom:auto!important;
+    transform:translateY(-154%)!important;
+  }
+}
+@media(pointer:coarse) and (orientation:landscape) and (max-height:560px){
+  #touchControls #stick{
+    right:max(24px,env(safe-area-inset-right))!important;
+    width:174px!important;
+    height:174px!important;
+  }
+  #touchControls #touchFire{
+    left:max(24px,env(safe-area-inset-left))!important;
+  }
+  #touchControls #touchMissile{
+    left:max(116px,calc(env(safe-area-inset-left) + 116px))!important;
+  }
+  #touchControls #touchBoost{
+    left:max(34px,calc(env(safe-area-inset-left) + 34px))!important;
+  }
+}
