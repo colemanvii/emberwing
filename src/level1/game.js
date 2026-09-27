@@ -570,7 +570,7 @@ touchUI.innerHTML='<div id="stick" aria-label="Flight joystick"><span id="stickD
 document.body.appendChild(touchUI);
 const stick=document.getElementById('stick'),stickDot=document.getElementById('stickDot');let stickPointer=null;
 function releaseTouch(){touchState.active=false;touchState.x=touchState.y=0;touchPitchInput=touchRollInput=0;stickPointer=null;stickDot.style.transform='';for(const k of ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyZ','KeyX'])keys[k]=false;if(seeker)setSeeker(false);for(const b of touchUI.querySelectorAll('button'))b.classList.remove('active');}
-function moveStick(e){const r=stick.getBoundingClientRect(),radius=Math.max(44,r.width*.34),travel=Math.max(30,r.width*.185);touchState.x=THREE.MathUtils.clamp((e.clientX-r.left-r.width/2)/radius,-1,1);touchState.y=THREE.MathUtils.clamp((e.clientY-r.top-r.height/2)/radius,-1,1);stickDot.style.transform=`translate(${touchState.x*travel}px,${touchState.y*travel}px)`;}
+function moveStick(e){const r=stick.getBoundingClientRect();touchState.x=THREE.MathUtils.clamp((e.clientX-r.left-r.width/2)/55,-1,1);touchState.y=THREE.MathUtils.clamp((e.clientY-r.top-r.height/2)/55,-1,1);stickDot.style.transform=`translate(${touchState.x*35}px,${touchState.y*35}px)`;}
 stick.addEventListener('pointerdown',e=>{audio();stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);touchState.active=true;moveStick(e);});
 stick.addEventListener('pointermove',e=>{if(e.pointerId===stickPointer)moveStick(e);});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(type,()=>{touchState.active=false;touchState.x=touchState.y=0;stickPointer=null;stickDot.style.transform='';for(const k of ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'])keys[k]=false;});
@@ -581,7 +581,7 @@ for(const [id,code] of [['touchFire','Space'],['touchMissile','KeyX'],['touchBoo
   for(const type of ['pointercancel','lostpointercapture'])b.addEventListener(type,()=>{if(held){held=false;keys[code]=false;if(code==='KeyX'&&seeker)setSeeker(false);}b.classList.remove('active');});
 }
 addEventListener('blur',releaseTouch);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseTouch();});
-function touchAxis(v,max){const a=Math.abs(v),dead=.12;if(a<=dead)return 0;const n=(a-dead)/(1-dead);return Math.sign(v)*Math.pow(n,1.38)*max;}
+function touchAxis(v,max){const a=Math.abs(v),dead=.18;if(a<=dead)return 0;const n=(a-dead)/(1-dead);return Math.sign(v)*Math.pow(n,1.6)*max;}
 function updateTouchFlight(){if(!touchState.active)return;keys.ArrowLeft=keys.ArrowRight=keys.ArrowUp=keys.ArrowDown=false;}
 let metricsSeconds=0,metricsFrames=0,flightFps=0;
 function updateFlightMetrics(dt){metricsSeconds+=dt;metricsFrames++;if(metricsSeconds>1){flightFps=metricsFrames/metricsSeconds;metricsSeconds=metricsFrames=0;}}
@@ -594,7 +594,7 @@ updateFlight=function(dt){
  if(crashed||missionComplete||missionCompleteTimer>0)return;
  turboBurst=Math.max(0,turboBurst-dt);
  const keyPi=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),keyRi=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);
- const targetTouchPitch=touchState.active?touchAxis(-touchState.y,.72):0,targetTouchRoll=touchState.active?touchAxis(touchState.x,.74):0;
+ const targetTouchPitch=touchState.active?touchAxis(-touchState.y,.66):0,targetTouchRoll=touchState.active?touchAxis(touchState.x,.62):0;
  touchPitchInput=THREE.MathUtils.lerp(touchPitchInput,targetTouchPitch,1-Math.exp(-dt/.11));
  touchRollInput=THREE.MathUtils.lerp(touchRollInput,targetTouchRoll,1-Math.exp(-dt/.10));
  const pi=touchState.active?touchPitchInput:keyPi,ri=touchState.active?touchRollInput:keyRi,ab=keys.KeyZ||keys.ShiftLeft||keys.ShiftRight||turboBurst>0;
