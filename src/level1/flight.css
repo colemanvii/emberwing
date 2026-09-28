@@ -414,75 +414,94 @@ html,body{
 
 
 /* FIRST FLIGHT — desktop onboarding */
+body[data-onboarding="true"] #hud{
+ opacity:.12;
+ transition:opacity .24s ease;
+}
+body[data-onboarding="false"] #hud{
+ opacity:1;
+ transition:opacity .34s ease;
+}
+body[data-onboarding="true"] canvas{
+ filter:brightness(.68) saturate(.8) contrast(.98);
+ transition:filter .42s ease;
+}
+body[data-onboarding="false"] canvas{
+ filter:none;
+ transition:filter .42s ease;
+}
+
 #firstFlight{
  position:fixed;
- left:max(58px,7.4vw);
- top:43%;
- transform:translateY(-50%);
+ inset:0;
  z-index:30;
- width:min(560px,46vw);
- color:#eeeade;
+ display:grid;
+ place-items:center;
  pointer-events:none;
- text-shadow:0 2px 22px rgba(0,0,0,.42);
- animation:firstFlightIn .9s cubic-bezier(.2,.72,.18,1) both;
+ color:#eeeade;
+ text-align:center;
+ animation:firstFlightIn .7s cubic-bezier(.2,.72,.18,1) both;
 }
 #firstFlight:before{
  content:'';
- position:fixed;
+ position:absolute;
  inset:0;
  z-index:-1;
  background:
-  linear-gradient(90deg,rgba(8,11,9,.28) 0%,rgba(8,11,9,.11) 27%,rgba(8,11,9,0) 58%),
-  linear-gradient(180deg,rgba(8,11,9,.04),rgba(8,11,9,.08));
- backdrop-filter:saturate(.92);
+  radial-gradient(circle at 50% 45%,rgba(8,11,9,.05) 0%,rgba(8,11,9,.14) 38%,rgba(8,11,9,.34) 100%),
+  linear-gradient(180deg,rgba(8,11,9,.08),rgba(8,11,9,.18));
+ backdrop-filter:blur(1.5px) saturate(.9);
 }
 #firstFlight.departing{
- animation:firstFlightOut .2s cubic-bezier(.4,0,.8,.2) both;
+ animation:firstFlightOut .18s cubic-bezier(.4,0,.8,.2) both;
+}
+#firstFlight>*{
+ width:min(720px,74vw);
 }
 .firstFlightEyebrow{
- margin:0 0 15px;
- font:600 7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
- letter-spacing:.31em;
+ margin:0 0 16px;
+ font:600 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+ letter-spacing:.32em;
  color:rgba(238,234,222,.42);
 }
 #firstFlight h1{
- margin:0 0 27px;
- font:500 clamp(31px,3.55vw,50px)/.92 ui-monospace,SFMono-Regular,Menlo,monospace;
- letter-spacing:.035em;
- color:rgba(245,241,231,.96);
+ margin:0 0 30px;
+ font:500 clamp(38px,4.6vw,64px)/.92 ui-monospace,SFMono-Regular,Menlo,monospace;
+ letter-spacing:.04em;
+ color:rgba(245,241,231,.97);
+ text-shadow:0 8px 30px rgba(0,0,0,.24);
 }
 .firstFlightControls{
- width:min(455px,100%);
- margin:0 0 25px;
- border-top:1px solid rgba(238,234,222,.13);
- border-bottom:1px solid rgba(238,234,222,.10);
- padding:11px 0 10px;
+ margin:0 auto 30px;
+ width:min(520px,64vw)!important;
+ border-top:1px solid rgba(238,234,222,.14);
+ border-bottom:1px solid rgba(238,234,222,.12);
+ padding:14px 0 13px;
 }
 .firstFlightControls div{
  display:grid;
- grid-template-columns:92px 1fr;
+ grid-template-columns:150px 1fr;
+ gap:22px;
  align-items:baseline;
- min-height:19px;
- font:600 7px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+ min-height:24px;
+ text-align:left;
+ font:600 9px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
  letter-spacing:.12em;
 }
 .firstFlightControls span{
- color:rgba(238,234,222,.34);
+ color:rgba(245,241,231,.86);
+ text-align:right;
 }
 .firstFlightControls b{
  font:inherit;
- color:rgba(238,234,222,.72);
+ color:rgba(238,234,222,.48);
 }
 .firstFlightStart{
- margin:0;
- font:600 7px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
- letter-spacing:.22em;
- color:rgba(245,241,231,.88);
- animation:firstFlightPrompt 2.4s ease-in-out 1.1s infinite;
-}
-.firstFlightStart span{
- margin-left:12px;
- color:rgba(238,234,222,.30);
+ margin:0 auto;
+ font:600 9px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+ letter-spacing:.24em;
+ color:rgba(245,241,231,.92);
+ animation:firstFlightPrompt 2.2s ease-in-out 1s infinite;
 }
 #firstFlightCount{
  position:fixed;
@@ -491,31 +510,32 @@ html,body{
  display:grid;
  place-items:center;
  pointer-events:none;
- font:400 clamp(76px,8.5vw,116px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;
- letter-spacing:-.035em;
- color:rgba(245,241,231,.88);
- text-shadow:0 8px 46px rgba(0,0,0,.46);
- background:radial-gradient(circle at 50% 45%,rgba(8,11,9,.015),rgba(8,11,9,.095));
+ font:400 clamp(96px,11vw,150px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+ letter-spacing:-.04em;
+ color:rgba(245,241,231,.92);
+ text-shadow:0 10px 52px rgba(0,0,0,.48);
+ background:rgba(8,11,9,.22);
+ backdrop-filter:blur(1.5px) saturate(.9);
 }
 #firstFlightCount.pulse{
- animation:firstFlightCount .5s cubic-bezier(.18,.76,.2,1) both;
+ animation:firstFlightCount .54s cubic-bezier(.18,.76,.2,1) both;
 }
 @keyframes firstFlightIn{
- from{opacity:0;transform:translate(-12px,-48%)}
- to{opacity:1;transform:translate(0,-50%)}
+ from{opacity:0;transform:scale(1.01)}
+ to{opacity:1;transform:scale(1)}
 }
 @keyframes firstFlightOut{
- from{opacity:1;transform:translate(0,-50%)}
- to{opacity:0;transform:translate(-8px,-50%)}
+ from{opacity:1}
+ to{opacity:0}
 }
 @keyframes firstFlightPrompt{
- 0%,72%,100%{opacity:.72}
+ 0%,72%,100%{opacity:.68}
  82%{opacity:1}
 }
 @keyframes firstFlightCount{
- 0%{opacity:0;transform:scale(1.08);filter:blur(2px)}
- 22%{opacity:.92;filter:blur(0)}
- 100%{opacity:.62;transform:scale(.985)}
+ 0%{opacity:0;transform:scale(1.06);filter:blur(2px)}
+ 22%{opacity:.95;filter:blur(0)}
+ 100%{opacity:.72;transform:scale(.985)}
 }
 
 @media(max-width:700px){
