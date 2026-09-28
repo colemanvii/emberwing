@@ -1,15 +1,100 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101311"><meta name="description" content="Low-level strike. Destroy the launch site. Get out north."><meta property="og:type" content="website"><meta property="og:site_name" content="EMBERWING"><meta property="og:title" content="EMBERWING — Valley Strike"><meta property="og:description" content="Low-level strike. Destroy the launch site. Get out north."><meta property="og:url" content="https://colemanvii.github.io/emberwing/play.html"><meta property="og:image" content="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><meta property="og:image:secure_url" content="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><meta property="og:image:alt" content="EMBERWING Valley Strike — low-level jet flight through a desert valley"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/jpeg"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="EMBERWING — Valley Strike"><meta name="twitter:description" content="Low-level strike. Destroy the launch site. Get out north."><meta name="twitter:image" content="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><link rel="canonical" href="https://colemanvii.github.io/emberwing/play.html"><link rel="image_src" href="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><title>Emberwing — Valley Strike</title><link rel="icon" href="data:,"><link rel="stylesheet" href="src/level1/flight.css?build=c63e4b0f5dc9"><link rel="stylesheet" href="src/level1/bandit-cue.css"><link rel="stylesheet" href="src/level1/touch.css?build=c63e4b0f5dc9"></head>
-<body data-state="flight">
-<section id="briefing" aria-label="Mission briefing"><div class="brief">
-<p class="eyebrow">EMBERWING // EW-01</p>
-<h1>VALLEY STRIKE</h1>
-<p class="orders">PENETRATE LOW · DESTROY LAUNCH SITE · EXIT NORTH</p>
-<button id="deploy" hidden disabled>BEGIN MISSION</button>
-<p class="controls desktop">ARROWS FLY · SPACE CANNON · HOLD X MISSILE · SHIFT TURBO</p>
-<p class="controls mobile">LEFT THUMB FLY · FIRE CANNON · TRACK / RELEASE MISSILE · BOOST</p>
-<p id="loadError" hidden>Aircraft could not load. Reload to try again.</p>
-</div></section>
-<div id="hud"><ol id="objectives" aria-label="Mission progress"><li><span aria-hidden="true">✓</span>Penetrate Defenses</li><li><span aria-hidden="true">✓</span>Destroy Launch Site</li><li><span aria-hidden="true">✓</span>Escape North</li></ol><div id="runClock" aria-label="Run timer"><span id="runTime">00:00.0</span><small id="runBest" hidden></small></div><div id="grade"></div><div id="flash"></div><div id="compass" aria-label="Heading"><i></i></div><div id="reticle"></div><div id="capture" hidden></div><div id="target" hidden></div><div id="banditCue" hidden aria-hidden="true"></div><div id="radio" role="status" hidden></div><div id="health" aria-label="Hull"></div><div id="crash">FLIGHT TERMINATED</div><div id="complete"></div></div>
-<script type="module">import('./src/level1/game.js?build=c63e4b0f5dc9').catch(error=>{document.getElementById('loadError').hidden=false;document.getElementById('deploy').textContent='UNABLE TO LAUNCH';console.error(error);});</script>
-</body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101311">
+<meta name="description" content="Low-level strike. Destroy the launch site. Get out north.">
+<title>Emberwing — Valley Strike</title>
+<link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101311;color:#ece9df;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
+#game{position:fixed;inset:0;width:100%;height:100%;border:0;background:#101311;opacity:0;transition:opacity .16s ease}
+#game.ready{opacity:1}
+#veil{position:fixed;inset:0;z-index:4;pointer-events:none;background:
+linear-gradient(90deg,rgba(7,9,8,.36) 0%,rgba(7,9,8,.14) 28%,rgba(7,9,8,0) 58%),
+linear-gradient(180deg,rgba(7,9,8,.06),rgba(7,9,8,.18));opacity:0;transition:opacity .16s ease}
+#veil.ready{opacity:1}
+#intro{position:fixed;left:max(30px,3.2vw);bottom:max(30px,4.2vh);z-index:5;width:min(430px,72vw);pointer-events:none;opacity:0;transition:opacity .16s ease;text-shadow:0 2px 18px rgba(0,0,0,.58)}
+#intro.ready{opacity:1}
+#intro.hide{opacity:0}
+.eyebrow{margin:0 0 10px;font:600 7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.28em;color:rgba(236,233,223,.48)}
+h1{margin:0 0 13px;font-size:clamp(24px,2.8vw,38px);font-weight:500;line-height:1;letter-spacing:.025em;color:#ece9df}
+.line{width:128px;height:1px;margin:0 0 14px;background:linear-gradient(90deg,rgba(236,233,223,.34),transparent)}
+.controls{margin:0 0 15px;font:600 8px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.13em;color:rgba(236,233,223,.58);text-transform:uppercase}
+.start{margin:0;font:600 7px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.22em;color:rgba(236,233,223,.88)}
+.start span{color:rgba(236,233,223,.36)}
+#count{position:fixed;inset:0;z-index:7;display:none;place-items:center;pointer-events:none;font:500 clamp(82px,15vw,170px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;color:#ece9df;text-shadow:0 10px 50px rgba(0,0,0,.65)}
+#count.show{display:grid}
+#count.ready{font-size:clamp(18px,2.4vw,32px);letter-spacing:.22em}
+@media(max-width:700px),(pointer:coarse){
+  #intro{left:20px;bottom:24px;width:calc(100vw - 40px)}
+}
+</style>
+</head>
+<body>
+<iframe id="game" src="./play.html?introHold=1&v=20260928a" title="Emberwing Valley Strike" allow="autoplay; fullscreen"></iframe>
+<div id="veil"></div>
+<section id="intro" aria-labelledby="introTitle">
+  <p class="eyebrow">EMBERWING // EW-01 // FIRST FLIGHT</p>
+  <h1 id="introTitle">YOU'RE FLYING</h1>
+  <div class="line"></div>
+  <div class="controls">
+    <div>ARROW KEYS&nbsp;&nbsp;STEER</div>
+    <div>SPACE&nbsp;&nbsp;FIRE</div>
+  </div>
+  <p class="start">PRESS ENTER <span>TO RELEASE</span></p>
+</section>
+<div id="count" aria-live="assertive"></div>
+<script>
+const game=document.getElementById('game');
+const intro=document.getElementById('intro');
+const veil=document.getElementById('veil');
+const count=document.getElementById('count');
+let ready=false,started=false;
+
+addEventListener('message',e=>{
+  if(e.data!=='emberwing:ready')return;
+  ready=true;
+  game.classList.add('ready');
+  intro.classList.add('ready');
+  veil.classList.add('ready');
+});
+
+function begin(){
+  if(!ready||started)return;
+  started=true;
+  intro.classList.remove('ready');
+  intro.classList.add('hide');
+
+  const steps=['READY','3','2','1','GO'];
+  let i=0;
+  const step=()=>{
+    const value=steps[i];
+    count.textContent=value;
+    count.className='show'+(value==='READY'?' ready':'');
+    if(value==='GO'){
+      setTimeout(()=>{
+        count.className='';
+        veil.classList.remove('ready');
+        game.contentWindow?.postMessage('emberwing:start','*');
+        setTimeout(()=>game.contentWindow?.focus(),40);
+      },360);
+      return;
+    }
+    i+=1;
+    setTimeout(step,value==='READY'?520:500);
+  };
+  step();
+}
+
+addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    begin();
+  }
+});
+</script>
+</body>
+</html>
