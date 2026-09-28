@@ -1197,18 +1197,23 @@ const firstFlightDesktop=document.body.dataset.firstFlight==='true'&&innerWidth>
 let firstFlightReleased=!firstFlightDesktop,firstFlightStarting=false;
 function beginFirstFlight(){
  if(!firstFlightDesktop||firstFlightReleased||firstFlightStarting)return;
- firstFlightStarting=true;firstFlightUI.hidden=true;
+ firstFlightStarting=true;firstFlightUI.classList.add('departing');
  const steps=['3','2','1'];let i=0;
- firstFlightCount.hidden=false;
- const advance=()=>{
-  const value=steps[i];firstFlightCount.textContent=value;
-  if(value==='1'){
-   setTimeout(()=>{firstFlightCount.hidden=true;firstFlightReleased=true;document.body.dataset.onboarding='false';clock.getDelta();renderer.domElement.focus();},500);
-   return;
-  }
-  i+=1;setTimeout(advance,500);
- };
- advance();
+ setTimeout(()=>{
+  firstFlightUI.hidden=true;firstFlightCount.hidden=false;
+  const advance=()=>{
+   const value=steps[i];firstFlightCount.textContent=value;
+   firstFlightCount.classList.remove('pulse');void firstFlightCount.offsetWidth;firstFlightCount.classList.add('pulse');
+   if(value==='1'){
+    setTimeout(()=>{
+     firstFlightCount.hidden=true;firstFlightCount.classList.remove('pulse');firstFlightReleased=true;document.body.dataset.onboarding='false';clock.getDelta();renderer.domElement.focus();
+    },540);
+    return;
+   }
+   i+=1;setTimeout(advance,540);
+  };
+  advance();
+ },190);
 }
 // Base flight/audio/rendering stay intact. There is no simulated time during briefing.
 const flightKey=key;
