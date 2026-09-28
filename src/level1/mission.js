@@ -144,15 +144,15 @@ let firstFlightReleased=!firstFlightDesktop,firstFlightStarting=false;
 function beginFirstFlight(){
  if(!firstFlightDesktop||firstFlightReleased||firstFlightStarting)return;
  firstFlightStarting=true;firstFlightUI.hidden=true;
- const steps=['READY','3','2','1','GO'];let i=0;
+ const steps=['3','2','1'];let i=0;
  firstFlightCount.hidden=false;
  const advance=()=>{
-  const value=steps[i];firstFlightCount.textContent=value;firstFlightCount.dataset.ready=value==='READY'?'true':'false';
-  if(value==='GO'){
-   setTimeout(()=>{firstFlightCount.hidden=true;firstFlightReleased=true;document.body.dataset.onboarding='false';clock.getDelta();renderer.domElement.focus();},360);
+  const value=steps[i];firstFlightCount.textContent=value;
+  if(value==='1'){
+   setTimeout(()=>{firstFlightCount.hidden=true;firstFlightReleased=true;document.body.dataset.onboarding='false';clock.getDelta();renderer.domElement.focus();},500);
    return;
   }
-  i+=1;setTimeout(advance,value==='READY'?520:500);
+  i+=1;setTimeout(advance,500);
  };
  advance();
 }
