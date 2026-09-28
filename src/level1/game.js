@@ -1193,7 +1193,7 @@ function releaseInputs(){for(const k in keys)keys[k]=false;releaseTouch();silenc
 addEventListener('blur',releaseInputs);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseInputs();});
 const firstFlightUI=document.getElementById('firstFlight');
 const firstFlightCount=document.getElementById('firstFlightCount');
-const firstFlightDesktop=!matchMedia('(pointer:coarse)').matches&&innerWidth>700;
+const firstFlightDesktop=innerWidth>700;
 let firstFlightReleased=!firstFlightDesktop,firstFlightStarting=false;
 function beginFirstFlight(){
  if(!firstFlightDesktop||firstFlightReleased||firstFlightStarting)return;
