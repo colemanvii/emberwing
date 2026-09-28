@@ -1544,17 +1544,8 @@ reset=function(){
  updateObjectives();deploy.disabled=true;renderer.domElement.focus();
 };
 const clock=new THREE.Clock();
-const introHold=new URLSearchParams(location.search).get('introHold')==='1';
-let introReleased=!introHold;
-addEventListener('message',e=>{
- if(e.data!=='emberwing:start')return;
- introReleased=true;
- clock.getDelta();
- renderer.domElement.focus();
-});
 function loop(){
  requestAnimationFrame(loop);const rawDt=Math.min(clock.getDelta(),.033);
- if(!introReleased){renderer.render(scene,camera);return;}
  if(mission.phase!=='flight'||document.hidden)return;
  const dt=rawDt*(killSlow>0?.42:1);killSlow=Math.max(0,killSlow-rawDt);
  if(!crashed)missionElapsed+=rawDt;
