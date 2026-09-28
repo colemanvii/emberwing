@@ -416,55 +416,50 @@ html,body{
 /* FIRST FLIGHT — desktop onboarding */
 #firstFlight{
  position:fixed;
- left:max(30px,3.2vw);
- bottom:max(30px,4.2vh);
+ left:max(54px,7vw);
+ top:42%;
+ transform:translateY(-50%);
  z-index:30;
- width:min(430px,72vw);
+ width:min(520px,44vw);
  padding:0;
- color:var(--ew-bone,#ece9df);
- text-shadow:0 2px 18px rgba(0,0,0,.64);
+ color:#ece9df;
  pointer-events:none;
+ text-shadow:0 2px 20px rgba(0,0,0,.5);
 }
 #firstFlight:before{
  content:'';
  position:fixed;
  inset:0;
  z-index:-1;
- background:linear-gradient(90deg,rgba(7,9,8,.38) 0%,rgba(7,9,8,.12) 30%,rgba(7,9,8,0) 58%);
+ background:linear-gradient(90deg,rgba(7,9,8,.24) 0%,rgba(7,9,8,.08) 28%,rgba(7,9,8,0) 56%);
 }
 .firstFlightEyebrow{
- margin:0 0 10px;
+ margin:0 0 14px;
  font:600 7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
- letter-spacing:.28em;
- color:rgba(236,233,223,.48);
+ letter-spacing:.26em;
+ color:rgba(236,233,223,.46);
 }
 #firstFlight h1{
- margin:0 0 13px;
- font-size:clamp(24px,2.8vw,38px);
+ margin:0 0 22px;
+ font-size:clamp(28px,3.4vw,46px);
  font-weight:500;
- line-height:1;
- letter-spacing:.025em;
+ line-height:.94;
+ letter-spacing:.015em;
  color:#ece9df;
 }
-.firstFlightRule{
- width:128px;
- height:1px;
- margin:0 0 14px;
- background:linear-gradient(90deg,rgba(236,233,223,.34),transparent);
-}
 .firstFlightControls{
- margin:0 0 15px;
- font:600 8px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;
- letter-spacing:.13em;
- color:rgba(236,233,223,.62);
+ margin:0 0 16px;
+ font:600 8px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+ letter-spacing:.12em;
+ color:rgba(236,233,223,.55);
+ white-space:nowrap;
 }
 .firstFlightStart{
  margin:0;
- font:600 7px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
- letter-spacing:.22em;
- color:rgba(236,233,223,.9);
+ font:600 7px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+ letter-spacing:.2em;
+ color:rgba(236,233,223,.82);
 }
-.firstFlightStart span{color:rgba(236,233,223,.36)}
 #firstFlightCount{
  position:fixed;
  inset:0;
@@ -472,16 +467,13 @@ html,body{
  display:grid;
  place-items:center;
  pointer-events:none;
- font:500 clamp(82px,15vw,170px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;
- letter-spacing:.04em;
- color:#ece9df;
- text-shadow:0 10px 50px rgba(0,0,0,.7);
- background:radial-gradient(circle at 50% 45%,rgba(7,9,8,.08),rgba(7,9,8,.2));
+ font:500 clamp(74px,9vw,118px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+ letter-spacing:.02em;
+ color:rgba(236,233,223,.9);
+ text-shadow:0 8px 42px rgba(0,0,0,.52);
+ background:rgba(7,9,8,.045);
 }
-#firstFlightCount[data-ready="true"]{
- font-size:clamp(18px,2.4vw,32px);
- letter-spacing:.22em;
-}
+
 @media(max-width:700px){
  #firstFlight,#firstFlightCount{display:none!important}
 }
