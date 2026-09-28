@@ -2,7 +2,7 @@
 
 A cinematic browser flight mission across a long desert valley.
 
-[Play Emberwing](https://colemanvii.github.io/emberwing/play.html)
+[Play Emberwing](https://colemanvii.github.io/emberwing/)
 
 **Destroy the target. Avoid bandits and SAMs. Exit north.**
 
@@ -29,7 +29,7 @@ npm run build
 npm start
 ```
 
-Then open `http://127.0.0.1:8892/play.html`.
+Then open `http://127.0.0.1:8892/` for the public first-flight experience, or `/play.html` for the raw game entry used by verification.
 
 Useful commands:
 
@@ -38,7 +38,7 @@ Useful commands:
 - `npm run verify` — run the full browser pilot and write screenshots/logs to `.artifacts/level1/`
 - `npm start` — serve the repository locally
 
-Both `index.html` and `play.html` are generated from `src/level1/shell.html`. The canonical runtime consists of `core.js` (flight, rendering, audio and air combat), `assets.js` (installation, SAMs and destruction effects), and `mission.js` (geography, mission, targeting, instruments and lifecycle). `game.js` is their generated bundle.
+`index.html` and `play.html` are generated from `src/level1/shell.html`. The public `index.html` opts into the first-flight onboarding sequence; `play.html` is the raw mission entry used by browser verification and direct play. The canonical runtime consists of `core.js` (flight, rendering, audio and air combat), `assets.js` (installation, SAMs and destruction effects), `mission.js` (geography, mission, targeting, instruments and lifecycle), and `bandit-flow.js` (air-combat pressure). `game.js` is their generated bundle.
 
 Generated deployment files are intentionally committed because GitHub Pages serves this repository directly. CI rebuilds them and fails if the committed outputs drift from source.
 
