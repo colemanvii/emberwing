@@ -13,8 +13,13 @@
 <section id="firstFlight" hidden aria-label="Mission controls">
   <p class="firstFlightEyebrow">EMBERWING // EW-01</p>
   <h1>VALLEY STRIKE</h1>
-  <p class="firstFlightControls">ARROWS — STEER&nbsp;&nbsp;&nbsp;&nbsp;SPACE — CANNON<br>HOLD X — LOCK&nbsp;&nbsp;&nbsp;&nbsp;RELEASE X — MISSILE<br>SHIFT — TURBO</p>
-  <p class="firstFlightStart">ENTER TO BEGIN</p>
+  <div class="firstFlightControls" aria-label="Flight controls">
+    <div><span>STEER</span><b>ARROWS</b></div>
+    <div><span>CANNON</span><b>SPACE</b></div>
+    <div><span>MISSILE</span><b>HOLD X TO LOCK · RELEASE TO FIRE</b></div>
+    <div><span>TURBO</span><b>SHIFT</b></div>
+  </div>
+  <p class="firstFlightStart">ENTER <span>BEGIN MISSION</span></p>
 </section>
 <div id="firstFlightCount" hidden aria-live="assertive"></div>
 <div id="hud"><ol id="objectives" aria-label="Mission progress"><li><span aria-hidden="true">✓</span>Penetrate Defenses</li><li><span aria-hidden="true">✓</span>Destroy Launch Site</li><li><span aria-hidden="true">✓</span>Escape North</li></ol><div id="runClock" aria-label="Run timer"><span id="runTime">00:00.0</span><small id="runBest" hidden></small></div><div id="grade"></div><div id="flash"></div><div id="compass" aria-label="Heading"><i></i></div><div id="reticle"></div><div id="capture" hidden></div><div id="target" hidden></div><div id="banditCue" hidden aria-hidden="true"></div><div id="radio" role="status" hidden></div><div id="health" aria-label="Hull"></div><div id="crash">FLIGHT TERMINATED</div><div id="complete"></div></div>
