@@ -1193,7 +1193,14 @@ function releaseInputs(){for(const k in keys)keys[k]=false;releaseTouch();silenc
 addEventListener('blur',releaseInputs);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseInputs();});
 // Base flight/audio/rendering stay intact. There is no simulated time during briefing.
 const countdown=document.getElementById('countdown'),blockedOpeningKeys=new Set();
-let launchElapsed=0;
+const desktopOpening=matchMedia('(pointer:fine)').matches;
+let openingElapsed=0,launchElapsed=0;
+if(desktopOpening){
+ document.body.classList.add('desktop-opening');
+ briefing.setAttribute('aria-label','Flight controls');
+ briefing.querySelector('h1').textContent='YOU’RE FLYING';
+ briefing.querySelector('.controls').innerHTML='Arrow keys — steer<br>Space — fire';
+}
 const flightKey=key;
 key=function(e,down){
  if(mission.phase==='briefing'||mission.phase==='countdown'){
@@ -1216,7 +1223,7 @@ function startMission(){
  if(mission.phase!=='briefing')return;
  releaseInputs();mission.phase='countdown';launchElapsed=0;clock.getDelta();
  audio();document.body.dataset.state='countdown';
- countdown.textContent='3';countdown.hidden=false;deploy.disabled=true;renderer.domElement.focus();
+ countdown.textContent=desktopOpening?'READY?':'3';countdown.hidden=false;deploy.disabled=true;renderer.domElement.focus();
 }
 deploy.addEventListener('click',startMission);
 const compassMarks=[];
@@ -1560,6 +1567,16 @@ const clock=new THREE.Clock();
 function loop(){
  requestAnimationFrame(loop);const elapsed=clock.getDelta(),rawDt=Math.min(elapsed,.033);
  if(document.hidden)return;
+ if(desktopOpening&&mission.phase==='briefing'){
+  openingElapsed+=elapsed;
+  if(openingElapsed>=4)startMission();
+ }
+ if(mission.phase==='countdown'&&desktopOpening){
+  launchElapsed+=elapsed;
+  countdown.textContent=launchElapsed<1?'READY?':launchElapsed<2?'3':launchElapsed<3?'2':launchElapsed<4?'1':'GO';
+  if(launchElapsed<4)return;
+  briefing.hidden=true;releaseInputs();mission.phase='flight';document.body.dataset.state='flight';
+ }
  if(mission.phase==='countdown'){
   launchElapsed+=elapsed;
   if(launchElapsed>=.3)briefing.hidden=true;

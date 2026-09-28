@@ -427,3 +427,13 @@ body[data-state=briefing] #touchControls,body[data-state=countdown] #touchContro
 @media(max-width:420px){#briefing .controls{font-size:10px}}
 @media(max-height:480px){#briefing h1{font-size:26px;margin-bottom:18px}#briefing .controls{margin-top:16px}#deploy{margin-top:18px}}
 @media(prefers-reduced-motion:reduce){#briefing{transition:none}}
+
+/* Desktop-only orientation; retain the exact rendered opening frame. */
+body.desktop-opening #briefing{background:rgba(9,13,12,.28);backdrop-filter:none;-webkit-backdrop-filter:none;transition:none;text-align:center}
+body.desktop-opening #briefing .brief{width:min(900px,100%)}
+body.desktop-opening #briefing h1{font-size:clamp(44px,6vw,84px);letter-spacing:.03em;margin:0 0 36px}
+body.desktop-opening #briefing .controls{font-size:clamp(26px,3vw,42px);line-height:1.65;color:var(--ew-bone);margin:0}
+body.desktop-opening #briefing .eyebrow,body.desktop-opening #briefing .orders,body.desktop-opening #deploy{display:none}
+body.desktop-opening[data-state=countdown] #briefing{opacity:1}
+body.desktop-opening[data-state=countdown] #briefing .brief{visibility:hidden}
+body.desktop-opening #countdown{font-size:clamp(64px,10vw,140px)}
