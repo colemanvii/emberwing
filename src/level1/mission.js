@@ -137,9 +137,32 @@ function announce(text){
 }
 function releaseInputs(){for(const k in keys)keys[k]=false;releaseTouch();silence();}
 addEventListener('blur',releaseInputs);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseInputs();});
+const firstFlightUI=document.getElementById('firstFlight');
+const firstFlightCount=document.getElementById('firstFlightCount');
+const firstFlightDesktop=!matchMedia('(pointer:coarse)').matches&&innerWidth>700;
+let firstFlightReleased=!firstFlightDesktop,firstFlightStarting=false;
+function beginFirstFlight(){
+ if(!firstFlightDesktop||firstFlightReleased||firstFlightStarting)return;
+ firstFlightStarting=true;firstFlightUI.hidden=true;
+ const steps=['READY','3','2','1','GO'];let i=0;
+ firstFlightCount.hidden=false;
+ const advance=()=>{
+  const value=steps[i];firstFlightCount.textContent=value;firstFlightCount.dataset.ready=value==='READY'?'true':'false';
+  if(value==='GO'){
+   setTimeout(()=>{firstFlightCount.hidden=true;firstFlightReleased=true;document.body.dataset.onboarding='false';clock.getDelta();renderer.domElement.focus();},360);
+   return;
+  }
+  i+=1;setTimeout(advance,value==='READY'?520:500);
+ };
+ advance();
+}
 // Base flight/audio/rendering stay intact. There is no simulated time during briefing.
 const flightKey=key;
 key=function(e,down){
+ if(firstFlightDesktop&&!firstFlightReleased){
+  if(down&&e.code==='Enter'){e.preventDefault();beginFirstFlight();}
+  return;
+ }
  if(mission.phase==='briefing'){if(down&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();if(!deploy.disabled)startMission();}return;}
  if(e.code==='KeyR'&&down){e.preventDefault();if(!e.repeat)reset();return;}
  if(e.metaKey||e.ctrlKey){releaseInputs();return;}
@@ -492,14 +515,20 @@ reset=function(){
 const clock=new THREE.Clock();
 function loop(){
  requestAnimationFrame(loop);const rawDt=Math.min(clock.getDelta(),.033);
- if(mission.phase!=='flight'||document.hidden)return;
+ if(document.hidden)return;
+ if(!firstFlightReleased){renderer.render(scene,camera);return;}
+ if(mission.phase!=='flight')return;
  const dt=rawDt*(killSlow>0?.42:1);killSlow=Math.max(0,killSlow-rawDt);
  if(!crashed)missionElapsed+=rawDt;
  if(!briefing.hidden&&missionElapsed>=mission.introUntil)briefing.hidden=true;
  if(!crashed){updateTouchFlight();updateFlight(dt);updateDanger(dt);updateWorld();if(enemyAlive)updateEnemy(dt);updateEnemyAttack(dt);updateSamNetwork(dt);updateMission(dt);updateRange(dt);updateCamera(dt);updateSpeedFX(dt);updateCombatFX(dt);updateWeapons(dt);updateV43SamSmoke(dt);updateLaunchClimax(dt);v44UpdateFirestorm(dt);updateTargeting(dt);updateGuidance();updateBanditCue(dt);updateInstruments();}
  renderer.render(scene,camera);
 }
-reset();requestAnimationFrame(loop);
+reset();
+if(firstFlightDesktop){
+ firstFlightReleased=false;firstFlightStarting=false;firstFlightUI.hidden=false;firstFlightCount.hidden=true;briefing.hidden=true;document.body.dataset.onboarding='true';
+}
+requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 // Read-only diagnostics support repeatable browser verification without an alternate simulation.
 window.emberwing=Object.freeze({snapshot:()=>({phase:mission.phase,variant:activeVariant().id,entry:mission.entry,position:ship.position.toArray(),forward:new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion).toArray(),quaternion:ship.quaternion.toArray(),speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),elapsed:missionElapsed,destroyed:mission.destroyed,hp:playerHP,target:rocket.position.toArray(),targetHP:mission.hp,selected:mission.selected,lock:lockState,seeker,missile:!!missile,crashed,complete:missionComplete,bandit:enemyAlive,banditPosition:enemyAlive?enemy.position.toArray():null,sams:sam.sites.map(s=>s.position.toArray()),samMissile:sam.missiles.length>0,samMissiles:sam.missiles.length,samTracking:sam.stage,samTracks:sam.sites.map(s=>s.stage||0),samDisabled:sam.sites.map(s=>s.disabled),samTrail:effects.samTrail.length,banditRange:enemyAlive?enemy.position.distanceTo(ship.position):null,banditPasses:banditPass,banditKnown,banditCue:banditCueActive&&!banditCue.hidden?[Math.round(banditCueX),Math.round(banditCueY),banditCue.dataset.rear==='true']:null,geometry:projectedGeometry(rocket.position,STRIKE_LOCK_RANGE)}),height:terrainHeight,center:valleyCenter});
