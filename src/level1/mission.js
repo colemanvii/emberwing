@@ -16,7 +16,7 @@ let entryRun=loadEntryRun();
 // Level 1 is one authored mission, not a hidden difficulty lottery.
 // The player should be able to learn this valley, understand its threat geometry, and improve by mastery.
 const MISSION_VARIANTS=Object.freeze([
- {id:'VALLEY',sam:[1250,1600,1740,1950,2000],cooldown:2.8,bandit:{trigger:340,z:80,side:260,alt:108,delay:.30},escape:{trigger:-6000,z:-6600,side:-620,alt:155,delay:1.3}}
+ {id:'VALLEY',sam:[1120,1450,1600,1780,1880],cooldown:3.4,bandit:{trigger:1050,z:520,side:430,alt:120,delay:.42},escape:{trigger:-6000,z:-6600,side:-620,alt:155,delay:1.3}}
 ]);
 let missionRun=-1;
 const mission={phase:'flight',penetrated:false,detected:false,detectClock:0,ingressArmed:false,approachCue:false,destroyed:false,hp:8,lastSalvo:-1,bandit:false,secondBandit:false,escapeBandit:false,selected:'air',messageUntil:0,lastMessage:-10,hitAt:0,variant:0,entry:'LOW_WEST',introUntil:1.55};
@@ -423,13 +423,13 @@ function updateMission(dt){
    firstSam.light.visible=true;firstSam.light.scale.setScalar(pulse);
   }else firstSam.light.scale.setScalar(1);
  }
- if(!mission.ingressArmed&&ship.position.z<950)mission.ingressArmed=true;
+ if(!mission.ingressArmed&&(ship.position.z<1280||missionElapsed>=4.2))mission.ingressArmed=true;
  const watched=mission.ingressArmed&&sam.stage>=1&&!!sam.site;
  mission.detectClock=watched?Math.min(1.2,mission.detectClock+dt):Math.max(0,mission.detectClock-dt*2.4);
  if(mission.ingressArmed&&!mission.detected&&(mission.detectClock>=.72||sam.stage>=2||!!sam.missile))mission.detected=true;
  // Good masking can postpone the merge, but not erase it. A clean run gets several seconds
  // of geography first; a detected run brings the defender in sooner.
- if(!mission.bandit&&mission.ingressArmed&&(mission.detected||ship.position.z<variant.bandit.trigger)){
+ if(!mission.bandit&&mission.ingressArmed&&(mission.detected||ship.position.z<variant.bandit.trigger||missionElapsed>=6.2)){
   mission.detected=true;mission.bandit=true;spawnDefender();
  }
  if(mission.destroyed&&!mission.escapeBandit&&!enemyAlive){mission.escapeBandit=true;spawnDefender(true);}
@@ -504,7 +504,7 @@ reset=function(){
  for(const child of launchSite.children)child.rotation.z=0;
  rocket.scale.setScalar(1);rocket.position.set(LEVEL.targetX,terrainHeight(LEVEL.targetX,LEVEL.targetZ)+34,LEVEL.targetZ);rocket.visible=true;
  // Overlapping threat envelopes: opening shelf, mid-valley, approach, terminal defense, escape battery.
- const specs=[[valleyCenter(-50)+560,-50],[valleyCenter(-1450)-500,-1450],[valleyCenter(-4250)+380,-4250],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
+ const specs=[[valleyCenter(430)+650,430],[valleyCenter(-1450)-500,-1450],[valleyCenter(-4250)+380,-4250],[valleyCenter(-5300)+470,-5300],[-560,-6400]];
  sam.sites=specs.map(([sx,z],i)=>makeSamSite(sx-launchSite.position.x,z-LEVEL.targetZ,i));
  variant.sam.forEach((range,i)=>sam.sites[i].range=range);
  sam.cooldown=variant.cooldown;sam.smokeClock=0;seatServiceRoad();
