@@ -1,0 +1,15 @@
+#briefing{background:linear-gradient(90deg,rgba(24,26,24,.84),rgba(24,26,24,.18));place-items:center start;padding-left:8vw}
+#briefing .brief{border:0;background:transparent;text-align:left;max-width:570px}
+#briefing h1{font-size:clamp(30px,5vw,60px);letter-spacing:.15em;color:#f0dfb6}
+#briefing .orders{font-size:15px;line-height:1.8;color:#ece1c8}
+#briefing .eyebrow{color:#d7bd88;letter-spacing:.18em}
+#desertIntel{position:fixed;bottom:34px;left:28px;max-width:70vw;font:10px ui-monospace,monospace;letter-spacing:.12em;color:#eee0bb;text-shadow:0 1px 3px #242b2b}
+#target:after{content:attr(data-label);position:absolute;top:calc(100% + 9px);left:50%;transform:translateX(-50%);font:9px ui-monospace,monospace;white-space:nowrap;letter-spacing:.12em}
+@media(max-width:700px){#briefing{padding-left:4vw}#briefing .orders{font-size:12px}#desertIntel{bottom:auto;top:135px;left:18px;font-size:8px;max-width:80vw}}
+
+#objectives:before{content:"EW-02 / WHICH ONE"}
+#briefing{inset:0;display:grid;pointer-events:auto;padding:5vh 8vw;background:linear-gradient(90deg,rgba(24,26,24,.82),rgba(24,26,24,.14));backdrop-filter:none}
+body[data-state=briefing] canvas{filter:none}
+#briefing[hidden]{display:none}
+#briefing .controls{font-size:10px;color:#d1c8b4;line-height:1.9;margin-top:24px}
+#briefing .eyebrow{font-size:10px}

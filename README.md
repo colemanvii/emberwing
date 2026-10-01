@@ -4,6 +4,8 @@ A cinematic browser flight mission across a long desert valley.
 
 [Play Emberwing](https://colemanvii.github.io/emberwing/play.html)
 
+**Desert prototype:** open `/level2.html` on this branch. Build with `npm run build:level2`; see [Level 2 — WHICH ONE](docs/LEVEL2-DESERT.md) for controls, mission rules and verification. Level 1 is unchanged.
+
 **Destroy the target. Avoid bandits and SAMs. Exit north.**
 
 The briefing waits for you. Descend into the valley, penetrate to the launch installation, attack by cannon or guided missile, and survive to the northern opening. There are no checkpoint gates, required fighter kills, or escape timers.

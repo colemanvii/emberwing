@@ -14,7 +14,10 @@
     "test": "npm run check",
     "verify": "node scripts/verify-level1.cjs",
     "ci": "npm run build && npm run check",
-    "setup:browsers": "playwright install chromium"
+    "setup:browsers": "playwright install chromium",
+    "build:level2": "node scripts/build-level2.mjs",
+    "check:level2": "node scripts/check-level2.cjs",
+    "verify:level2": "node scripts/verify-level2.cjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"
