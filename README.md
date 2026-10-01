@@ -62,3 +62,7 @@ Historical numbered pages, release notes, legacy build scripts, retired workflow
 - [QA checklist](docs/QA-CHECKLIST.md)
 - [Consolidation and verification](docs/LEVEL1-CONSOLIDATION.md)
 - [Next pass](docs/NEXT-PASS.md)
+
+## Active prototype
+
+`main` remains the published Level 1 experience. The separate [`level2-desert-prototype`](https://github.com/colemanvii/emberwing/tree/level2-desert-prototype) branch contains the open-desert Level 2 prototype at `level2.html`. It is not part of the published Level 1 site. Preserve this branch while Level 2 is being evaluated.
