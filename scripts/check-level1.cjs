@@ -10,17 +10,123 @@ const {startStaticServer}=require('./static-server.cjs');
   const launch={headless:true,args:['--no-sandbox']};
   if(process.env.CHROME)launch.executablePath=process.env.CHROME;
   browser=await chromium.launch(launch);
-  const page=await browser.newPage();
+  const page=await browser.newPage({hasTouch:true});
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
 
-  await page.route('**/src/level1/game.js*',async route=>{
+  const instrument=async route=>{
    const response=await route.fetch();
    await route.fulfill({
     response,
     body:await response.text()+`
 window.scenario={
   exitZ:LEVEL.exitZ,
+  combatFeedback(){
+    reset();mission.phase='flight';missionElapsed=10;
+    const originalChirp=chirp,originalFlash=flashScreen,sounds=[];let flashes=0;
+    chirp=(...args)=>sounds.push(args);flashScreen=()=>{flashes++;};
+    try{
+      spawnDefender();enemyDetected=true;
+      const mats=enemy.userData.hitMats||[];
+      hitKick=0;spawnImpactFX(rocket.position.clone(),false);
+      const groundFlashedFighter=mats.some(m=>m.emissive.getHex()!==0),hitKickAmount=hitKick;
+      hitKick=0;spawnImpactFX(enemy.position.clone(),true,true,true);
+      const fighterFlashed=mats.some(m=>m.emissive.getHex()!==0),killKickAmount=hitKick;
+      camera.position.copy(ship.position);camera.quaternion.identity();
+      hitKick=0;hostileNearCooldown=0;const hp=playerHP;sounds.length=0;flashes=0;
+      hostileNearMiss(ship.position.clone().add(new THREE.Vector3(-10,0,0)));
+      const near={sounds:sounds.length,left:sounds.every(a=>a[4]<0),soft:sounds.every(a=>a[5]==='sine'),flashes,kick:hitKick,hpUnchanged:hp===playerHP};
+      hostileNearMiss(ship.position.clone().add(new THREE.Vector3(10,0,0)));
+      const throttled=sounds.length===2;
+      sounds.length=0;
+      const far=missileWarning(ship.position.clone().add(new THREE.Vector3(900,0,0)));
+      const close=missileWarning(ship.position.clone().add(new THREE.Vector3(50,0,0)));
+      const directional=sounds.every(a=>a[4]>0);
+      missionElapsed=20;mission.messageUntil=0;enemyTime=5;duel.state='engage';duelState('extend');const leaving=radio.textContent;
+      missionElapsed+=2;duelState('engage');const returning=radio.textContent;
+      announce('MISSILE INBOUND');missionElapsed+=.5;announce('BANDIT BREAKING');const urgent=radio.textContent;
+      return {groundFlashedFighter,fighterFlashed,hitKickAmount,killKickAmount,near,throttled,far,close,directional,leaving,returning,urgent};
+    }finally{chirp=originalChirp;flashScreen=originalFlash;reset();mission.phase='test';}
+  },
+  fighterCadence(){
+    reset();mission.phase='test';spawnDefender();banditOfferActive=false;
+    ship.position.set(0,1400,0);ship.quaternion.identity();
+    enemy.position.set(0,1400,-600);enemy.quaternion.identity();duel.forward.set(0,0,-1);duelState('extend');
+    mission.detected=true;enemyTime=5;banditReattackClock=0;
+    let earlyAttack=false;
+    for(let i=0;i<120;i++){missionElapsed+=1/60;updateEnemy(1/60);earlyAttack ||= duel.state!=='extend'||enemyFireSolution()||hostileLockSolution();}
+    const stayedOut=!earlyAttack;
+    for(let i=0;i<30;i++){missionElapsed+=1/60;updateEnemy(1/60);}
+    const returned=duel.state!=='extend';
+    enemy.position.set(0,1400,300);enemy.quaternion.identity();duel.forward.set(0,0,-1);duelState('press');duel.age=3.51;
+    updateEnemy(1/60);const endedPress=duel.state==='extend';
+    return {stayedOut,returned,endedPress};
+  },
+  samCadence(){
+    reset();mission.phase='test';mission.ingressArmed=true;mission.detected=true;
+    ship.position.set(0,1400,500);playerInvuln=999;
+    const site=sam.sites[0];site.position.set(0,1200,0);site.cooldown=0;
+    for(const other of sam.sites.slice(1))other.disabled=true;
+    const originalExposure=samExposure;let exposed=true;
+    samExposure=s=>s===site&&exposed?{exposure:10,agl:200}:null;
+    const advance=n=>{for(let i=0;i<n;i++){missionElapsed+=1/60;updateSamNetwork(1/60);}};
+    try{
+      advance(60);const premature=sam.missiles.length;
+      exposed=false;advance(1);exposed=true;advance(60);const afterCover=sam.missiles.length;
+      advance(27);const launched=sam.missiles.length;
+      const active=sam.missiles[0],life=active.life;advance(1);const stillMoving=active.life<life;
+      launchHostileMissile();const overlap=!!hostileMissile;
+      removeSamMissile();advance(100);const quiet=sam.missiles.length===0&&site.lock===0;
+      launchHostileMissile();const earlyFighter=!!hostileMissile;
+      advance(21);launchHostileMissile();const fighter=!!hostileMissile;
+      launchSam(site);const samOverlap=sam.missiles.length;
+      removeHostileMissile();advance(100);const afterFighter=sam.missiles.length;
+      advance(110);const resumed=sam.missiles.length;
+      return {premature,afterCover,launched,stillMoving,overlap,quiet,earlyFighter,fighter,samOverlap,afterFighter,resumed};
+    }finally{samExposure=originalExposure;reset();mission.phase='test';}
+  },
+  sustainedPressure(){
+    reset();mission.phase='test';mission.ingressArmed=true;mission.destroyed=true;
+    ship.position.set(0,1400,500);playerInvuln=999;
+    const site=sam.sites[0];site.position.set(0,1200,0);site.cooldown=0;
+    for(const other of sam.sites.slice(1))other.disabled=true;
+    const originalExposure=samExposure;samExposure=s=>s===site?{exposure:10,agl:200}:null;
+    let maximum=0,launches=0,lastEnd=null,minGap=Infinity,previous=0;
+    try{
+      for(let i=0;i<5400;i++){
+        missionElapsed+=1/30;updateSamNetwork(1/30);
+        const count=sam.missiles.length;maximum=Math.max(maximum,count);
+        if(count&&!previous){launches++;if(lastEnd!==null)minGap=Math.min(minGap,missionElapsed-lastEnd);}
+        if(!count&&previous)lastEnd=missionElapsed;
+        previous=count;
+      }
+      return {maximum,launches,minGap,elapsed:missionElapsed};
+    }finally{samExposure=originalExposure;reset();mission.phase='test';}
+  },
+  feedback(){
+    reset();missionElapsed=10;announce('HIT');const hit=radio.textContent;
+    announce('MISSILE INBOUND');const danger=radio.textContent;
+    missionElapsed+=.5;announce('HIT');const protectedDanger=radio.textContent;
+    missionElapsed+=2;announce('CONTACT DESTROYED');
+    const kill=radio.textContent;mission.phase='test';return {hit,danger,protectedDanger,kill};
+  },
+  earlyOffer(){
+    reset();mission.phase='test';missionElapsed=1.19;updateMission(0);const before=enemyAlive;
+    missionElapsed=1.2;updateMission(0);
+    return {before,offered:enemyAlive,offer:banditOfferActive,clock:banditOfferClock,canFire:enemyFireSolution(),ingress:mission.ingressArmed};
+  },
+  recovery(){
+    reset();spawnDefender();banditOfferActive=false;
+    enemy.position.copy(ship.position).add(new THREE.Vector3(900,200,0));
+    const before=enemy.position.toArray();missionElapsed=20;destroyTarget();
+    const after=enemy.position.toArray(),until=mission.recoveryUntil;
+    for(let i=0;i<100;i++){missionElapsed+=.016;updateSamNetwork(.016);}
+    const freshMissiles=sam.missiles.length,canFire=enemyFireSolution();
+    enemyAlive=false;updateMission(0);const earlyEscape=enemyAlive;
+    missionElapsed=until;updateMission(0);
+    const escape=enemyAlive;mission.phase='test';
+    return {before,after,until,freshMissiles,canFire,earlyEscape,escape};
+  },
   inputs(){return {keys:{...keys},tracers:tracers.length,seeker,missile:!!missile,turboBurst};},
   variants(){return MISSION_VARIANTS.map(v=>({id:v.id,sam:[...v.sam],bandit:{...v.bandit},escape:{...v.escape},cooldown:v.cooldown}));},
   boundary(destroyed,z,dt=1){
@@ -101,8 +207,9 @@ window.scenario={
   }
 };`
    });
-  });
+  };
 
+  await page.route('**/src/level1/game.js*',instrument);
   await page.goto(target,{waitUntil:'networkidle'});
   await page.waitForFunction(()=>window.scenario);
 
@@ -138,8 +245,8 @@ window.scenario={
   assert.deepEqual([...new Set(handoff.marks)],['3','2','1','GO']);
   for(const key of ['Space','x','ArrowUp','Shift'])await page.keyboard.down(key);
   const held=await page.evaluate(()=>scenario.inputs());
-  assert.equal(held.tracers,0);assert.equal(held.seeker,false);assert.equal(held.turboBurst,0);
-  assert.ok(Object.values(held.keys).every(v=>!v),'Held opening keys must remain blocked through handoff');
+  assert.ok(held.tracers>0,'Held fire must shoot at handoff');assert.equal(held.seeker,false);assert.equal(held.turboBurst,0);
+  assert.equal(held.keys.ArrowUp,true,'Held steering must survive handoff');assert.equal(held.keys.ShiftLeft,true);
   for(const key of ['Enter','Space','x','ArrowUp','Shift'])await page.keyboard.up(key);
   await page.keyboard.down('Space');
   assert.ok((await page.evaluate(()=>scenario.inputs())).tracers>0,'Gun must work after handoff');
@@ -245,8 +352,49 @@ window.scenario={
   assert.equal(await page.evaluate(()=>emberwing.snapshot().phase),'briefing');
   await page.keyboard.press('Enter');await page.waitForFunction(()=>emberwing.snapshot().phase==='flight');
 
+  const feel=await page.evaluate(()=>scenario.combatFeedback());
+  assert.equal(feel.groundFlashedFighter,false,'Ground impacts must not flash an unrelated fighter');
+  assert.equal(feel.fighterFlashed,true,'Fighter impacts must retain their local flash');
+  assert.ok(feel.killKickAmount>feel.hitKickAmount*4,'Kills must remain distinct from routine hits');
+  assert.deepEqual(feel.near,{sounds:2,left:true,soft:true,flashes:0,kick:0,hpUnchanged:true});
+  assert.equal(feel.throttled,true,'A burst of near misses must not stack sound cues');
+  assert.ok(feel.close<feel.far);assert.equal(feel.directional,true);
+  assert.match(feel.leaving,/BANDIT DISENGAGING.*O'CLOCK/);assert.match(feel.returning,/BANDIT TURNING IN.*O'CLOCK/);
+  assert.equal(feel.urgent,'MISSILE INBOUND','Fighter intent must not replace urgent danger');
+  console.log('Combat feedback checks passed.');
+  const cadence=await page.evaluate(()=>scenario.fighterCadence());
+  assert.deepEqual(cadence,{stayedOut:true,returned:true,endedPress:true},'Fighter must extend, return, and end sustained pursuit');
+  const samCadence=await page.evaluate(()=>scenario.samCadence());
+  assert.deepEqual(samCadence,{premature:0,afterCover:0,launched:1,stillMoving:true,overlap:false,quiet:true,earlyFighter:false,fighter:true,samOverlap:0,afterFighter:0,resumed:1},'Cover must restart warning; guided threats must alternate with recovery');
+  const sustained=await page.evaluate(()=>scenario.sustainedPressure());
+  assert.equal(sustained.maximum,1,'Extraction must never stack SAM missiles');
+  assert.ok(sustained.launches>10,'Pressure must resume throughout a three-minute exposed scenario');
+  assert.ok(sustained.minGap>=3.35,'Each resolved missile must leave recovery plus a fresh warning');
+  console.log('Pacing checks:',JSON.stringify({cadence,samCadence,sustained}));
+  const feedback=await page.evaluate(()=>scenario.feedback());
+  assert.deepEqual(feedback,{hit:'HIT',danger:'MISSILE INBOUND',protectedDanger:'MISSILE INBOUND',kill:'CONTACT DESTROYED'});
+  const offer=await page.evaluate(()=>scenario.earlyOffer());
+  assert.deepEqual(offer,{before:false,offered:true,offer:true,clock:2.65,canFire:false,ingress:false});
+  const recovery=await page.evaluate(()=>scenario.recovery());
+  assert.deepEqual(recovery.before,recovery.after,'Strike must not teleport a fighter');
+  assert.equal(recovery.until,22);assert.equal(recovery.freshMissiles,0);assert.equal(recovery.canFire,false);
+  assert.equal(recovery.earlyEscape,false);assert.equal(recovery.escape,true);
+
+  const desktop=await browser.newPage();desktop.on('pageerror',e=>errors.push(e.message));
+  await desktop.route('**/src/level1/game.js*',instrument);
+  await desktop.goto(target,{waitUntil:'load'});await desktop.waitForFunction(()=>window.scenario);
+  await desktop.keyboard.down('ArrowRight');await desktop.keyboard.down('Space');
+  assert.equal(await desktop.evaluate(()=>emberwing.snapshot().phase),'flight');
+  const direct=await desktop.evaluate(()=>scenario.inputs());
+  assert.equal(direct.keys.ArrowRight,true);assert.ok(direct.tracers>0);
+  assert.equal(await desktop.locator('#briefing').isHidden(),true);
+  await desktop.keyboard.up('ArrowRight');await desktop.keyboard.up('Space');
+  await desktop.reload({waitUntil:'load'});await desktop.waitForFunction(()=>window.scenario);
+  await desktop.waitForFunction(()=>emberwing.snapshot().phase==='flight',null,{timeout:2000});
+  assert.ok((await desktop.evaluate(()=>emberwing.snapshot())).elapsed<1,'Automatic opening must not insert a long wait');
+  await desktop.close();
   assert.deepEqual(errors,[]);
-  console.log(`PASS: paused briefing, input isolation, 2.1s countdown, Enter on both entries, mission boundary at ${exitZ}, strike authority, physical SAM cover, concealment, and replay cleanup.`);
+  console.log(`PASS: touch countdown, held-input handoff, immediate desktop flight, early target offer, feedback priority, physical post-strike recovery, mission boundary at ${exitZ}, strike authority, physical SAM cover, concealment, and replay cleanup.`);
  }finally{
   if(browser)await browser.close();
   if(local)await local.close();
