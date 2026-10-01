@@ -527,6 +527,8 @@ function loop(){
  if(!crashed)missionElapsed+=rawDt;
  if(!briefing.hidden&&missionElapsed>=mission.introUntil)briefing.hidden=true;
  if(!crashed){updateTouchFlight();updateFlight(dt);updateDanger(dt);updateWorld();if(enemyAlive)updateEnemy(dt);updateEnemyAttack(dt);updateSamNetwork(dt);updateMission(dt);updateRange(dt);updateCamera(dt);updateSpeedFX(dt);updateCombatFX(dt);updateWeapons(dt);updateV43SamSmoke(dt);updateLaunchClimax(dt);v44UpdateFirestorm(dt);updateTargeting(dt);updateGuidance();updateBanditCue(dt);updateInstruments();}
+ else{updateCombatFX(rawDt);v44UpdateFirestorm(rawDt);}
+ cinematicFrame(dt,rawDt);
  renderer.render(scene,camera);
 }
 reset();
