@@ -604,8 +604,8 @@ updateFlight=function(dt){
  const flicker=1+Math.sin(performance.now()*.027)*.045+Math.sin(performance.now()*.061)*.018;
  for(const e of ship.userData.engines){e.scale.setScalar(.94+burner*.34+flicker*.045);e.material.opacity=.78+burner*.2;}
  for(const p of ship.userData.plumes){p.scale.z=(1.05+burner*1.95)*flicker;p.material.opacity=.66+burner*.32;}
- pitchRate=THREE.MathUtils.lerp(pitchRate,pi*1.25,1-Math.exp(-dt/.17));
- rollRate=THREE.MathUtils.lerp(rollRate,ri*2.2,1-Math.exp(-dt/.09));
+ pitchRate=THREE.MathUtils.lerp(pitchRate,pi*1.5,1-Math.exp(-dt/.12));
+ rollRate=THREE.MathUtils.lerp(rollRate,ri*2.85,1-Math.exp(-dt/.065));
  // Integrate both local axes together: no extra pitch and no world-yaw correction during a pull.
  flightLocalRate.set(pitchRate,0,-rollRate);const angularSpeed=flightLocalRate.length();
  if(angularSpeed>1e-8){flightStep.setFromAxisAngle(flightLocalRate.multiplyScalar(1/angularSpeed),angularSpeed*dt);ship.quaternion.multiply(flightStep);}
@@ -614,10 +614,10 @@ updateFlight=function(dt){
  const horizontal=Math.hypot(tmpF.x,tmpF.z),bank=Math.atan2(-flightRight.y,flightUp.y);
  // Keep one continuous turn model: bank coordination fades smoothly as local pitch takes over,
  // but never disappears completely during a hard pull.
- const pullBlend=THREE.MathUtils.clamp(Math.abs(pitchRate)/1.25,0,1);
+ const pullBlend=THREE.MathUtils.clamp(Math.abs(pitchRate)/1.5,0,1);
  const coordinationGain=THREE.MathUtils.lerp(1,.28,pullBlend);
  if(horizontal>.001&&coordinationGain>.001){
-  flightStep.setFromAxisAngle(worldUp,-(Math.sin(bank)*.55+ri*.18)*horizontal*dt*coordinationGain);
+  flightStep.setFromAxisAngle(worldUp,-(Math.sin(bank)*.72+ri*.2)*horizontal*dt*coordinationGain);
   ship.quaternion.premultiply(flightStep);
  }
  // Neutral settling fades in only after commanded rates have decayed, avoiding a release/reversal handoff.

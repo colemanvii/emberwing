@@ -1,0 +1,1 @@
+{"version":"0.0.1","configurations":[{"name":"emberwing","runtimeExecutable":"node","runtimeArgs":["scripts/static-server.cjs"],"port":8892}]}
