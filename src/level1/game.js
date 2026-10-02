@@ -814,7 +814,7 @@ function updateSamNetwork(dt){
  // Preserve the new open-air approach. The first battery can be seen waking on the ridge,
  // but the network does not begin accumulating a real track until the aircraft reaches
  // the valley mouth. Once armed, retreating does not magically reset the encounter.
- if(!mission.destroyed&&!mission.ingressArmed&&ship.position.z>=950){
+ if(!mission.destroyed&&!mission.ingressArmed&&ship.position.z>=1280){
   for(const s of sam.sites){
    if(s.disabled)continue;
    s.cooldown=Math.max(0,(s.cooldown||0)-dt);
@@ -834,7 +834,7 @@ function updateSamNetwork(dt){
    s.lock=Math.max(0,(s.lock||0)-dt*(mission.detected?.88:1.25));
    if(s.lock<=.02)s.stage=0;
   }else{
-   const baseLock=mission.destroyed?.82:(s.index===0?1.08:(s.index>=3?.94:1.02));
+   const baseLock=mission.destroyed?.92:(s.index===0?1.34:(s.index>=3?1.12:1.20));
    s.lock=Math.min(1,(s.lock||0)+dt/baseLock*c.exposure);
    if(s.stage===0){
     s.stage=1;
@@ -845,7 +845,7 @@ function updateSamNetwork(dt){
     if(missionElapsed-sam.lastCue>.7){announce('RADAR TRACK — BREAK LINE OF SIGHT');sam.lastCue=missionElapsed}
     chirp(690,.05,.03);chirp(910,.05,.026,.1);s.lastCue=missionElapsed;
    }
-   if(s.lock>=1&&s.cooldown<=0&&sam.missiles.length<(mission.destroyed?2:1)&&missionElapsed-sam.lastLaunch>=.55)launchSam(s);
+   if(s.lock>=1&&s.cooldown<=0&&sam.missiles.length<1&&missionElapsed-sam.lastLaunch>=(mission.destroyed?1.35:1.75))launchSam(s);
   }
   const score=(s.stage||0)*2+(s.lock||0);
   if(score>leadScore){leadScore=score;leadSite=s}
