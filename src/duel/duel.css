@@ -1,0 +1,62 @@
+/* Missile Duel prototype HUD. Loaded only by duel.html, after the Level 1 styles. */
+#objectives, #runBest, #radio, #target, #briefing, #firstFlight, #firstFlightCount { display: none !important; }
+#crash { background: radial-gradient(ellipse at center, #10131100 0%, #101311a8 70%); }
+#crash small { color: #e9e3d0; font-size: 11px; letter-spacing: .3em; margin-top: 14px; }
+
+#duelHud { position: fixed; inset: 0; pointer-events: none; z-index: 5; font-family: inherit; }
+#duelSite, #duelMissile, #duelEdge { position: absolute; left: 0; top: 0; will-change: transform; }
+
+/* Launcher bracket */
+#duelSite i { position: absolute; left: -17px; top: -17px; width: 34px; height: 34px;
+  border: 1px solid #f0c39066; clip-path: polygon(0 0,35% 0,35% 6%,6% 6%,6% 35%,0 35%,0 65%,6% 65%,6% 94%,35% 94%,35% 100%,65% 100%,65% 94%,94% 94%,94% 65%,100% 65%,100% 35%,94% 35%,94% 6%,65% 6%,65% 0,100% 0,100% 100%,0 100%); }
+#duelSite span { position: absolute; left: 24px; top: -6px; white-space: nowrap; font-size: 9px; letter-spacing: .2em; color: #f0d8b8b0; text-shadow: 0 1px 3px #000a; }
+#duelSite[data-state=exposed] i { border: 2px solid #ff5a36; animation: duelStrobe .18s steps(2) infinite; }
+#duelSite[data-state=exposed] span { color: #ff8a5c; font-weight: 600; }
+#duelSite[data-state=lock] i { border: 2px solid #ffe2a8; background: #ffcf7a22; }
+#duelSite[data-state=lock] span { color: #ffe2a8; font-weight: 600; }
+
+/* Missile: diamond plus a closing ring that tells you when to break */
+#duelMissile b { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border: 2px solid #ff4a2a; transform: rotate(45deg); box-shadow: 0 0 10px #ff4a2a88; }
+#duelMissile em { position: absolute; left: 0; top: 0; border: 2px solid #ff6a40cc; border-radius: 50%; transform: translate(-50%,-50%); }
+#duelMissile[data-state=track] em[data-break=true] { border-color: #fff4dc; box-shadow: 0 0 14px #fff2; }
+#duelMissile[data-state=lost] b { border-color: #b7b1a5; box-shadow: none; transform: rotate(45deg) scale(.7); }
+#duelMissile[data-state=lost] em, #duelMissile[data-state=boost] em { display: none; }
+#duelEdge { width: 0; height: 0; margin: -10px 0 0 -6px; border-left: 20px solid #ff4a2a; border-top: 10px solid transparent; border-bottom: 10px solid transparent; filter: drop-shadow(0 0 6px #ff4a2a); animation: duelStrobe .25s steps(2) infinite; }
+
+/* Event callout */
+#duelMsg { position: absolute; left: 50%; top: 63%; transform: translateX(-50%); white-space: nowrap; font-size: 15px; font-weight: 600; letter-spacing: .24em; text-shadow: 0 2px 8px #000c; }
+#duelMsg[data-tone=threat] { color: #ff6a44; }
+#duelMsg[data-tone=status] { color: #f6e7c6; }
+#duelMsg.pop { animation: duelPop .32s ease-out; }
+
+/* Start hint: the jet is already in the air behind it */
+#duelHint { position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%); text-align: center; width: min(92vw, 760px); transition: opacity .25s ease; }
+#duelHint.gone { opacity: 0; }
+#duelHint .lead { margin: 0 0 10px; font-size: 22px; letter-spacing: .36em; color: #f4ecd8; text-shadow: 0 2px 10px #000b; }
+#duelHint .how { margin: 0 0 14px; font-size: 10px; line-height: 1.9; letter-spacing: .16em; color: #e6dfcbcc; text-shadow: 0 1px 4px #000c; }
+#duelHint .how b { color: #ffb487; font-weight: 600; }
+#duelHint .go { margin: 0; font-size: 11px; letter-spacing: .3em; color: #ffd9b0; animation: duelBreathe 1.4s ease-in-out infinite; }
+
+/* Result */
+#duelResult { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); min-width: 300px; padding: 26px 34px 22px; text-align: center; background: #0d100fd9; border: 1px solid #e9d8b02e; backdrop-filter: blur(6px); pointer-events: auto; animation: duelPop .35s ease-out; }
+#duelResult small { font-size: 9px; letter-spacing: .3em; color: #b8b4a4; }
+#duelResult h2 { margin: 8px 0 2px; font-size: 26px; letter-spacing: .22em; color: #f6ead0; font-weight: 600; }
+#duelResult .time { font-size: 30px; letter-spacing: .08em; color: #ffcf9a; font-variant-numeric: tabular-nums; }
+#duelResult .best { margin: 2px 0 14px; font-size: 10px; letter-spacing: .24em; color: #a8ab9d; }
+#duelResult .best.new { color: #9fe0a6; }
+#duelResult dl { display: flex; gap: 22px; justify-content: center; margin: 0 0 16px; }
+#duelResult dt { font-size: 8px; letter-spacing: .2em; color: #8f9286; }
+#duelResult dd { margin: 4px 0 0; font-size: 14px; color: #ece4cf; }
+#duelResult .again { margin: 0; font-size: 11px; letter-spacing: .32em; color: #ffd9b0; }
+#duelResult button.again { padding: 10px 22px; background: transparent; border: 1px solid #ffd9b066; font: inherit; }
+
+.mobile { display: none; }
+@media (pointer: coarse), (max-width: 700px) {
+  .mobile { display: block; } .desktop { display: none; }
+  #duelHint { bottom: 40%; } #duelMsg { top: 30%; font-size: 12px; }
+}
+@keyframes duelStrobe { 50% { opacity: .35; } }
+@keyframes duelPop { from { opacity: 0; transform: translateX(-50%) scale(1.25); } }
+#duelResult { animation-name: duelResultIn; }
+@keyframes duelResultIn { from { opacity: 0; transform: translate(-50%,-46%); } }
+@keyframes duelBreathe { 50% { opacity: .45; } }
