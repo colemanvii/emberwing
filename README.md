@@ -18,6 +18,16 @@ The briefing waits for you. Descend into the valley, penetrate to the launch ins
 - R: restart at the briefing
 - Touch: left joystick, FIRE, TRACK, BOOST, RESET
 
+## Gus Mode
+
+[`gus.html`](https://colemanvii.github.io/emberwing/gus.html) is a separate, forgiving arcade mission built for a four-year-old on an iPad in landscape: same valley, airframe, camera and effects, with two thumbs only.
+
+- Left half of the screen: steer (floating stick; up climbs).
+- Right half of the screen: FIRE (cannon with generous aim assist; missiles launch automatically).
+- No crashes, no ammunition, no game over. About 80–90 seconds: wingman joins, crossing jets, head-on passes, a three-ship to chase, ground batteries, flares against incoming missiles, then the launch rocket finale and a victory flyover with a giant FLY AGAIN.
+
+Gus Mode lives in `src/gus/` (`gus.js`, `gus.css`). The build appends `gus.js` to the canonical Level 1 runtime as a separate bundle, `src/gus/game.js`, and generates `gus.html` from the same shell. The Level 1 outputs (`index.html`, `play.html`, `src/level1/game.js`) never include Gus code. `npm run check:gus` drives it with real multitouch and plays full fixed-step missions under several "kid" input styles, writing screenshots to `.artifacts/gus/`.
+
 ## Development
 
 Requirements: Node.js 20+.
@@ -34,7 +44,7 @@ Then open `http://127.0.0.1:8892/` for the public first-flight experience, or `/
 Useful commands:
 
 - `npm run build` — regenerate the canonical Level 1 bundle and public entry pages
-- `npm test` — run fast browser mission checks
+- `npm test` — run fast browser mission checks (Level 1 and Gus Mode)
 - `npm run verify` — run the full browser pilot and write screenshots/logs to `.artifacts/level1/`
 - `npm start` — serve the repository locally
 

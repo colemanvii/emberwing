@@ -11,10 +11,11 @@
     "start": "node scripts/static-server.cjs",
     "build": "node scripts/build-level1.mjs",
     "check": "node scripts/check-level1.cjs",
-    "test": "npm run check",
+    "test": "npm run check && npm run check:gus",
     "verify": "node scripts/verify-level1.cjs",
-    "ci": "npm run build && npm run check",
-    "setup:browsers": "playwright install chromium"
+    "ci": "npm run build && npm test",
+    "setup:browsers": "playwright install chromium",
+    "check:gus": "node scripts/check-gus.cjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"

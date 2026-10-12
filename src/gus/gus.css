@@ -1,0 +1,102 @@
+/* EMBERWING · GUS MODE — two thumbs, big targets, no reading. Same palette as Level 1. */
+:root{--bone:#ece9df;--ember:#ff8a42;--ember-hot:#ffb46a;--gold:#ffd27a;--glass:rgba(11,14,13,.34)}
+html,body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none;overscroll-behavior:none}
+
+/* Level 1 HUD and touch layout stay in the bundle but are not part of Gus Mode. */
+body[data-mode=gus] #touchControls,body[data-mode=gus] #briefing,body[data-mode=gus] #firstFlight,body[data-mode=gus] #firstFlightCount,
+body[data-mode=gus] #objectives,body[data-mode=gus] #runClock,body[data-mode=gus] #compass,body[data-mode=gus] #reticle,body[data-mode=gus] #capture,
+body[data-mode=gus] #target,body[data-mode=gus] #banditCue,body[data-mode=gus] #radio,body[data-mode=gus] #health,body[data-mode=gus] #crash,
+body[data-mode=gus] #complete{display:none!important}
+
+#gus{position:fixed;inset:0;z-index:10;pointer-events:none;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--bone)}
+#gusTouch{position:absolute;inset:0;pointer-events:auto;touch-action:none}
+#gus svg{display:block;width:100%;height:100%}
+
+/* Steer: a big floating stick. It rests bottom-left and jumps to wherever the thumb lands. */
+#gusStick{position:absolute;left:calc(max(36px,env(safe-area-inset-left)) + 105px);top:calc(100% - max(36px,env(safe-area-inset-bottom)) - 105px);
+ width:210px;height:210px;margin:-105px 0 0 -105px;border-radius:50%;pointer-events:none;
+ border:2px solid rgba(236,233,223,.38);background:radial-gradient(circle,rgba(236,233,223,.10) 0 34%,rgba(11,14,13,.20) 35% 100%);
+ box-shadow:0 10px 40px rgba(0,0,0,.25),inset 0 0 0 14px rgba(11,14,13,.12);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);transition:opacity .2s,border-color .15s}
+#gusStick:before,#gusStick:after{content:'';position:absolute;left:50%;top:50%;width:12px;height:12px;border:solid rgba(236,233,223,.45);border-width:3px 3px 0 0;transform:translate(-50%,-50%)}
+#gusStick:before{margin-left:-80px;transform:translate(-50%,-50%) rotate(-135deg)}
+#gusStick:after{margin-left:80px;transform:translate(-50%,-50%) rotate(45deg)}
+#gusStick.active{border-color:rgba(255,255,255,.75)}
+#gusKnob{position:absolute;left:50%;top:50%;width:92px;height:92px;border-radius:50%;transform:translate(-50%,-50%);
+ background:radial-gradient(circle at 40% 35%,rgba(236,233,223,.55),rgba(60,64,62,.75) 70%);border:2px solid rgba(255,255,255,.8);box-shadow:0 8px 22px rgba(0,0,0,.35)}
+#gusStick.active #gusKnob{background:radial-gradient(circle at 40% 35%,#fff,rgba(150,150,140,.85) 70%)}
+
+/* Fire: one huge ember button. The whole right half of the screen also fires. */
+#gusFire{position:absolute;right:max(40px,env(safe-area-inset-right));bottom:max(40px,env(safe-area-inset-bottom));width:184px;height:184px;border-radius:50%;
+ pointer-events:none;border:3px solid rgba(255,180,106,.85);background:radial-gradient(circle at 50% 40%,rgba(255,138,66,.55),rgba(120,36,12,.55) 72%);
+ box-shadow:0 0 0 10px rgba(255,138,66,.12),0 12px 44px rgba(0,0,0,.35),inset 0 -10px 24px rgba(0,0,0,.25);color:#fff;display:grid;place-items:center;align-content:center;gap:4px;
+ transition:transform .06s,background .06s,box-shadow .06s;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#gusFire span{width:58px;height:58px;color:#fff2d6;filter:drop-shadow(0 0 10px rgba(255,200,120,.8))}
+#gusFire b{font-size:17px;letter-spacing:.22em;margin-left:.22em}
+#gusFire.active{transform:scale(.92);background:radial-gradient(circle at 50% 40%,#ffd9a0,#ff7a2e 55%,#a8340f);box-shadow:0 0 0 18px rgba(255,160,90,.28),0 0 70px rgba(255,140,60,.75)}
+
+/* Aim: a quiet sight that blooms when anything is in reach. */
+#gusSight{position:absolute;left:50%;top:42%;width:46px;height:46px;transform:translate(-50%,-50%);border:2px solid rgba(236,233,223,.45);border-radius:50%;transition:all .12s}
+#gusSight i{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:rgba(236,233,223,.7)}
+#gusSight.lock{width:62px;height:62px;border-color:var(--ember-hot);box-shadow:0 0 18px rgba(255,150,80,.6)}
+#gus[data-phase=title] #gusSight,#gus[data-phase=victory] #gusSight,#gus[data-phase=title] #gusStars{opacity:0}
+
+#gusRings{position:absolute;inset:0;overflow:hidden}
+.gusRing{position:absolute;left:0;top:0;display:none;border-radius:50%;border:3px solid rgba(255,180,106,.85);box-shadow:0 0 16px rgba(255,138,66,.45),inset 0 0 12px rgba(255,138,66,.25);will-change:transform}
+.gusRing.on{display:block;animation:gusPulse .9s ease-in-out infinite}
+.gusRing.lock{border-color:#fff;border-width:4px;background:rgba(255,120,60,.16);box-shadow:0 0 28px rgba(255,160,90,.85),inset 0 0 20px rgba(255,160,90,.5)}
+.gusRing.ground{border-radius:14px}
+.gusRing.boss{border-width:5px;border-style:dashed}
+@keyframes gusPulse{50%{opacity:.62}}
+.gusArrow{position:absolute;left:0;top:0;display:none;width:0;height:0;border-style:solid;border-width:22px 0 22px 36px;border-color:transparent transparent transparent rgba(255,170,100,.9);filter:drop-shadow(0 0 8px rgba(255,138,66,.7))}
+.gusArrow.on{display:block}
+
+/* Stars: earned one at a time, flown up from the explosion. */
+#gusStars{position:absolute;top:max(18px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:4px;max-width:min(78vw,760px);transition:opacity .3s}
+.gusStar{display:block;width:34px;height:34px;color:var(--gold);filter:drop-shadow(0 2px 6px rgba(0,0,0,.45)) drop-shadow(0 0 8px rgba(255,200,100,.5))}
+.gusFlyStar{position:absolute;left:0;top:0;width:44px;height:44px;color:var(--gold);filter:drop-shadow(0 0 14px rgba(255,210,120,.95));pointer-events:none}
+
+#gusWarn{position:absolute;inset:0;opacity:0;box-shadow:inset 0 0 120px 30px rgba(255,60,30,.55)}
+#gusWarn.show{animation:gusWarn 1.2s ease-out}
+@keyframes gusWarn{0%,40%,80%{opacity:1}20%,60%,100%{opacity:0}}
+
+/* Title: the jet is already flying behind this. One tap and he has it. */
+#gusTitle{position:absolute;inset:0;pointer-events:auto;display:grid;place-items:center;align-content:center;gap:26px;
+ background:radial-gradient(ellipse at 50% 55%,rgba(11,14,13,.05),rgba(11,14,13,.55));transition:opacity .25s}
+#gusTitle[hidden]{display:none}
+.gusMark{margin:0;font-size:15px;letter-spacing:.5em;margin-left:.5em;color:rgba(236,233,223,.82);text-shadow:0 2px 12px rgba(0,0,0,.5)}
+#gusGo,#gusAgain{pointer-events:auto;cursor:pointer;color:#fff;border:3px solid rgba(255,190,120,.95);display:grid;place-items:center;align-content:center;gap:6px;
+ background:radial-gradient(circle at 50% 38%,rgba(255,150,80,.7),rgba(130,40,14,.75) 74%);box-shadow:0 0 0 14px rgba(255,138,66,.16),0 18px 60px rgba(0,0,0,.45)}
+#gusGo{width:230px;height:230px;border-radius:50%;animation:gusBreathe 1.6s ease-in-out infinite}
+#gusGo svg{width:96px;height:96px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4))}
+#gusGo b,#gusAgain b{font-size:22px;letter-spacing:.3em;margin-left:.3em}
+@keyframes gusBreathe{50%{transform:scale(1.06);box-shadow:0 0 0 26px rgba(255,138,66,.10),0 18px 60px rgba(0,0,0,.45)}}
+
+/* Victory: stars across the top, the flyover in the middle, one giant button. */
+#gusVictory{position:absolute;inset:0;display:grid;grid-template-rows:auto auto auto 1fr auto;justify-items:center;padding:max(24px,env(safe-area-inset-top)) 24px max(30px,env(safe-area-inset-bottom));
+ background:linear-gradient(180deg,rgba(11,14,13,.55),rgba(11,14,13,0) 42%,rgba(11,14,13,0) 70%,rgba(11,14,13,.5));pointer-events:none}
+#gusVictory[hidden]{display:none}
+.gusBurst{width:96px;height:96px;color:var(--gold);filter:drop-shadow(0 0 24px rgba(255,210,120,.9));animation:gusSpin 6s linear infinite,gusPop .5s ease-out}
+@keyframes gusSpin{to{transform:rotate(360deg)}}
+@keyframes gusPop{from{transform:scale(0)}}
+#gusVictory .gusMark{margin:8px 0 14px}
+#gusEarned{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(86vw,820px)}
+#gusEarned .gusStar{width:46px;height:46px}
+#gusAgain{grid-row:5;width:340px;height:150px;border-radius:75px;display:flex;align-items:center;justify-content:center;gap:18px;opacity:.45;transform:scale(.9);transition:opacity .3s,transform .3s}
+#gusAgain svg{width:56px;height:56px}
+#gusAgain.ready{opacity:1;transform:none;animation:gusBreathe 1.6s ease-in-out infinite}
+#gus[data-phase=victory] #gusStick,#gus[data-phase=victory] #gusFire,#gus[data-phase=title] #gusFire,#gus[data-phase=title] #gusStick{opacity:0}
+#gus[data-phase=victory] #gusStars{opacity:0}
+
+#gusRotate{display:none}
+@media (orientation:portrait){
+ #gusRotate{position:absolute;inset:0;z-index:5;display:grid;place-items:center;align-content:center;gap:10px;background:#0b0e0d;pointer-events:auto}
+ #gusRotate div{width:120px;height:120px;color:var(--bone);animation:gusTurn 2.4s ease-in-out infinite}
+ #gusRotate p{margin:0;font-size:64px;color:var(--ember-hot)}
+}
+@keyframes gusTurn{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
+@media (max-height:560px){
+ #gusStick{width:176px;height:176px;margin:-88px 0 0 -88px;left:calc(max(24px,env(safe-area-inset-left)) + 88px);top:calc(100% - max(24px,env(safe-area-inset-bottom)) - 88px)}
+ #gusKnob{width:78px;height:78px}
+ #gusFire{width:150px;height:150px;right:max(24px,env(safe-area-inset-right));bottom:max(24px,env(safe-area-inset-bottom))}
+ #gusGo{width:180px;height:180px}
+}
