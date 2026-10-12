@@ -2300,18 +2300,29 @@ gusRoot.innerHTML=`
 <section id="gusTitle" aria-label="Start">
  <p class="gusMark">EMBERWING</p>
  <button id="gusGo" aria-label="Fly">${GUS_JET}<b>FLY</b></button>
+ <div class="gusHelp keys" aria-label="Keyboard controls">
+  <span><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd><b>FLY</b></span>
+  <span><kbd class="wide">SPACE</kbd><b>SHOOT</b></span>
+  <span><kbd class="wide">ENTER</kbd><b>START</b></span>
+ </div>
+ <div class="gusHelp touch" aria-label="Touch controls"><span><b>LEFT THUMB · STEER</b></span><span><b>RIGHT THUMB · FIRE</b></span></div>
 </section>
+<div id="gusHint" aria-hidden="true"><span><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd><b>FLY</b></span><span><kbd class="wide">SPACE</kbd><b>SHOOT</b></span></div>
 <section id="gusVictory" aria-label="Mission complete" hidden>
  <div class="gusBurst">${GUS_STAR}</div>
  <p class="gusMark">MISSION COMPLETE</p>
  <div id="gusEarned"></div>
- <button id="gusAgain" aria-label="Fly again">${GUS_AGAIN}<b>FLY AGAIN</b></button>
+ <button id="gusAgain" aria-label="Fly again">${GUS_AGAIN}<b>FLY AGAIN</b><kbd class="wide gusKeyOnly">ENTER</kbd></button>
 </section>
 <div id="gusRotate"><div>${GUS_JET}</div><p>↻</p></div>`;
 document.body.appendChild(gusRoot);document.body.dataset.mode='gus';
 const gusEl={touch:document.getElementById('gusTouch'),sight:document.getElementById('gusSight'),rings:document.getElementById('gusRings'),stars:document.getElementById('gusStars'),
  warn:document.getElementById('gusWarn'),stick:document.getElementById('gusStick'),knob:document.getElementById('gusKnob'),fire:document.getElementById('gusFire'),
- title:document.getElementById('gusTitle'),go:document.getElementById('gusGo'),victory:document.getElementById('gusVictory'),earned:document.getElementById('gusEarned'),again:document.getElementById('gusAgain')};
+ title:document.getElementById('gusTitle'),go:document.getElementById('gusGo'),victory:document.getElementById('gusVictory'),earned:document.getElementById('gusEarned'),again:document.getElementById('gusAgain'),hint:document.getElementById('gusHint')};
+// Input mode decides which instructions show: key caps on a laptop, two thumbs on a tablet.
+// It follows the last thing actually used, so a touchscreen laptop still gets the right help.
+function gusSetInput(mode){if(gusRoot.dataset.input!==mode)gusRoot.dataset.input=mode;}
+gusSetInput(matchMedia('(hover:hover) and (pointer:fine)').matches?'keys':'touch');
 const gusRingPool=[],gusArrowPool=[];
 for(let i=0;i<10;i++){const el=document.createElement('i');el.className='gusRing';gusEl.rings.appendChild(el);gusRingPool.push(el);}
 for(let i=0;i<5;i++){const el=document.createElement('b');el.className='gusArrow';gusEl.rings.appendChild(el);gusArrowPool.push(el);}
@@ -2366,6 +2377,7 @@ const gusFirePointers=new Set();
 function gusFireRelease(id){if(gusFirePointers.delete(id)){GUS.fireHeld=gusFirePointers.size;gusEl.fire.classList.toggle('active',GUS.fireHeld>0);}}
 gusEl.touch.addEventListener('pointerdown',e=>{
  e.preventDefault();gusAudio();
+ if(e.pointerType==='touch')gusSetInput('touch');
  if(GUS.phase==='title'){gusStart();}
  try{gusEl.touch.setPointerCapture(e.pointerId);}catch{}
  if(e.clientX<innerWidth*.5){
@@ -2387,13 +2399,13 @@ for(const type of ['touchstart','touchmove','touchend','gesturestart','gesturech
 // iPad Safari only unlocks Web Audio on touch *end*; pointerdown alone can leave it suspended.
 for(const type of ['touchend','pointerup','click','keydown'])document.addEventListener(type,()=>gusAudio(),{capture:true,passive:true});
 gusEl.go.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();gusAudio();gusStart();});
-gusEl.title.addEventListener('pointerdown',e=>{e.preventDefault();gusAudio();gusStart();});
+gusEl.title.addEventListener('pointerdown',e=>{e.preventDefault();if(e.pointerType==='touch')gusSetInput('touch');gusAudio();gusStart();});
 gusEl.again.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(GUS.real<GUS.againReadyAt)return;gusAudio();gusRestart();});
-// Keyboard for desk testing: arrows steer (up = climb), Space fires, Enter starts.
+// Keyboard: arrows steer (up = climb), Space fires, Enter starts / flies again, R restarts.
 key=function(e,down){
  const handled=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','KeyR'].includes(e.code);
  if(!handled)return;e.preventDefault();
- if(down)gusAudio();
+ if(down){gusAudio();gusSetInput('keys');}
  if(e.code==='Enter'&&down){if(GUS.phase==='title')gusStart();else if(GUS.phase==='victory'&&GUS.real>=GUS.againReadyAt)gusRestart();return;}
  if(e.code==='KeyR'){if(down&&!e.repeat)gusRestart();return;}
  GUS.keys[e.code]=down;
@@ -2470,6 +2482,8 @@ function gusStep(rawDt){
  updateSpeedFX(dt);
  if(gusRumble&&audioCtx){const now=audioCtx.currentTime;gusRumble.gain.setTargetAtTime(.05+burner*.11,now,.12);gusRumbleFilter.frequency.setTargetAtTime(150+burner*260,now,.15);}
  gusUpdateHud();
+ // Keyboard reminder: on for the first few seconds of each flight, then it fades away.
+ gusEl.hint.classList.toggle('show',GUS.phase==='fly'&&GUS.t<5);
  if(GUS.phase==='victory')gusEl.again.classList.toggle('ready',GUS.real>=GUS.againReadyAt);
  GUS.frames++;GUS.fpsClock+=rawDt;if(GUS.fpsClock>=1){GUS.fps=GUS.frames/GUS.fpsClock;GUS.frames=0;GUS.fpsClock=0;}
 }
@@ -2494,7 +2508,7 @@ const gusOrientation=matchMedia('(orientation:portrait)');
 // Read-only diagnostics for browser verification (mirrors window.emberwing).
 window.gus=Object.freeze({snapshot:()=>({phase:GUS.phase,t:GUS.t,stars:GUS.stars,kills:GUS.kills,hits:GUS.hits,shots:GUS.shots,fps:GUS.fps,
  position:ship.position.toArray(),yaw:GUS.yaw,bank:GUS.bank,pitch:GUS.pitch,speed,altitude:ship.position.y-terrainHeight(ship.position.x,ship.position.z),
- stick:[GUS.stick.x,GUS.stick.y],fireHeld:GUS.fireHeld,lock:!!GUS.lockTarget,
+ stick:[GUS.stick.x,GUS.stick.y],input:[GUS.inX,GUS.inY],fireHeld:GUS.fireHeld,lock:!!GUS.lockTarget,
  enemies:GUS.enemies.filter(e=>e.alive).map(e=>({kind:e.kind,a:Math.round(e.a),s:Math.round(e.s),hp:e.hp})),ground:GUS.ground.filter(g=>g.alive).length,
  boss:GUS.boss?{alive:GUS.boss.alive,hp:GUS.boss.hp,lit:GUS.boss.lit}:null,hostiles:GUS.hostiles.length,flares:GUS.flares.length,wingman:!!(GUS.wingman&&GUS.wingman.on),
  portrait:gusOrientation.matches,adultPhase:mission.phase})});

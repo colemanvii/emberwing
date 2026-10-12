@@ -24,6 +24,7 @@ The briefing waits for you. Descend into the valley, penetrate to the launch ins
 
 - Left half of the screen: steer (floating stick; up climbs).
 - Right half of the screen: FIRE (cannon with generous aim assist; missiles launch automatically).
+- Laptop: arrow keys fly (↑ climbs), Space shoots, Enter starts / flies again, R restarts. The opening screen shows the keys; a short reminder fades out a few seconds into flight. Touch devices show only the two-thumb hint.
 - No crashes, no ammunition, no game over. About 80–90 seconds: wingman joins, crossing jets, head-on passes, a three-ship to chase, ground batteries, flares against incoming missiles, then the launch rocket finale and a victory flyover with a giant FLY AGAIN.
 
 Gus Mode lives in `src/gus/` (`gus.js`, `gus.css`). The build appends `gus.js` to the canonical Level 1 runtime as a separate bundle, `src/gus/game.js`, and generates `gus.html` from the same shell. The Level 1 outputs (`index.html`, `play.html`, `src/level1/game.js`) never include Gus code. `npm run check:gus` drives it with real multitouch and plays full fixed-step missions under several "kid" input styles, writing screenshots to `.artifacts/gus/`.

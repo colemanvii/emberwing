@@ -71,6 +71,10 @@ window.gusTest={
   let s=await snap();
   assert.equal(s.phase,'title');
   assert.equal(await page.locator('#gusGo').isVisible(),true,'Giant FLY button must be visible');
+  // iPad: two-thumb hint only; no keyboard instructions anywhere.
+  assert.equal(await page.locator('#gus').getAttribute('data-input'),'touch','Tablet must start in touch mode');
+  assert.equal(await page.locator('#gusTitle .gusHelp.touch').isVisible(),true,'Tablet title must show the two-thumb hint');
+  assert.equal(await page.locator('#gusTitle .gusHelp.keys').isVisible(),false,'Tablet must not show keyboard instructions');
   for(const id of ['#touchControls','#briefing','#compass','#objectives','#runClock','#health','#radio'])
    assert.equal(await page.locator(id).isVisible(),false,`Level 1 HUD ${id} must be hidden in Gus Mode`);
   const titlePos=s.position;await page.waitForTimeout(400);
@@ -144,10 +148,59 @@ window.gusTest={
   assert.equal(again.phase,'fly','FLY AGAIN must go straight back into flight');
   assert.equal(again.stars,0);
 
+  assert.equal(await page.locator('#gusHint').isVisible(),false,'Tablet must never show the keyboard reminder');
+  assert.equal(await page.locator('#gusFire').isVisible(),true,'Tablet FIRE button must remain');
+
   // 6. Portrait shows only the rotate prompt.
   await page.setViewportSize({width:820,height:1180});
   assert.equal(await page.locator('#gusRotate').isVisible(),true,'Portrait must ask to rotate');
   await page.setViewportSize({width:1180,height:820});
+
+  // 7. Laptop: keyboard instructions before start, working keys, a reminder that fades.
+  const desk=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1});
+  const dpage=await desk.newPage();dpage.on('pageerror',error=>errors.push(error.message));
+  await dpage.goto(base+'/gus.html',{waitUntil:'networkidle'});
+  await dpage.waitForFunction(()=>window.gus&&gus.snapshot().phase==='title');
+  const dsnap=()=>dpage.evaluate(()=>gus.snapshot());
+  assert.equal(await dpage.locator('#gus').getAttribute('data-input'),'keys','Laptop must start in keyboard mode');
+  const help=dpage.locator('#gusTitle .gusHelp.keys');
+  assert.equal(await help.isVisible(),true,'Laptop title must show keyboard instructions');
+  const helpText=(await help.innerText()).replace(/\s+/g,' ');
+  for(const words of ['FLY','SPACE','SHOOT','ENTER','START'])assert.ok(helpText.includes(words),`Keyboard help must mention ${words}: ${helpText}`);
+  assert.equal(await dpage.locator('#gusTitle .gusHelp.touch').isVisible(),false,'Laptop title must not show the thumb hint');
+  assert.equal(await dpage.locator('#gusStick').isVisible(),false,'Laptop must not show the touch stick');
+  await dpage.screenshot({path:path.join(OUT,'07-laptop-title.png')});
+  await dpage.keyboard.press('Enter');
+  await dpage.waitForFunction(()=>gus.snapshot().phase==='fly',null,{timeout:2000});
+  await dpage.waitForTimeout(400);
+  assert.equal(await dpage.locator('#gusHint').evaluate(el=>el.classList.contains('show')),true,'Reminder must show as flight begins');
+  await dpage.screenshot({path:path.join(OUT,'08-laptop-reminder.png')});
+  let k0=await dsnap();
+  await dpage.keyboard.down('ArrowRight');await dpage.waitForTimeout(900);let k1=await dsnap();await dpage.keyboard.up('ArrowRight');
+  assert.ok(k1.bank>.3&&k1.yaw<k0.yaw-.02,`Right arrow must bank and turn right (bank ${k1.bank}, yaw ${k0.yaw}→${k1.yaw})`);
+  await dpage.waitForTimeout(700);k0=await dsnap();
+  await dpage.keyboard.down('ArrowLeft');await dpage.waitForTimeout(900);k1=await dsnap();await dpage.keyboard.up('ArrowLeft');
+  assert.ok(k1.bank<-.3&&k1.yaw>k0.yaw+.02,`Left arrow must bank and turn left (bank ${k1.bank})`);
+  await dpage.keyboard.down('ArrowUp');await dpage.waitForTimeout(700);k1=await dsnap();await dpage.keyboard.up('ArrowUp');
+  assert.ok(k1.pitch>.15,`Up arrow must climb (pitch ${k1.pitch})`);
+  await dpage.waitForTimeout(500);
+  k0=await dsnap();
+  await dpage.keyboard.down('ArrowDown');await dpage.waitForTimeout(700);k1=await dsnap();await dpage.keyboard.up('ArrowDown');
+  // Down commands a dive; terrain assist may still hold the nose up near a wall, so check the command.
+  assert.ok(k1.input[1]<-.8&&k1.pitch<=k0.pitch+.01,`Down arrow must command a dive (input ${k1.input[1]}, pitch ${k0.pitch}→${k1.pitch})`);
+  const shotsBefore=(await dsnap()).shots;
+  // Headless desktop rendering can be slow, so wait on game state rather than wall time.
+  await dpage.keyboard.down('Space');
+  await dpage.waitForFunction(n=>gus.snapshot().shots>=n,shotsBefore+3,{timeout:10000});
+  await dpage.keyboard.up('Space');
+  await dpage.waitForFunction(()=>gus.snapshot().t>6.5,null,{timeout:15000});
+  await dpage.waitForTimeout(1300);
+  assert.equal(await dpage.locator('#gusHint').evaluate(el=>getComputedStyle(el).opacity),'0','Reminder must fade away once flying');
+  await dpage.screenshot({path:path.join(OUT,'09-laptop-flying.png')});
+  await dpage.keyboard.press('KeyR');
+  assert.equal((await dsnap()).phase,'fly','R must restart straight into flight');
+  assert.ok((await dsnap()).t<.5);
+  await desk.close();
 
   assert.deepEqual(errors,[]);
   console.log(`PASS: Gus Mode — one-tap start, multitouch steer+fire, ${results.length} full missions without a crash, victory and FLY AGAIN.`);
