@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#101311">
+<title>EMBERWING — Gus iPad Playtest</title>
+<meta name="description" content="Emberwing iPad HOTAS playtest build for Gus.">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b0e0d;color:#ece9df;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;touch-action:none;overscroll-behavior:none}
+body{background:#0b0e0d url('./emberwing-og-v2.jpg') center/cover no-repeat}
+body:before{content:"";position:fixed;inset:0;background:linear-gradient(180deg,rgba(7,10,9,.18),rgba(7,10,9,.58))}
+iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#0b0e0d;opacity:0;pointer-events:none;transition:opacity .28s ease}
+iframe.live{opacity:1;pointer-events:auto}
+#glass{position:fixed;inset:0;z-index:5;display:grid;place-items:center;padding:max(22px,env(safe-area-inset-top)) max(28px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(28px,env(safe-area-inset-left));background:rgba(11,14,13,.46);backdrop-filter:blur(16px) saturate(.82);-webkit-backdrop-filter:blur(16px) saturate(.82);transition:opacity .25s ease}
+#glass.hide{opacity:0;pointer-events:none}
+.card{width:min(680px,82vw);padding:34px 38px 31px;border:1px solid rgba(236,233,223,.18);background:rgba(11,14,13,.42)}
+.eyebrow{margin:0 0 13px;font:600 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.22em;color:rgba(236,233,223,.52)}
+h1{margin:0 0 17px;font-size:clamp(31px,5vw,48px);font-weight:500;letter-spacing:.02em}
+.mission{margin:0 0 25px;font-size:13px;line-height:1.6;letter-spacing:.08em;color:rgba(236,233,223,.74);text-transform:uppercase}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;margin:0 0 28px;padding:18px 0;border-top:1px solid rgba(236,233,223,.12);border-bottom:1px solid rgba(236,233,223,.12);font:600 11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;color:rgba(236,233,223,.62)}
+.controls b{display:block;margin-bottom:3px;color:#ece9df;font-weight:600;letter-spacing:.12em}
+.start{margin:0;font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.16em;color:#ece9df}
+.start span{margin-left:8px;color:rgba(236,233,223,.44)}
+#count{position:fixed;inset:0;z-index:6;display:none;place-items:center;font:500 clamp(76px,18vw,180px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ece9df;text-shadow:0 12px 50px rgba(0,0,0,.5)}
+#count.show{display:grid}
+.rotate{display:none}
+@media(orientation:portrait){
+  .rotate{display:grid;position:fixed;inset:0;z-index:9;place-items:center;padding:30px;text-align:center;background:#0b0e0d;color:#ece9df;font:600 13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em}
+}
+</style>
+</head>
+<body>
+<iframe id="game" title="Emberwing iPad playtest" allow="autoplay; fullscreen"></iframe>
+
+<div id="glass" role="dialog" aria-modal="true" aria-labelledby="title">
+  <div class="card">
+    <p class="eyebrow">EMBERWING // GUS IPAD TEST</p>
+    <h1 id="title">VALLEY STRIKE</h1>
+    <p class="mission">Fly low. Destroy the launch site. Get out north.</p>
+    <div class="controls">
+      <div><b>LEFT THUMB — FLY</b>Bank and pitch without changing your grip.</div>
+      <div><b>RIGHT THUMB — FIGHT</b>Cannon, missile, and boost live under one thumb.</div>
+      <div><b>CANNON</b>Tap or hold with your right thumb.</div>
+      <div><b>MISSILE</b>Hold to lock. Release to fire. Boost sits above.</div>
+    </div>
+    <p class="start">TAP TO ENTER COCKPIT <span>landscape only</span></p>
+  </div>
+</div>
+
+<div id="count" aria-live="assertive"></div>
+<div class="rotate">ROTATE IPAD TO LANDSCAPE<br>THIS ONE FLIES LIKE A COCKPIT.</div>
+
+<script>
+const game=document.getElementById('game');
+const glass=document.getElementById('glass');
+const count=document.getElementById('count');
+let started=false;
+
+function installIpadCockpit(){
+  const doc=game.contentDocument;
+  if(!doc)return;
+  doc.body.dataset.handheld='ipad';
+
+  const style=doc.createElement('style');
+  style.id='gus-handheld-layout';
+  style.textContent=`
+    #touchControls{display:block!important}
+    #touchControls #stick{
+      left:auto!important;
+      right:max(28px,env(safe-area-inset-right))!important;
+      top:50%!important;
+      bottom:auto!important;
+      transform:translateY(-50%)!important;
+      width:190px!important;
+      height:190px!important;
+    }
+    #touchControls #touchFire{
+      left:max(30px,env(safe-area-inset-left))!important;
+      right:auto!important;
+      top:50%!important;
+      bottom:auto!important;
+      transform:translateY(48%)!important;
+    }
+    #touchControls #touchMissile{
+      left:max(130px,calc(env(safe-area-inset-left) + 130px))!important;
+      right:auto!important;
+      top:50%!important;
+      bottom:auto!important;
+      transform:translateY(-44%)!important;
+    }
+    #touchControls #touchBoost{
+      left:max(42px,calc(env(safe-area-inset-left) + 42px))!important;
+      right:auto!important;
+      top:50%!important;
+      bottom:auto!important;
+      transform:translateY(-154%)!important;
+    }
+    @media (max-height:560px){
+      #touchControls #stick{width:174px!important;height:174px!important;right:max(24px,env(safe-area-inset-right))!important}
+      #touchControls #touchFire{left:max(24px,env(safe-area-inset-left))!important}
+      #touchControls #touchMissile{left:max(116px,calc(env(safe-area-inset-left) + 116px))!important}
+      #touchControls #touchBoost{left:max(34px,calc(env(safe-area-inset-left) + 34px))!important}
+    }
+  `;
+  doc.head.appendChild(style);
+
+  const fire=doc.getElementById('touchFire');
+  const missile=doc.getElementById('touchMissile');
+  const boost=doc.getElementById('touchBoost');
+  const stick=doc.getElementById('stick');
+  if(stick)stick.setAttribute('aria-label','Right thumb flight control');
+  if(fire)fire.setAttribute('aria-label','Left thumb cannon');
+  if(missile)missile.setAttribute('aria-label','Left thumb missile: hold to lock, release to fire');
+  if(boost)boost.setAttribute('aria-label','Left thumb boost');
+}
+function launch(){
+  if(started || matchMedia('(orientation:portrait)').matches)return;
+  started=true;
+  game.src='./play.html?gus=ipad-handheld-v3';
+  glass.classList.add('hide');
+  game.addEventListener('load',()=>{
+    installIpadCockpit();
+    let n=3;
+    count.textContent=n;
+    count.classList.add('show');
+    const timer=setInterval(()=>{
+      n-=1;
+      if(n>0){count.textContent=n;return}
+      clearInterval(timer);
+      count.textContent='FLY';
+      setTimeout(()=>{
+        count.classList.remove('show');
+        game.classList.add('live');
+        setTimeout(()=>game.contentWindow?.focus(),50);
+      },460);
+    },650);
+  },{once:true});
+}
+glass.addEventListener('pointerup',launch);
+addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();launch()}});
+</script>
+</body>
+</html>
