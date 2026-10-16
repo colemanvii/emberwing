@@ -144,4 +144,29 @@ let last=performance.now();function loop(now){requestAnimationFrame(loop);const 
 if(new URLSearchParams(location.search).has('test'))window.gusTest={
   planeScreen:()=>{hero.updateWorldMatrix(true,true);const p=hero.getWorldPosition(new T.Vector3()).project(camera);return {ndc:[p.x,p.y,p.z],pixels:[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2],camera:camera.position.toArray(),hero:hero.position.toArray(),heroVisible:hero.visible,planeChildren:hero.children.length};},
   planeVisible:(on)=>{hero.visible=on;buddy.visible=on;renderer.render(scene,camera);},
+  planePixelCoverage:()=>{
+    const gl=renderer.getContext(),w=gl.drawingBufferWidth,h=gl.drawingBufferHeight;
+    function capture(){
+      renderer.render(scene,camera);
+      const out=new Uint8Array(w*h*4);
+      gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,out);
+      return out;
+    }
+    const wasHero=hero.visible,wasBuddy=buddy.visible;
+    hero.visible=true;buddy.visible=true;
+    const on=capture();
+    hero.visible=false;buddy.visible=false;
+    const off=capture();
+    hero.visible=wasHero;buddy.visible=wasBuddy;
+    renderer.render(scene,camera);
+    let changed=0,minX=w,minY=h,maxX=0,maxY=0;
+    for(let i=0;i<on.length;i+=4){
+      if(Math.abs(on[i]-off[i])+Math.abs(on[i+1]-off[i+1])+Math.abs(on[i+2]-off[i+2])<50)continue;
+      changed++;
+      const pixel=i/4,x=pixel%w,y=Math.floor(pixel/w);
+      minX=Math.min(minX,x);maxX=Math.max(maxX,x);
+      minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+    }
+    return {changed,ratio:changed/(w*h),bounds:changed?{left:minX/w,top:1-maxY/h,right:maxX/w,bottom:1-minY/h}:null,screen:this?.planeScreen?.(),drawSize:[w,h]};
+  },
   snapshot:()=>({state,time,score,shield,stats:{...stats},hero:hero.position.toArray(),buddy:buddy.position.toArray(),shots:shots.map(s=>({missile:s.missile,p:s.mesh.position.toArray()})),boss:boss?{hp:boss.pods.map(p=>p.hp),dead:boss.dead}:null,orbs:orbCount,particles:particles.length,drawCalls:renderer.info.render.calls,audio:audio?.state,muted,touch:{...touch}}),orbAtHero:(collect)=>{const o=orbs[0];o.collect=collect;o.x=hero.position.x;o.y=hero.position.y;o.z=hero.position.z;},advance:(seconds)=>{for(let i=0;i<seconds*60;i++)update(1/60);renderer.render(scene,camera);}};
