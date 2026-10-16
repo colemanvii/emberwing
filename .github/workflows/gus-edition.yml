@@ -17,6 +17,8 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm install
+      - name: Install PNG decoder for visual verification
+        run: npm install --no-save pngjs
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run actual game in a browser
