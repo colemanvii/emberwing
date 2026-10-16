@@ -1,0 +1,30 @@
+name: Gus Edition browser verification
+on:
+  push:
+    branches:
+      - feature/gus-hulk-green-playtest
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gus-playtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run actual game in a browser
+        run: node scripts/check-gus.cjs
+      - name: Preserve screenshot for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gus-browser-preview
+          path: gus-playtest.png
+          if-no-files-found: ignore
