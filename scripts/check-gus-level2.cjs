@@ -14,7 +14,7 @@ const {startStaticServer}=require('./static-server.cjs');
  await page.keyboard.down('Shift');await step(1);assert((await snap()).turbo>.9);await page.keyboard.up('Shift');
  await page.keyboard.press('x');await step(2);assert((await snap()).stats.missileHits>0);
  await step(20);s=await snap();assert(s.boss,'Level 2 boss arrives');assert(s.boss.hp.some(h=>h>18),'Stronger Level 2 boss');await page.keyboard.down('Space');await step(55);await page.keyboard.up('Space');
- s=await snap();assert.equal(s.state,'won');assert(s.stats.wolverineHits>=3);assert(s.boss.hp.every(h=>h===0));assert(!(await page.locator('#next-level').isVisible()));
+ s=await snap();assert.equal(s.state,'won');assert(s.stats.wolverineHits>=3);assert(s.boss.hp.every(h=>h===0));assert(await page.locator('#next-level').isVisible(),'Level 2 unlocks hero team-up');
  await page.locator('#again').click();assert.equal((await snap()).level,2);assert.equal((await snap()).state,'playing');
  await page.goto((process.env.BASE_URL||server.url)+'/gus.html?test');await page.locator('#level-two').click();assert.equal((await snap()).level,2);await step(.2);assert((await snap()).wolverine.visible);
  assert.deepEqual(errors,[]);console.log('PASS: Level 1 -> Level 2, visible Wolverine, real claw damage/kills, turbo/missiles, stronger boss victory, replay, direct Level 2 entry, no JavaScript errors.');console.log(JSON.stringify(s.stats));

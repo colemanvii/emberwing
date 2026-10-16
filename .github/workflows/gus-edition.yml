@@ -22,7 +22,7 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run actual game in a browser
-        run: node scripts/check-gus.cjs && node scripts/check-gus-level2.cjs
+        run: node scripts/check-gus.cjs && node scripts/check-gus-level2.cjs && node scripts/check-gus-heroes.cjs
       - name: Preserve screenshot for inspection
         if: always()
         uses: actions/upload-artifact@v4
