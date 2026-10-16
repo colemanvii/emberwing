@@ -16,7 +16,17 @@ const { startStaticServer } = require('./static-server.cjs');
     page.on('response', r=>{ if(r.status()>=400)badResponses.push(r.status()+' '+r.url()); });
     page.on('console', msg=>{ if(msg.type()==='error')failures.push('console: '+msg.text()); });
     await page.goto(server.url+'/gus.html?test', {waitUntil:'networkidle',timeout:30000});
-    await page.waitForFunction(()=>!!window.gusTest,{timeout:20000});
+    try {
+      await page.waitForFunction(()=>!!window.gusTest,null,{timeout:7000});
+    } catch (e) {
+      console.error('Game module failed to initialize: '+e.message);
+      console.error('Browser errors:',JSON.stringify(failures));
+      console.error('HTTP failures:',JSON.stringify(badResponses));
+      console.error('Rendered intro:',await page.locator('#intro').innerText());
+      console.error('Module responses:',JSON.stringify(await page.evaluate(()=>performance.getEntriesByType('resource').filter(x=>x.name.includes('/gus/')).map(x=>({name:x.name,duration:x.duration,responseStatus:x.responseStatus})))));
+      await page.screenshot({path:'gus-playtest.png',fullPage:true}).catch(()=>{});
+      throw e;
+    }
     const canvas = await page.locator('#sky').boundingBox();
     assert(canvas&&canvas.width>500&&canvas.height>300,'3D canvas has measurable size');
     await page.locator('#start').click();
