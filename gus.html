@@ -1,12 +1,13 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#153f59"><title>Emberwing · Gus Edition</title><link rel="stylesheet" href="./gus/style.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#182b2a"><title>Emberwing — Gus Edition / Alien Strike</title><link rel="stylesheet" href="./gus/style.css"></head>
 <body><canvas id="sky" aria-label="Gus flying over the desert with his police partner"></canvas>
 <header><div class="brand">EMBERWING <span>GUS EDITION</span></div><div class="tools"><button id="restart" aria-label="Restart adventure">↻</button><button id="mute" aria-label="Mute sound">SOUND ON</button></div></header>
-<div id="hud"><div class="badge"><small>ALIENS POPPED</small><strong id="score">0</strong></div><div class="badge partner"><i></i> OFFICER BLUE <small>YOUR WINGMAN</small></div><div class="badge shield"><small>SUPER SHIELD</small><div id="shield">● ● ● ● ●</div></div></div>
-<div id="bossbar" hidden><span>THE GREAT GREEN GOOGLER</span><div><i id="bossfill"></i></div><small>Pop his three glowing power pods!</small></div>
+<div id="hud"><div class="badge"><small>ALIEN KILLS</small><strong id="score">0</strong></div><div class="badge partner"><i></i> OFFICER BLUE <small>WINGMAN ACTIVE</small></div><div class="badge shield"><small>HULL SHIELD</small><div id="shield">● ● ● ● ●</div></div></div>
+<div id="bossbar" hidden><span>GREEN TITAN // BOSS</span><div><i id="bossfill"></i></div><small>Destroy the three power cores</small></div>
 <div id="message" aria-live="polite"></div>
-<div id="intro"><div class="eyebrow">GUS FREEMAN PRESENTS</div><h1>Operation<br><em>Alien Invasion.</em></h1><p>Two hero airplanes. One unstoppable team.<br>A whole sky of trouble.</p><button id="start">LET’S FLY! <span>➜</span></button><small>Or press ENTER · SPACE shoots · X launches missiles</small></div>
-<div id="victory" hidden><div class="eyebrow">DESERT SAVED. BEST TEAM EVER.</div><h1>YOU DID IT,<br><em>CAPTAIN GUS!</em></h1><p id="victoryscore"></p><button id="again">FLY AGAIN! ↗</button></div>
-<div id="touch"><div class="weapons"><button id="fire" aria-label="Hold to shoot lasers">PEW!<small>HOLD TO FIRE</small></button><button id="missile" aria-label="Launch missile">🚀<small>MISSILE</small></button></div><div id="stick" role="application" aria-label="Drag to fly"><div id="knob">✦</div><span>FLY</span></div></div>
-<footer><span>✦ DESERT PATROL</span><span id="hint">WASD / ARROWS · FLY &nbsp; SPACE · PEW &nbsp; X · MISSILE</span><span id="missilestatus">🚀 MISSILE READY</span></footer>
+<div id="intro"><div class="eyebrow">EMBERWING // SPECIAL MISSION</div><h1>ALIEN<br><em>STRIKE.</em></h1><p>Your fighter. A police wingman.<br>Hostile aircraft over the desert.</p><button id="start">LAUNCH MISSION <span>➜</span></button><small>ENTER to fly · SPACE cannon · X guided missile</small></div>
+<div id="victory" hidden><div class="eyebrow">MISSION COMPLETE // DESERT SECURED</div><h1>WELL FLOWN,<br><em>CAPTAIN GUS.</em></h1><p id="victoryscore"></p><button id="again">FLY AGAIN ↗</button></div>
+<button id="launch" aria-label="Launch guided missile">X <span>LAUNCH MISSILE</span></button>
+<div id="touch"><div class="weapons"><button id="fire" aria-label="Hold to shoot lasers">FIRE<small>CANNON</small></button><button id="missile" aria-label="Launch missile">X<small>MISSILE</small></button></div><div id="stick" role="application" aria-label="Drag to fly"><div id="knob">✦</div><span>FLY</span></div></div>
+<footer><span>GUS / ALIEN STRIKE</span><span id="hint">WASD / ARROWS · FLY &nbsp; SPACE · CANNON &nbsp; X · MISSILE</span><span id="missilestatus">MISSILE // X / M // READY</span></footer>
 <script type="module" src="./gus/game.js"></script></body></html>
