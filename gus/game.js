@@ -1,67 +1,45 @@
 import * as T from './vendor/three.module.js';
 const $=id=>document.getElementById(id), clamp=T.MathUtils.clamp, rand=(a,b)=>a+Math.random()*(b-a);
-const scene=new T.Scene();scene.background=new T.Color('#73cce9');scene.fog=new T.Fog('#bee5dc',110,340);
-const camera=new T.PerspectiveCamera(innerWidth<innerHeight?70:56,innerWidth/innerHeight,.1,700);camera.position.set(0,14,29);camera.lookAt(0,9,-45);
+const scene=new T.Scene();scene.background=new T.Color('#b8745d');scene.fog=new T.FogExp2('#b8745d',.0012);
+const camera=new T.PerspectiveCamera(66,innerWidth/innerHeight,.1,3200);camera.position.set(0,13,22);camera.lookAt(0,1,-38);
 let renderer;
 try{renderer=new T.WebGLRenderer({canvas:$('sky'),antialias:true,powerPreference:'high-performance'});}catch(e){$('intro').innerHTML='<h1>Our airplane needs WebGL</h1><p>Open this link in Safari or Chrome with graphics acceleration enabled.</p>';throw e;}
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;
-scene.add(new T.HemisphereLight('#fff8dc','#a86646',2.5));const sun=new T.DirectionalLight('#fff2c7',3.2);sun.position.set(-50,90,30);scene.add(sun);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.13;
+const sky=new T.Mesh(new T.SphereGeometry(2500,32,18),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,uniforms:{top:{value:new T.Color(0x20172f)},hor:{value:new T.Color(0xbb684f)},low:{value:new T.Color(0xf2aa68)},sunDir:{value:new T.Vector3(-.58,.17,-.79).normalize()},sunCol:{value:new T.Color(0xffd19b)}},vertexShader:'varying vec3 d;void main(){d=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'uniform vec3 top;uniform vec3 hor;uniform vec3 low;uniform vec3 sunDir;uniform vec3 sunCol;varying vec3 d;void main(){float h=d.y;vec3 c=mix(hor,top,smoothstep(.02,.72,h));c=mix(low,c,smoothstep(-.28,.14,h));float horizon=exp(-pow(abs(h)/.065,2.0));c+=sunCol*horizon*.09;float sd=max(dot(normalize(d),normalize(sunDir)),0.0);float halo=pow(sd,18.0)*.23+pow(sd,90.0)*.72;float disc=smoothstep(.99935,.99986,sd);c+=sunCol*(halo+disc*1.35);gl_FragColor=vec4(c,1.0);}'}));scene.add(sky);
+scene.add(new T.HemisphereLight('#ffd6bd','#241a22',1.85));const sun=new T.DirectionalLight('#ffbd76',6.4);sun.position.set(-520,260,-650);scene.add(sun);
 const materials=new Map();function mat(color,glow=false){const key=color+glow;if(!materials.has(key))materials.set(key,new T.MeshStandardMaterial({color,roughness:.55,metalness:.15,emissive:glow?color:0,emissiveIntensity:glow?2:0}));return materials.get(key);}
 const sphere=new T.SphereGeometry(1,16,12),box=new T.BoxGeometry(1,1,1);
 function mesh(parent,geo,color,pos=[0,0,0],scale=[1,1,1],glow=false){const m=new T.Mesh(geo,mat(color,glow));m.position.set(...pos);m.scale.set(...scale);parent.add(m);return m;}
 function ball(parent,color,pos,scale,glow=false){return mesh(parent,sphere,color,pos,scale,glow);}
 function block(parent,color,pos,scale){return mesh(parent,box,color,pos,scale);}
 
-/* Gus Edition uses the original Emberwing swept-wing fighter silhouette,
-   with separate matte-green and police-wingman paint schemes. */
-function aircraftPlate(points, thickness=.28){
-  const count=points.length, positions=[], indices=[];
-  for(const y of [-thickness/2,thickness/2])for(const [x,z] of points)positions.push(x,y,z);
-  for(let i=1;i<count-1;i++)indices.push(count,count+i,count+i+1,0,i+1,i);
-  for(let i=0;i<count;i++){const j=(i+1)%count;indices.push(i,j,count+j,i,count+j,count+i);}
-  const geo=new T.BufferGeometry();
-  geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));
-  geo.setIndex(indices);geo.computeVertexNormals();return geo;
+// Actual plate and makeShip geometry from main/src/level1/game.js.
+// Gus wears matte green; the wingman wears blue-white police paint.
+function plate(points,t=.28){const n=points.length,v=[],idx=[];for(const y of[-t/2,t/2])for(const p of points)v.push(p[0],y,p[1]);for(let i=1;i<n-1;i++)idx.push(n,n+i,n+i+1,0,i+1,i);for(let i=0;i<n;i++){const j=(i+1)%n;idx.push(i,j,n+j,i,n+j,n+i)}const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(v,3));g.setIndex(idx);g.computeVertexNormals();if(police){const white=new T.MeshStandardMaterial({color:0xebeee7,roughness:.42,metalness:.21});for(const s of [-1,1]){const band=new T.Mesh(new T.BoxGeometry(2.3,.042,1.1),white);band.position.set(s*5.25,.17,.9);g.add(band);}g.userData.lights=[ball(g,'#ff4150',[-.48,1.18,-.45],[.3,.22,.28],true),ball(g,'#408eff',[.48,1.18,-.45],[.3,.22,.28],true)];}return g}
+function makeShip(police=false){const enemy=false;const g=new T.Group(),hull=new T.MeshStandardMaterial({color:enemy?0x11161c:police?0xd9e5e3:0x386b39,roughness:enemy?.32:police?.43:.89,metalness:enemy?.55:police?.34:.13}),wing=new T.MeshStandardMaterial({color:enemy?0x1d252d:police?0x305f87:0x477b43,roughness:enemy?.43:police?.45:.93,metalness:enemy?.4:police?.32:.11}),pts=enemy?[[-.5,-3],[-4,.6],[-3,2],[0,1.1],[3,2],[4,.6],[.5,-3]]:[[-.8,-3.5],[-3,-1.6],[-8.5,.5],[-7.5,3],[-3.2,2.2],[0,1.2],[3.2,2.2],[7.5,3],[8.5,.5],[3,-1.6],[.8,-3.5]];g.add(new T.Mesh(plate(pts),wing));const body=new T.Mesh(new T.CylinderGeometry(enemy?.7:1.05,enemy?1:1.4,enemy?6.5:9,8),hull);body.rotation.x=Math.PI/2;g.add(body);const nose=new T.Mesh(new T.ConeGeometry(enemy?.75:1.1,enemy?3:4,8),hull);nose.rotation.x=-Math.PI/2;nose.position.z=enemy?-4.6:-6.2;g.add(nose);const canopy=new T.Mesh(new T.SphereGeometry(enemy?.6:.9,12,8),new T.MeshStandardMaterial({color:enemy?0x071117:0x03131d,metalness:enemy?.8:.92,roughness:enemy?.1:.06}));canopy.scale.set(.8,.42,1.6);canopy.position.set(0,.72,enemy?-1.7:-2.1);g.add(canopy);g.userData.plumes=[];g.userData.engines=[];if(!enemy){for(const x of[-2.6,2.6]){const fin=new T.Mesh(new T.BoxGeometry(.22,1.55,2.45),wing);fin.position.set(x,.72,2);fin.rotation.z=x<0?.12:-.12;g.add(fin)}const spine=new T.Mesh(new T.BoxGeometry(.72,.22,4.6),hull);spine.position.set(0,.36,.35);g.add(spine)}const xs=enemy?[-1.35,1.35]:[-5,-1.7,1.7,5];if(enemy)g.userData.hitMats=[hull,wing];for(const x of xs){const e=new T.Mesh(new T.SphereGeometry(enemy?.25:.38,8,6),new T.MeshBasicMaterial({color:enemy?0x6dd8ff:0xff9a43,transparent:!enemy,opacity:enemy?1:.9,blending:enemy?T.NormalBlending:T.AdditiveBlending,depthWrite:enemy}));e.position.set(x,0,3.35);g.add(e);if(!enemy){g.userData.engines.push(e);const p=new T.Mesh(new T.ConeGeometry(.34,3.4,8),new T.MeshBasicMaterial({color:0xff8a3b,transparent:true,opacity:.76,blending:T.AdditiveBlending,depthWrite:false}));p.rotation.x=-Math.PI/2;p.position.set(x,0,4.9);g.add(p);g.userData.plumes.push(p)}}return g}
+const hero=makeShip();hero.position.set(0,7,6);
+const buddy=makeShip(true);buddy.scale.setScalar(.78);buddy.position.set(-9,9,-2);
+const terrainGeo=new T.PlaneGeometry(2000,2000,110,110);
+terrainGeo.rotateX(-Math.PI/2);
+const terrainP=terrainGeo.attributes.position,terrainColors=new Float32Array(terrainP.count*3);
+const low=new T.Color('#603b39'),mid=new T.Color('#a85b48'),high=new T.Color('#e4a06a'),crest=new T.Color('#edbf86'),tc=new T.Color();
+for(let i=0;i<terrainP.count;i++){
+  const x=terrainP.getX(i),z=terrainP.getZ(i);
+  const ridge=Math.pow(Math.abs(Math.sin(x*.008+z*.002)),3)*8;
+  const roll=Math.sin(x*.012)*2.7+Math.cos(z*.013)*3.4+Math.sin((x+z)*.006)*3.5;
+  const y=-11+Math.max(0,ridge+roll);
+  terrainP.setY(i,y);
+  const level=T.MathUtils.clamp((y+14)/17,0,1);
+  tc.copy(low).lerp(mid,Math.min(1,level*1.4));
+  if(level>.36)tc.lerp(high,(level-.36)*.8);
+  if(level>.7)tc.lerp(crest,(level-.7)*1.8);
+  terrainColors.set(tc.toArray(),i*3);
 }
-function plane(police=false){
-  const g=new T.Group();
-  const matte=(color)=>new T.MeshStandardMaterial({color,roughness:police?.62:.94,metalness:police?.18:.04,side:T.DoubleSide});
-  const hull=matte(police?'#e1e8e6':'#386b39');
-  const wings=matte(police?'#dae3e3':'#477b43');
-  const trim=matte(police?'#235887':'#2d6335');
-  const silhouette=[[-.8,-3.5],[-3,-1.6],[-8.5,.5],[-7.5,3],[-3.2,2.2],[0,1.2],[3.2,2.2],[7.5,3],[8.5,.5],[3,-1.6],[.8,-3.5]];
-  g.add(new T.Mesh(aircraftPlate(silhouette),wings));
-  const fuselage=new T.Mesh(new T.CylinderGeometry(1.05,1.4,9,10),hull);
-  fuselage.rotation.x=Math.PI/2;g.add(fuselage);
-  const nose=new T.Mesh(new T.ConeGeometry(1.1,4,10),hull);
-  nose.rotation.x=-Math.PI/2;nose.position.z=-6.2;g.add(nose);
-  const canopy=new T.Mesh(new T.SphereGeometry(.9,14,10),new T.MeshStandardMaterial({color:'#102b36',roughness:.12,metalness:.72}));
-  canopy.scale.set(.8,.42,1.6);canopy.position.set(0,.72,-2.1);g.add(canopy);
-  for(const x of [-2.6,2.6]){
-    const fin=new T.Mesh(new T.BoxGeometry(.22,1.55,2.45),trim);
-    fin.position.set(x,.72,2);fin.rotation.z=x<0?.12:-.12;g.add(fin);
-  }
-  const spine=new T.Mesh(new T.BoxGeometry(.72,.22,4.6),hull);
-  spine.position.set(0,.36,.35);g.add(spine);
-  for(const x of [-5,-1.7,1.7,5]){
-    ball(g,police?'#8dd9ff':'#ffa853',[x,0,3.35],[.36,.32,.42],true);
-    const plume=mesh(g,new T.ConeGeometry(.3,2.5,8),police?'#62baff':'#ff9345',[x,0,4.4],[1,1,1],true);
-    plume.rotation.x=-Math.PI/2;plume.userData.flame=true;
-  }
-  if(police){
-    for(const side of [-1,1])block(g,'#275f93',[side*5.3,.18,1],[1.1,.08,1.8]);
-    g.userData.lights=[
-      ball(g,'#ff3f47',[-.58,1.2,.35],[.3,.24,.33],true),
-      ball(g,'#4ca4ff',[.58,1.2,.35],[.3,.24,.33],true)
-    ];
-  }
-  g.scale.setScalar(police?.74:.9);
-  scene.add(g);return g;
-}
-const hero=plane();hero.position.set(0,7,6);
-const buddy=plane(true);buddy.position.set(-7,9,0);
-const ground=mesh(scene,new T.PlaneGeometry(1800,1800),'#eab66e',[0,-4,-250]);ground.rotation.x=-Math.PI/2;
-const sunDisc=ball(scene,'#fff0b0',[-110,95,-290],[18,18,3],true);
+terrainGeo.setAttribute('color',new T.BufferAttribute(terrainColors,3));
+terrainGeo.computeVertexNormals();
+const ground=new T.Mesh(terrainGeo,new T.MeshStandardMaterial({vertexColors:true,roughness:.98,metalness:0}));
+ground.position.set(0,0,-300);scene.add(ground);
+// Desert sunlight is drawn by Emberwing's original atmospheric sky shader.
 const rocks=[];
 const rockBatches=[['#bd744e',.66,1],['#e79d5b',.68,.76],['#f5c278',.5,.64]].map(([c,top,bottom])=>{const m=new T.InstancedMesh(new T.CylinderGeometry(top,bottom,1,5),mat(c),65);m.instanceMatrix.setUsage(T.DynamicDrawUsage);m.frustumCulled=false;scene.add(m);return m;});
 const rockDummy=new T.Object3D();
@@ -139,7 +117,7 @@ $('stick').addEventListener('pointerdown',e=>{unlock();if(stickPointer!==null)re
 function update(dt){visualTime+=dt;const active=state==='playing';if(active)time+=dt;
 for(const m of [...rocks,...dunes]){m.position.z+=dt*(active?17:5);if(m.position.z>48)m.position.z-=520;}
 updateRocks();
-hero.traverse(m=>{if(m.userData.flame)m.scale.z=1+Math.sin(visualTime*35)*.22;});buddy.userData.lights.forEach((m,i)=>m.visible=Math.floor(visualTime*8)%2===i);
+for(const ship of [hero,buddy])for(const plume of ship.userData.plumes||[]){plume.scale.z=1+.18*Math.sin(visualTime*31);}buddy.userData.lights.forEach((m,i)=>m.visible=Math.floor(visualTime*8)%2===i);
 if(active){const x=(keys.has('ArrowRight')||keys.has('KeyD')?1:0)-(keys.has('ArrowLeft')||keys.has('KeyA')?1:0)+touch.x,y=(keys.has('ArrowUp')||keys.has('KeyW')?1:0)-(keys.has('ArrowDown')||keys.has('KeyS')?1:0)+touch.y;hero.position.x=clamp(hero.position.x+x*17*dt,-Math.min(14,camera.aspect*10),Math.min(14,camera.aspect*10));hero.position.y=clamp(hero.position.y+y*12*dt,1,16);hero.rotation.z=T.MathUtils.damp(hero.rotation.z,-x*.45,8,dt);hero.rotation.x=T.MathUtils.damp(hero.rotation.x,y*.18,8,dt);shotTimer-=dt;missileTimer=Math.max(0,missileTimer-dt);buddyTimer-=dt;invulnerable-=dt;power-=dt;if((keys.has('Space')||touch.fire)&&shotTimer<=0){fire();shotTimer=power>0?.09:.18;}if(buddyTimer<=0){fire('police');buddyTimer=.48;const danger=orbs.find(o=>!o.collect&&o.z>hero.position.z-14&&o.z<hero.position.z-3&&Math.hypot(o.x-hero.position.x,o.y-hero.position.y)<4);if(danger){explode(new T.Vector3(danger.x,danger.y,danger.z),'#77deff',14);resetOrb(danger);stats.protects++;}}
 if(time>=32&&!boss)makeBoss();
 const dive=Math.sin(time*.45)> .7;const bp=new T.Vector3(hero.position.x-7,hero.position.y+2,dive?-16:1);buddy.position.lerp(bp,1-Math.exp(-dt*2));buddy.rotation.z=Math.sin(time*2)*.12+hero.rotation.z*.5;
@@ -152,10 +130,14 @@ if(!active){buddy.position.y=9+Math.sin(visualTime)*.5;hero.rotation.z=Math.sin(
 for(let i=0;i<orbCount;i++){const o=orbs[i];o.z+=dt*(active?15:5);if(o.z>24)resetOrb(o);if(active&&Math.abs(o.z-hero.position.z)<1.7&&Math.hypot(o.x-hero.position.x,o.y-hero.position.y)<2){if(o.collect){stats.collections++;power=6;shield=Math.min(5,shield+1);sound('power');say('WEAPONS OVERCHARGED',2);}else if(invulnerable<=0){shield--;invulnerable=2;sound('zap');if(shield<=0){shield=5;stats.rescues++;say('OFFICER BLUE // SHIELD RESTORED',3);sound('power');}else say('SHIELD HIT // STAY ON TARGET',1.5);}resetOrb(o);}orbPositions.set([o.x+Math.sin(visualTime+o.phase)*.4,o.y,o.z],i*3);const pulse=.65+.35*Math.sin(visualTime*4+o.phase);orbColors.set(o.collect?[pulse,pulse,.18]:[.2*pulse,.8*pulse,pulse],i*3);}og.attributes.position.needsUpdate=og.attributes.color.needsUpdate=true;
 for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.p.addScaledVector(p.v,dt);p.v.multiplyScalar(1-dt*1.3);if(p.life<=0)particles.splice(i,1);}particles.forEach((p,i)=>{pp.set(p.p.toArray(),i*3);pc.set([p.c.r*p.life/p.max,p.c.g*p.life/p.max,p.c.b*p.life/p.max],i*3);});pg.setDrawRange(0,particles.length);pg.attributes.position.needsUpdate=pg.attributes.color.needsUpdate=true;
 if(messageTime>0){messageTime-=dt;if(messageTime<=0)$('message').textContent='';}hero.visible=invulnerable<=0||Math.floor(visualTime*12)%2===0;$('score').textContent=score;$('shield').textContent='● '.repeat(shield)+'○ '.repeat(5-shield);$('missilestatus').textContent=missileTimer>0?'MISSILE // RELOADING':'MISSILE // X / M // READY';$('missile').style.opacity=missileTimer>0?.5:1;$('launch').disabled=missileTimer>0;document.body.classList.toggle('missile-fired',missileTimer>1.18);
-camera.position.x=T.MathUtils.damp(camera.position.x,hero.position.x*(camera.aspect<1?.7:.24),2,dt);camera.position.y=T.MathUtils.damp(camera.position.y,14+(hero.position.y-7)*.23,2,dt);camera.lookAt(hero.position.x*(camera.aspect<1?.7:.32),9+(hero.position.y-7)*.3,-45);
+camera.position.x=T.MathUtils.damp(camera.position.x,hero.position.x,3,dt);
+camera.position.y=T.MathUtils.damp(camera.position.y,hero.position.y+5.5,3,dt);
+camera.position.z=T.MathUtils.damp(camera.position.z,hero.position.z+16,3,dt);
+camera.lookAt(hero.position.x,hero.position.y-8,hero.position.z-42);
+sky.position.copy(camera.position);
 }
 for(let i=0;i<15;i++)spawn(i,true);
-window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.fov=camera.aspect<1?70:56;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.fov=66;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 let last=performance.now();function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.04);last=now;if(!document.hidden){update(dt);renderer.render(scene,camera);}}requestAnimationFrame(loop);
 // Read-only diagnostics plus deterministic stepping only in explicit test mode.
 if(new URLSearchParams(location.search).has('test'))window.gusTest={snapshot:()=>({state,time,score,shield,stats:{...stats},hero:hero.position.toArray(),buddy:buddy.position.toArray(),shots:shots.map(s=>({missile:s.missile,p:s.mesh.position.toArray()})),boss:boss?{hp:boss.pods.map(p=>p.hp),dead:boss.dead}:null,orbs:orbCount,particles:particles.length,drawCalls:renderer.info.render.calls,audio:audio?.state,muted,touch:{...touch}}),orbAtHero:(collect)=>{const o=orbs[0];o.collect=collect;o.x=hero.position.x;o.y=hero.position.y;o.z=hero.position.z;},advance:(seconds)=>{for(let i=0;i<seconds*60;i++)update(1/60);renderer.render(scene,camera);}};
