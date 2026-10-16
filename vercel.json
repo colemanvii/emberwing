@@ -1,0 +1,5 @@
+{
+  "version": 2,
+  "buildCommand": "mkdir -p public && cp gus.html public/index.html && cp gus.html public/gus.html && cp -R gus public/gus",
+  "outputDirectory": "public"
+}
