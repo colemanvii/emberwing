@@ -13,7 +13,7 @@ const {startStaticServer}=require('./static-server.cjs');
  await page.screenshot({path:'gus-level2.png'});
  await page.keyboard.down('Shift');await step(1);assert((await snap()).turbo>.9);await page.keyboard.up('Shift');
  await page.keyboard.press('x');await step(2);assert((await snap()).stats.missileHits>0);
- await page.keyboard.down('Space');await step(20);s=await snap();assert(s.boss,'Level 2 boss arrives');assert(s.boss.hp.some(h=>h>18),'Stronger Level 2 boss');await step(55);await page.keyboard.up('Space');
+ await step(20);s=await snap();assert(s.boss,'Level 2 boss arrives');assert(s.boss.hp.some(h=>h>18),'Stronger Level 2 boss');await page.keyboard.down('Space');await step(55);await page.keyboard.up('Space');
  s=await snap();assert.equal(s.state,'won');assert(s.stats.wolverineHits>=3);assert(s.boss.hp.every(h=>h===0));assert(!(await page.locator('#next-level').isVisible()));
  await page.locator('#again').click();assert.equal((await snap()).level,2);assert.equal((await snap()).state,'playing');
  await page.goto((process.env.BASE_URL||server.url)+'/gus.html?test');await page.locator('#level-two').click();assert.equal((await snap()).level,2);await step(.2);assert((await snap()).wolverine.visible);
