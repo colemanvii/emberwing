@@ -100,7 +100,9 @@ function fire(owner='gus',missile=false){
     p.x+=nextMissilePylon*3.3;nextMissilePylon*=-1;
     p.y-=.85;p.z-=1.1;
   }else p.z-=3;
-  const target=nearest(p);
+  const target=missile&&boss&&!boss.dead
+    ? boss.pods.filter(p=>p.hp>0).map(p=>({p:p.mesh.getWorldPosition(new T.Vector3()),pod:p}))[0]||nearest(p)
+    : nearest(p);
   if(owner==='gus'&&!missile){
     const o=orbs.find(o=>!o.collect&&o.z<p.z&&o.z>p.z-30&&Math.hypot(o.x-p.x,o.y-p.y)<2);
     if(o){explode(new T.Vector3(o.x,o.y,o.z),'#8defff',12);resetOrb(o);stats.orbPops++;sound('zap');}
