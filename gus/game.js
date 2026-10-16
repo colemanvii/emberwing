@@ -168,6 +168,6 @@ if(new URLSearchParams(location.search).has('test'))window.gusTest={
       minX=Math.min(minX,x);maxX=Math.max(maxX,x);
       minY=Math.min(minY,y);maxY=Math.max(maxY,y);
     }
-    return {changed,ratio:changed/(w*h),bounds:changed?{left:minX/w,top:1-maxY/h,right:maxX/w,bottom:1-minY/h}:null,screen:this?.planeScreen?.(),drawSize:[w,h]};
+    return {changed,ratio:changed/(w*h),bounds:changed?{left:minX/w,top:1-maxY/h,right:maxX/w,bottom:1-minY/h}:null,screen:this?.planeScreen?.(),drawSize:[w,h],bufferSample:[...on.slice((Math.floor(h/2)*w+Math.floor(w/2))*4,(Math.floor(h/2)*w+Math.floor(w/2))*4+4)],nonzeroBytes:on.filter(v=>v>0).length,glError:gl.getError()};
   },
   snapshot:()=>({state,time,score,shield,stats:{...stats},hero:hero.position.toArray(),buddy:buddy.position.toArray(),shots:shots.map(s=>({missile:s.missile,p:s.mesh.position.toArray()})),boss:boss?{hp:boss.pods.map(p=>p.hp),dead:boss.dead}:null,orbs:orbCount,particles:particles.length,drawCalls:renderer.info.render.calls,audio:audio?.state,muted,touch:{...touch}}),orbAtHero:(collect)=>{const o=orbs[0];o.collect=collect;o.x=hero.position.x;o.y=hero.position.y;o.z=hero.position.z;},advance:(seconds)=>{for(let i=0;i<seconds*60;i++)update(1/60);renderer.render(scene,camera);}};
