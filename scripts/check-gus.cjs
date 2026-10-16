@@ -29,6 +29,13 @@ const { startStaticServer } = require('./static-server.cjs');
     }
     const canvas = await page.locator('#sky').boundingBox();
     assert(canvas&&canvas.width>500&&canvas.height>300,'3D canvas has measurable size');
+    const initialPosition=await page.evaluate(()=>window.gusTest.planeScreen());
+    console.log('Initial aircraft frame:',JSON.stringify(initialPosition));
+    const visual=await page.evaluate(()=>window.gusTest.planePixelCoverage());
+    console.log('Actual rendered aircraft pixels:',JSON.stringify(visual));
+    assert(visual.changed>1500,'Visible aircraft must affect at least 1500 real rendered pixels');
+    assert(visual.bounds&&visual.bounds.left<.65&&visual.bounds.right>.35,'Hero aircraft must occupy the central screen');
+    assert(visual.bounds.bottom>.50,'Hero aircraft must be in the lower half of chase camera');
     await page.locator('#start').click();
     await page.waitForFunction(()=>window.gusTest.snapshot().state==='playing',{timeout:5000});
     const initial = await page.evaluate(()=>window.gusTest.snapshot());
