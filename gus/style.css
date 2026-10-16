@@ -1,3 +1,37 @@
 :root{font-family:ui-rounded,'Arial Rounded MT Bold',system-ui,sans-serif;color:white;font-synthesis:none}*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#63cce8;touch-action:none;user-select:none}canvas{position:fixed;inset:0;width:100%;height:100%}header{position:fixed;top:max(22px,env(safe-area-inset-top));left:32px;right:32px;display:flex;align-items:center;justify-content:space-between}.brand{font-weight:950;font-size:20px;letter-spacing:4px;text-shadow:0 2px 8px #16466166}.brand span{display:block;font-size:10px;letter-spacing:5px;margin-top:6px;color:#ffef91}.tools{display:flex;gap:8px}button{font:inherit;cursor:pointer;touch-action:none;border:0;color:inherit;font-weight:900}button:focus-visible{outline:4px solid #fff;outline-offset:4px}.tools button{border:1px solid #ffffff66;border-radius:24px;background:#123c5970;padding:12px 18px;font-size:11px;letter-spacing:1px}#restart{font-size:22px;padding:5px 16px}#hud{position:fixed;top:102px;left:32px;display:flex;gap:12px}.badge{background:#173e596e;backdrop-filter:blur(12px);border:1px solid #ffffff40;border-radius:16px;padding:12px 18px;min-width:112px}.badge small{display:block;font-size:9px;letter-spacing:1.7px;opacity:.8}.badge strong{font-size:29px;line-height:1.1}.partner{font-weight:900;font-size:11px;padding-top:17px}.partner small{margin-top:9px}.partner i{display:inline-block;width:7px;height:7px;background:#7ef7ff;border-radius:50%;margin-right:6px;box-shadow:0 0 9px #7ef7ff}#shield{color:#8affbe;letter-spacing:3px;margin-top:6px}#intro,#victory{position:fixed;left:7%;top:31%;text-shadow:0 3px 25px #1a4b6540;max-width:520px}.eyebrow{letter-spacing:3px;font-size:10px;font-weight:900;color:#fff6bc}h1{font-size:clamp(38px,5.2vw,76px);line-height:1.02;letter-spacing:-3px;margin:17px 0}h1 em{font-style:normal;color:#ffed8b}p{line-height:1.6;font-size:16px}#intro>button,#victory>button{background:#ffdc57;color:#153951;border-radius:18px;font-size:19px;box-shadow:0 7px 0 #c68732,0 18px 35px #194a6133;padding:20px 30px;margin:10px 0 20px}#intro button span{margin-left:35px}#intro>small{display:block;font-size:10px;opacity:.85}footer{position:fixed;bottom:max(20px,env(safe-area-inset-bottom));left:32px;right:32px;display:flex;justify-content:space-between;gap:15px;font-size:10px;font-weight:800;letter-spacing:1.5px;text-shadow:0 2px 8px #51351a}#message{position:fixed;top:23%;left:15%;width:70%;text-align:center;font-size:clamp(18px,2.7vw,32px);font-weight:950;text-shadow:0 3px 10px #173c59;pointer-events:none}#bossbar{position:fixed;top:100px;left:50%;transform:translateX(-50%);width:320px;text-align:center;font-weight:900;font-size:11px;letter-spacing:1px}#bossbar>div{height:12px;border:2px solid white;border-radius:20px;margin:8px 0;overflow:hidden;background:#204857}#bossfill{display:block;height:100%;width:100%;background:#b8ff43;transition:width .15s}#bossbar small{font-size:9px}#touch{display:none}body.playing #intro{display:none}[hidden]{display:none!important}body.won #touch{display:none}body.won #victory{display:block}#victory{top:30%}@media(pointer:coarse){body.playing #touch{display:block}.weapons{position:fixed;left:max(28px,env(safe-area-inset-left));top:57%;display:flex;gap:15px;align-items:center}.weapons button{border:2px solid #ffffffaa;background:#17628c99;box-shadow:0 7px 25px #173a5944;border-radius:50%;width:100px;height:100px;font-size:26px}.weapons small{display:block;font-size:9px;margin-top:6px}#missile{width:78px;height:78px;background:#d5683299}#stick{position:fixed;right:max(35px,env(safe-area-inset-right));top:56%;width:145px;height:145px;border-radius:50%;background:#173e5944;border:2px solid #ffffff60;display:grid;place-items:center}#knob{width:70px;height:70px;display:grid;place-items:center;border-radius:50%;background:#ffffff60;border:2px solid white;font-size:30px}#stick span{position:absolute;bottom:-23px;font-size:10px;letter-spacing:3px}#hint{display:none}}@media(max-width:700px){header{left:18px;right:18px;top:18px}.brand{font-size:15px}#hud{left:18px;top:82px;gap:6px}.badge{padding:9px;min-width:75px}.partner{font-size:9px}.shield{display:none}#bossbar{top:155px;width:230px}#intro,#victory{left:7%;top:31%;max-width:90%}h1{letter-spacing:-2px}#intro p{font-size:13px}#intro>small{max-width:240px;line-height:1.5}footer{left:18px;right:18px;font-size:8px}#hint{display:none}.weapons{left:18px;gap:8px}.weapons button{width:77px;height:77px}#missile{width:65px;height:65px}#stick{right:22px;width:115px;height:115px}#message{top:25%}.tools button{padding:9px;font-size:9px}}
 
 button{-webkit-tap-highlight-color:transparent} @media(min-width:701px){#bossbar{left:auto;right:32px;transform:none;width:280px}}
+
+
+/* ALIEN STRIKE — confident tactical HUD, still easy for Gus to operate. */
+:root{font-family:Arial,Helvetica,system-ui,sans-serif}
+body{background:#8bbdb9}
+header{z-index:4}
+.brand{font-size:16px;font-weight:800;letter-spacing:2.8px;text-shadow:0 1px 6px #102a2a99}
+.brand span{font-size:9px;letter-spacing:3px;color:#f2e8bb}
+.tools button{background:#152c30c9;border-radius:3px;border-color:#b2c3bd88}
+.badge{background:#10292cbb;border:1px solid #abc1b47b;border-radius:3px;backdrop-filter:blur(5px)}
+.badge strong{font-size:25px}
+#shield{color:#b2da99}
+#intro,#victory{padding:22px 26px;background:#102426ae;max-width:570px;text-shadow:0 2px 8px #101b1b80}
+.eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:2px;color:#d0ddad}
+h1{font-weight:900;letter-spacing:-2.5px;font-size:clamp(42px,5.8vw,78px);line-height:.99}
+h1 em{color:#c6d9ac}
+#intro p{font-size:15px;max-width:410px}
+#intro>button,#victory>button{background:#d5dfc2;border:1px solid #fff8d5;color:#172f2d;border-radius:2px;font-size:14px;font-weight:900;letter-spacing:1.5px;box-shadow:none;padding:18px 22px}
+#intro>button:hover,#victory>button:hover{background:#edf3df}
+#intro>small{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.4px}
+#message{font-size:clamp(14px,2vw,24px);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:1px}
+#bossbar{background:#17302bdc;padding:12px 16px;border:1px solid #baccb367}
+#bossbar>div{height:7px;border-radius:0;border:0;background:#293e37}
+#bossfill{background:#91d16c}
+#bossbar small{color:#c3d3bd}
+footer{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.7px;font-size:10px}
+#launch{display:none;position:fixed;right:32px;bottom:70px;z-index:5;min-width:173px;padding:13px 17px;background:#1f3c36dd;border:1px solid #d3dcb9;color:#e7f1d2;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:24px;line-height:1;text-align:left;border-radius:2px;box-shadow:0 3px 16px #16252466}
+#launch span{display:block;font-size:11px;letter-spacing:1.2px;margin-top:8px}
+#launch:hover:not(:disabled){background:#365844}
+#launch:disabled{opacity:.48}
+body.playing #launch{display:block}
+body.missile-fired #launch{border-color:#f6c972;box-shadow:0 0 24px #f5bc617a}
+@media(pointer:coarse){body.playing #launch{display:none}.weapons button{background:#193c43d9;border-radius:12px;font-size:20px}.weapons button#missile{background:#3f5534df}.weapons small{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px}#stick,#knob{border-radius:50%;background:#14343eb9}}
+@media(max-width:700px){#intro,#victory{padding:14px 17px}h1{font-size:clamp(38px,9vw,55px)}#intro p{font-size:12px}#launch{right:18px;bottom:60px}.brand{font-size:13px}.badge strong{font-size:20px}}
