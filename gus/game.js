@@ -140,11 +140,12 @@ sky.position.copy(camera.position);
 }
 for(let i=0;i<15;i++)spawn(i,true);
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.fov=66;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-let last=performance.now();function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.04);last=now;if(!document.hidden){update(dt);renderer.render(scene,camera);}}requestAnimationFrame(loop);
+let freezeFrame=false;let last=performance.now();function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.04);last=now;if(!document.hidden){if(!freezeFrame)update(dt);renderer.render(scene,camera);}}requestAnimationFrame(loop);
 // Read-only diagnostics plus deterministic stepping only in explicit test mode.
 if(new URLSearchParams(location.search).has('test'))window.gusTest={
   planeScreen:()=>{hero.updateWorldMatrix(true,true);const p=hero.getWorldPosition(new T.Vector3()).project(camera);return {ndc:[p.x,p.y,p.z],pixels:[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2],camera:camera.position.toArray(),hero:hero.position.toArray(),heroVisible:hero.visible,planeChildren:hero.children.length};},
   planeVisible:(on)=>{hero.visible=on;buddy.visible=on;renderer.render(scene,camera);},
+  freeze:(on)=>{freezeFrame=!!on;renderer.render(scene,camera);},
   planePixelCoverage:()=>{
     const gl=renderer.getContext(),w=gl.drawingBufferWidth,h=gl.drawingBufferHeight;
     function capture(){
