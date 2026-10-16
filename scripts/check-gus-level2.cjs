@@ -1,0 +1,21 @@
+const assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+const {startStaticServer}=require('./static-server.cjs');
+(async()=>{const server=await startStaticServer();let browser;try{
+ browser=await chromium.launch({headless:true,args:['--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--disable-gpu-sandbox']});
+ const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto((process.env.BASE_URL||server.url)+'/gus.html?test');await page.waitForFunction(()=>window.gusTest);
+ const snap=()=>page.evaluate(()=>gusTest.snapshot()),step=s=>page.evaluate(s=>gusTest.advance(s),s);
+ await page.locator('#start').click();await page.evaluate(()=>gusTest.freeze(true));
+ await page.keyboard.down('Space');await step(65);await page.keyboard.up('Space');assert.equal((await snap()).state,'won');
+ assert(await page.locator('#next-level').isVisible(),'Level 1 unlocks Level 2');await page.locator('#next-level').click();
+ assert.equal((await snap()).level,2);await step(4);let s=await snap();assert(s.wolverine.visible);assert(s.stats.wolverineHits>0,'Wolverine lands real damage');assert(s.stats.wolverineKills>0,'Wolverine destroys an alien');
+ await page.screenshot({path:'gus-level2.png'});
+ await page.keyboard.down('Shift');await step(1);assert((await snap()).turbo>.9);await page.keyboard.up('Shift');
+ await page.keyboard.press('x');await step(2);assert((await snap()).stats.missileHits>0);
+ await page.keyboard.down('Space');await step(20);s=await snap();assert(s.boss,'Level 2 boss arrives');assert(s.boss.hp.some(h=>h>18),'Stronger Level 2 boss');await step(55);await page.keyboard.up('Space');
+ s=await snap();assert.equal(s.state,'won');assert(s.stats.wolverineHits>=3);assert(s.boss.hp.every(h=>h===0));assert(!(await page.locator('#next-level').isVisible()));
+ await page.locator('#again').click();assert.equal((await snap()).level,2);assert.equal((await snap()).state,'playing');
+ await page.goto((process.env.BASE_URL||server.url)+'/gus.html?test');await page.locator('#level-two').click();assert.equal((await snap()).level,2);await step(.2);assert((await snap()).wolverine.visible);
+ assert.deepEqual(errors,[]);console.log('PASS: Level 1 -> Level 2, visible Wolverine, real claw damage/kills, turbo/missiles, stronger boss victory, replay, direct Level 2 entry, no JavaScript errors.');console.log(JSON.stringify(s.stats));
+}finally{await browser?.close();await server.close();}})().catch(e=>{console.error(e);process.exitCode=1});
