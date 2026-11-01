@@ -1,9 +1,9 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101311"><meta name="description" content="Low-level strike. Destroy the launch site. Get out north."><meta property="og:type" content="website"><meta property="og:site_name" content="EMBERWING"><meta property="og:title" content="EMBERWING — Valley Strike"><meta property="og:description" content="Low-level strike. Destroy the launch site. Get out north."><meta property="og:url" content="https://colemanvii.github.io/emberwing/play.html"><meta property="og:image" content="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><meta property="og:image:secure_url" content="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><meta property="og:image:alt" content="EMBERWING Valley Strike — low-level jet flight through a desert valley"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/jpeg"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="EMBERWING — Valley Strike"><meta name="twitter:description" content="Low-level strike. Destroy the launch site. Get out north."><meta name="twitter:image" content="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><link rel="canonical" href="https://colemanvii.github.io/emberwing/play.html"><link rel="image_src" href="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><title>Emberwing — Valley Strike</title><link rel="icon" href="data:,"><link rel="stylesheet" href="src/level1/flight.css?build=56b1ab3b5fb4"><link rel="stylesheet" href="src/level1/bandit-cue.css"><link rel="stylesheet" href="src/level1/touch.css?build=56b1ab3b5fb4"></head>
-<body data-state="flight">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101311"><meta name="description" content="Low-level strike. Destroy the launch site. Get out north."><meta property="og:type" content="website"><meta property="og:site_name" content="EMBERWING"><meta property="og:title" content="EMBERWING — Valley Strike"><meta property="og:description" content="Low-level strike. Destroy the launch site. Get out north."><meta property="og:url" content="https://colemanvii.github.io/emberwing/play.html"><meta property="og:image" content="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><meta property="og:image:secure_url" content="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><meta property="og:image:alt" content="EMBERWING Valley Strike — low-level jet flight through a desert valley"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/jpeg"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="EMBERWING — Valley Strike"><meta name="twitter:description" content="Low-level strike. Destroy the launch site. Get out north."><meta name="twitter:image" content="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><link rel="canonical" href="https://colemanvii.github.io/emberwing/play.html"><link rel="image_src" href="https://colemanvii.github.io/emberwing/emberwing-og-v2.jpg"><title>Emberwing — Valley Strike</title><link rel="icon" href="data:,"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=B612:wght@400;700&display=swap"><link rel="stylesheet" href="src/level1/flight.css?build=56b1ab3b5fb4"><link rel="stylesheet" href="src/level1/bandit-cue.css"><link rel="stylesheet" href="src/level1/touch.css?build=56b1ab3b5fb4"></head>
+<body data-state="flight" data-first-flight="true">
 <section id="briefing" aria-label="Mission briefing"><div class="brief">
-<p class="eyebrow">EMBERWING // EW-01</p>
+<p class="eyebrow">EMBERWING · EW-01</p>
 <h1>VALLEY STRIKE</h1>
 <p class="orders">PENETRATE LOW · DESTROY LAUNCH SITE · EXIT NORTH</p>
 <button id="deploy" hidden disabled>BEGIN MISSION</button>
@@ -11,20 +11,23 @@
 <p class="controls mobile">LEFT THUMB FLY · FIRE CANNON · TRACK / RELEASE MISSILE · BOOST</p>
 <p id="loadError" hidden>Aircraft could not load. Reload to try again.</p>
 </div></section>
-<section id="firstFlight" hidden aria-label="Mission controls">
-  <p class="firstFlightEyebrow">EMBERWING // EW-01</p>
+<section id="firstFlight" hidden aria-label="Mission briefing">
+  <div class="ffPanel">
+  <p class="ffEyebrow"><span>EMBERWING</span><span>OPERATION EW-01</span></p>
   <h1>VALLEY STRIKE</h1>
+  <div class="ffRule"></div>
+  <ol class="ffOrders" aria-label="Orders"><li><i>01</i>Penetrate low</li><li><i>02</i>Destroy the launch site</li><li><i>03</i>Exit north</li></ol>
   <div class="firstFlightControls" aria-label="Flight controls">
-    <div><span>ARROWS</span><b>STEER</b></div>
-    <div><span>SPACE</span><b>CANNON</b></div>
-    <div><span>HOLD X</span><b>LOCK MISSILE</b></div>
-    <div><span>RELEASE X</span><b>FIRE MISSILE</b></div>
-    <div><span>SHIFT</span><b>TURBO</b></div>
+    <div><span><kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd></span><b>Steer</b></div>
+    <div><span><kbd>SPACE</kbd></span><b>Cannon</b></div>
+    <div><span><kbd>X</kbd></span><b>Hold to lock · release to fire missile</b></div>
+    <div><span><kbd>SHIFT</kbd></span><b>Turbo</b></div>
   </div>
-  <p class="firstFlightStart">PRESS ENTER TO BEGIN</p>
+  <p class="firstFlightStart"><kbd>ENTER</kbd>LAUNCH</p>
+  </div>
 </section>
 <div id="firstFlightCount" hidden aria-live="assertive"></div>
-<div id="hud"><ol id="objectives" aria-label="Mission progress"><li><span aria-hidden="true">✓</span>Penetrate Defenses</li><li><span aria-hidden="true">✓</span>Destroy Launch Site</li><li><span aria-hidden="true">✓</span>Escape North</li></ol><div id="runClock" aria-label="Run timer"><span id="runTime">00:00.0</span><small id="runBest" hidden></small></div><div id="grade"></div><div id="flash"></div><div id="compass" aria-label="Heading"><i></i></div><div id="reticle"></div><div id="capture" hidden></div><div id="target" hidden></div><div id="banditCue" hidden aria-hidden="true"></div><div id="radio" role="status" hidden></div><div id="health" aria-label="Hull"></div><div id="crash">FLIGHT TERMINATED</div><div id="complete"></div></div>
+<div id="hud"><ol id="objectives" aria-label="Mission progress"><li><span aria-hidden="true">✓</span>Penetrate Defenses</li><li><span aria-hidden="true">✓</span>Destroy Launch Site</li><li><span aria-hidden="true">✓</span>Escape North</li></ol><div id="runClock" aria-label="Run timer"><span id="runTime">00:00.0</span><small id="runBest" hidden></small></div><div id="grade"></div><div id="flash"></div><div id="compass" aria-hidden="true"><i></i></div><div id="heading" aria-label="Heading"></div><div id="reticle"></div><div id="capture" hidden></div><div id="target" hidden></div><div id="banditCue" hidden aria-hidden="true"></div><div id="radio" role="status" hidden></div><div id="health" aria-label="Hull"></div><div id="crash">FLIGHT TERMINATED</div><div id="complete"></div></div>
 <script type="module">import('./src/level1/game.js?build=56b1ab3b5fb4').catch(error=>{document.getElementById('loadError').hidden=false;document.getElementById('deploy').textContent='UNABLE TO LAUNCH';console.error(error);});</script>
 </body></html>
 

@@ -23,7 +23,7 @@ const setWorldThemeIdentity=setWorldTheme;setWorldTheme=function(alpine){setWorl
 function audio(){if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();lockOsc=audioCtx.createOscillator();lockGain=audioCtx.createGain();lockOsc.frequency.value=980;lockGain.gain.value=0;lockOsc.connect(lockGain).connect(audioCtx.destination);lockOsc.start()}if(audioCtx.state==='suspended')audioCtx.resume()}function chirp(freq=700,dur=.055,gain=.032,delay=0){if(!audioCtx||audioCtx.state!=='running')return;const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+delay;o.type='square';o.frequency.value=freq;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(gain,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+dur+.02)}function silence(){pulseClock=0;if(lockGain&&audioCtx)lockGain.gain.setTargetAtTime(0,audioCtx.currentTime,.02)}function setSeeker(on){seeker=on;lockState=lockTimer=lastLock=0;enemyLockReacted=false;silence();if(on){chirp(540,.05,.035);chirp(760,.07,.032,.055);announce('TRACK REQUEST')}else{chirp(430,.065,.025);if(!missile)announce('TRACK COLD')}}
 function dangerPulse(kind,strength=.45){if(dangerCooldown>0)return;dangerCooldown=kind==='enemy'?.48:.26;hitKick=Math.max(hitKick,strength);flashScreen(.02+strength*.025);if(kind==='enemy'){chirp(118,.075,.032);chirp(920,.04,.022,.012)}else if(kind==='ground'){chirp(72,.085,.022);chirp(360,.055,.016,.014)}else{chirp(92,.075,.027);chirp(610,.045,.019,.01)}}
 function updateDanger(dt){dangerCooldown=Math.max(0,dangerCooldown-dt);if(crashed||missionComplete||missionCompleteTimer>0)return;const alt=ship.position.y-terrainHeight(ship.position.x,ship.position.z),low=alt<18&&speed>130;if(low&&!groundNear)dangerPulse('ground',.38);groundNear=low?true:alt<28&&groundNear;let closeObstacle=false;for(const m of scenery){if(!m.visible)continue;const dx=ship.position.x-m.position.x,dz=m.position.z-ship.position.z,r=m.userData.collisionR||0,gap=Math.hypot(dx,dz)-r,vertical=Math.abs(ship.position.y-m.position.y)<(m.userData.collisionH||8)+18;if(vertical&&gap>1.5&&gap<20){closeObstacle=true;break}}if(closeObstacle&&!obstacleNear)dangerPulse('obstacle',.52);obstacleNear=closeObstacle;const eclose=enemyAlive&&enemy.position.distanceTo(ship.position)<30;if(eclose&&!enemyNear)dangerPulse('enemy',.68);enemyNear=eclose}
-function crashNow(reason='TERRAIN IMPACT'){if(crashed)return;crashed=true;camTargetBias=camClosureFov=0;cancelEnemyAttack(99);silence();crashUI.innerHTML=`FLIGHT TERMINATED<small>${reason}<br>PRESS R TO REINITIALIZE</small>`;crashUI.style.display='grid';flashScreen(.45)}
+function crashNow(reason='TERRAIN IMPACT'){if(crashed)return;crashed=true;camTargetBias=camClosureFov=0;cancelEnemyAttack(99);silence();crashUI.innerHTML=`<div class="endCard"><p class="endEyebrow">EW-01 · VALLEY STRIKE</p><h2 class="endTitle">FLIGHT TERMINATED</h2><div class="endRule"></div><p class="endReason">${reason}</p><p class="endHint">${matchMedia('(pointer:coarse)').matches?'TAP RESET':'PRESS R'} TO FLY AGAIN</p></div>`;crashUI.style.display='grid';flashScreen(.45)}
 function flashEnemyHit(){for(const m of enemy.userData.hitMats||[]){m.emissive.setHex(0xffffff);m.emissiveIntensity=2.8}setTimeout(()=>{for(const m of enemy.userData.hitMats||[]){m.emissive.setHex(0x000000);m.emissiveIntensity=1}},44)}
 function spawnImpactFX(pos,lethal=false,sound=true){const n=lethal?14:8;for(let i=0;i<n;i++){const mesh=new THREE.Mesh(new THREE.SphereGeometry(.1+Math.random()*.14,5,4),new THREE.MeshBasicMaterial({color:i%3?0xffd4a0:0xffffff,transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false}));mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*3,(Math.random()-.5)*2.2,(Math.random()-.5)*3));scene.add(mesh);const v=new THREE.Vector3(Math.random()-.5,Math.random()-.15,Math.random()-.5).normalize().multiplyScalar(14+Math.random()*24).addScaledVector(enemyVel,.08),life=lethal?.34:.23;combatFX.push({mesh,v,life,maxLife:life,smoke:false})}flashEnemyHit();confirmHit(lethal);hitKick=Math.min(1,hitKick+(lethal?.78:.38));if(sound){chirp(820,.018,.025);chirp(126,.058,.04,.003)}}
 function spawnDamageSmoke(){const mesh=new THREE.Mesh(new THREE.SphereGeometry(.78+Math.random()*.42,7,5),new THREE.MeshBasicMaterial({color:worldIndex?0x26343d:0x291d1b,transparent:true,opacity:.32,depthWrite:false}));mesh.position.copy(enemy.position).add(new THREE.Vector3((Math.random()-.5)*2.4,(Math.random()-.5)*1.5,(Math.random()-.5)*2.4));scene.add(mesh);const v=enemyVel.clone().multiplyScalar(.16).add(new THREE.Vector3((Math.random()-.5)*2.5,3+Math.random()*3,(Math.random()-.5)*2.5)),life=.78+Math.random()*.22;combatFX.push({mesh,v,life,maxLife:life,smoke:true,baseOpacity:.32,grow:1.15})}
@@ -1494,7 +1494,7 @@ function updateMission(dt){
   const delta=Number.isFinite(previousBest)&&!newBest?finalTime-previousBest:null;
   const bestLine=newBest?`NEW BEST · ${formatTime(bestTime)}`:`PB ${formatTime(bestTime)}${delta!==null?` · +${delta.toFixed(1)}`:''}`;
   audioCtx?.suspend();document.body.dataset.state='complete';completeUI.style.display='grid';
-  completeUI.innerHTML=`<div><small>EMBERWING / LEVEL 01</small><h1>EXTRACTED</h1><div class="runTime">${formatTime(finalTime)}</div><small class="${newBest?'best new':'best'}">${bestLine}</small><p>Target destroyed. Aircraft recovered.</p><small>HULL ${playerHP}/3</small><button id="again">FLY AGAIN</button></div>`;
+  completeUI.innerHTML=`<div class="endCard"><p class="endEyebrow">EW-01 · VALLEY STRIKE</p><h2 class="endTitle">EXTRACTED</h2><div class="endRule"></div><div class="runTime">${formatTime(finalTime)}</div><div class="endStats"><span class="${newBest?'best new':'best'}">${bestLine}</span><span>HULL ${playerHP}/3</span></div><p class="endLine">Target destroyed. Aircraft recovered.</p><button id="again">FLY AGAIN</button></div>`;
   document.getElementById('again').addEventListener('click',reset);chirp(330,.12,.03);chirp(660,.18,.035,.1);
  }
 }
@@ -2228,10 +2228,9 @@ updateEnemy=function(dt){
 };
 // Hit feedback: the airframe flashes and jolts, a spark burst and flash land on it,
 // and a hit marker blooms on the reticle. A kill gets a brief slow-motion beat.
-const hitMark=document.createElement('div');
-hitMark.style.cssText='position:absolute;left:50%;top:42%;width:34px;height:34px;transform:translate(-50%,-50%) rotate(45deg) scale(.6);border:2px dashed #ffd9a0;border-radius:3px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:5';
+const hitMark=document.createElement('div');hitMark.id='hitMark';hitMark.setAttribute('aria-hidden','true');
 (reticle.parentElement||document.body).appendChild(hitMark);
-function hitMarker(lethal){hitMark.style.transition='none';hitMark.style.borderColor=lethal?'#ff6a3a':'#ffd9a0';hitMark.style.opacity=1;hitMark.style.transform='translate(-50%,-50%) rotate(45deg) scale(1.15)';
+function hitMarker(lethal){hitMark.style.transition='none';hitMark.classList.toggle('lethal',lethal);hitMark.style.opacity=1;hitMark.style.transform='translate(-50%,-50%) rotate(45deg) scale(1.15)';
  requestAnimationFrame(()=>{hitMark.style.transition='opacity .3s,transform .3s';hitMark.style.opacity=0;hitMark.style.transform='translate(-50%,-50%) rotate(45deg) scale(.6)';});}
 const combatFeelWeapons=updateWeapons;
 updateWeapons=function(dt){
@@ -2248,3 +2247,15 @@ updateWeapons=function(dt){
 const combatFeelReset=reset;
 reset=function(){pass.mode='none';pass.unseen=0;combatFeelReset();};
 window.emberwingCombat={pass:()=>({...pass}),enemyHP:()=>enemyAlive?enemyHP:null};
+
+// ─── HUD presentation ─────────────────────────────────────────────────────────
+// Heading tape uses aviation convention (N 3 6 E 12 15 S …, tens of degrees) with a
+// three-digit readout under the index; hull is exposed as data for the CSS gauge.
+for(const {mark,deg} of compassMarks){mark.textContent=({0:'N',90:'E',180:'S',270:'W'})[deg]||String(deg/10);mark.dataset.cardinal=deg%90===0?'true':'false';}
+const headingUI=document.getElementById('heading');
+const hudInstruments=updateInstruments;
+updateInstruments=function(){
+ hudInstruments();
+ health.dataset.hp=String(Math.max(0,playerHP));
+ if(headingUI){const f=heading(),deg=(Math.round(THREE.MathUtils.radToDeg(Math.atan2(f.x,-f.z)))+360)%360;headingUI.textContent=String(deg).padStart(3,'0')+'°';}
+};
