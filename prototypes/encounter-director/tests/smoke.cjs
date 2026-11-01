@@ -30,6 +30,6 @@ const DUR=+process.env.DUR||70;
   await page.close();
   return{seed,deck,clock:[+t0.toFixed(1),+t1.toFixed(1),+st.s.elapsed.toFixed(1)],log:st.d.log,played:st.d.log.filter(l=>!l.includes('skipped')).length,second:!!st.d.log[1],third:!!st.d.log[2],end:st.x||{phase:st.s.phase},errors,fails};
  };
- const res=[];for(const seed of [3,41,977])res.push(await run(seed));
+ const res=[];for(const seed of (process.env.SEEDS||'3,41,977').split(',').map(Number))res.push(await run(seed));
  console.log(JSON.stringify(res,null,1));await browser.close();process.exit(res.some(r=>r.fails.length||r.errors.length)?1:0);
 })().catch(e=>{console.error(e);process.exit(2)});

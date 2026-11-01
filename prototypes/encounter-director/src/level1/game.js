@@ -2123,8 +2123,10 @@ function directorAmbush(card){
 }
 function directorOpportunity(card){
  // A crippled transport-escort limping home: slow, smoking, not shooting. Optional, and it pays.
- if(enemyAlive||mission.bandit||mission.destroyed)return false;
- spawnDefender();mission.bandit=false;
+ // Needs an empty sky (the one bandit airframe is free). Leaves the authored bandit flag as it
+ // was: before the scripted merge it stays armed, after it the respawn timer resumes later.
+ if(enemyAlive||mission.destroyed)return false;
+ const banditFlag=mission.bandit;spawnDefender();mission.bandit=banditFlag;
  const {f,r}=directorFrame();
  enemy.position.copy(ship.position).addScaledVector(f,640).addScaledVector(r,card.side*240);
  enemy.position.y=Math.max(terrainHeight(enemy.position.x,enemy.position.z)+70,ship.position.y+35);
@@ -2153,8 +2155,11 @@ updateMission=function(dt){
  }
  const card=director.deck[director.next];
  if(!card||missionElapsed<director.armAt||missionElapsed-director.lastCombat<3)return;
- const played=directorPlays[card.kind](card);
- director.log.push(`${missionElapsed.toFixed(1)}s ${card.kind}${played?'':' (skipped)'}`);
+ // A card whose situation can't happen yet (e.g. no free airframe for a straggler) waits and
+ // retries every 2s for up to 20s before it is dropped, so late cards aren't lost to bad timing.
+ const played=directorPlays[card.kind](card);card.tries=(card.tries||0)+1;
+ if(!played&&card.tries<10){director.armAt=missionElapsed+2;return;}
+ director.log.push(`${missionElapsed.toFixed(1)}s ${card.kind}${played?'':' (skipped)'}${card.tries>1?` after ${card.tries} tries`:''}`);
  director.next++;director.armAt=missionElapsed+(played?9+director.rng()*6:.5);
 };
 const directorReset=reset;
