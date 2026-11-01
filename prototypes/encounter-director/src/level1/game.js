@@ -1196,24 +1196,11 @@ const firstFlightCount=document.getElementById('firstFlightCount');
 const firstFlightDesktop=document.body.dataset.firstFlight==='true'&&innerWidth>700&&!matchMedia('(pointer:coarse)').matches;
 let firstFlightReleased=!firstFlightDesktop,firstFlightStarting=false;
 function beginFirstFlight(){
+ // Enter dismisses the briefing panel and hands over the aircraft straight away.
  if(!firstFlightDesktop||firstFlightReleased||firstFlightStarting)return;
  firstFlightStarting=true;firstFlightUI.classList.add('departing');
- const steps=['3','2','1'];let i=0;
- setTimeout(()=>{
-  firstFlightUI.hidden=true;firstFlightCount.hidden=false;
-  const advance=()=>{
-   const value=steps[i];firstFlightCount.textContent=value;
-   firstFlightCount.classList.remove('pulse');void firstFlightCount.offsetWidth;firstFlightCount.classList.add('pulse');
-   if(value==='1'){
-    setTimeout(()=>{
-     firstFlightCount.hidden=true;firstFlightCount.classList.remove('pulse');firstFlightReleased=true;document.body.dataset.onboarding='false';clock.getDelta();renderer.domElement.focus();
-    },540);
-    return;
-   }
-   i+=1;setTimeout(advance,540);
-  };
-  advance();
- },190);
+ firstFlightReleased=true;document.body.dataset.onboarding='false';clock.getDelta();renderer.domElement.focus();
+ setTimeout(()=>{firstFlightUI.hidden=true;},260);
 }
 // Base flight/audio/rendering stay intact. There is no simulated time during briefing.
 const flightKey=key;

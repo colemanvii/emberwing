@@ -205,29 +205,47 @@ body[data-onboarding="false"] #hud{opacity:1;transition:opacity .5s ease .1s}
 body[data-onboarding="true"] canvas{filter:brightness(.62) saturate(.78)}
 body[data-onboarding="false"] canvas{filter:none}
 
+/* Centred briefing panel over the dimmed scene. Corner ticks echo the reticle. */
 #firstFlight{
- position:fixed;inset:0;z-index:30;display:flex;align-items:center;
- padding:0 max(8vw,48px);pointer-events:none;text-shadow:var(--halo);
- background:linear-gradient(90deg,rgba(6,8,7,.78) 0%,rgba(6,8,7,.5) 38%,rgba(6,8,7,0) 72%);
- animation:ffIn .7s cubic-bezier(.2,.72,.18,1) both;
+ position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:24px;pointer-events:none;
+ background:radial-gradient(ellipse at 50% 50%,rgba(6,8,7,.2),rgba(6,8,7,.55));
+ animation:ffIn .6s cubic-bezier(.2,.72,.18,1) both;
 }
-#firstFlight.departing{animation:ffOut .2s cubic-bezier(.4,0,.8,.2) both}
-.ffPanel{display:grid;gap:0;width:min(520px,84vw)}
-.ffEyebrow{display:flex;justify-content:space-between;margin:0 0 18px;font-size:var(--t-meta);letter-spacing:var(--track-eyebrow);color:var(--bone-3)}
-#firstFlight h1{margin:0;font-size:var(--t-display);font-weight:700;line-height:.9;letter-spacing:.06em;color:var(--bone)}
-.ffRule{height:1px;margin:28px 0 22px;background:linear-gradient(90deg,var(--hair),transparent)}
-.ffOrders{margin:0 0 30px;padding:0;list-style:none;display:grid;gap:12px;font-size:var(--t-body);letter-spacing:var(--track-caps);text-transform:uppercase;color:var(--bone)}
+#firstFlight.departing{animation:ffOut .26s cubic-bezier(.4,0,.8,.2) both}
+.ffPanel{
+ position:relative;display:grid;width:min(600px,100%);padding:40px 48px 36px;
+ background:rgba(9,12,11,.74);border:1px solid var(--hair-soft);
+ -webkit-backdrop-filter:blur(10px) saturate(.85);backdrop-filter:blur(10px) saturate(.85);
+ box-shadow:0 30px 80px rgba(0,0,0,.45);
+ --c:var(--bone);--l:14px;--w:1.5px;
+}
+.ffPanel:before{
+ content:'';position:absolute;inset:-1px;pointer-events:none;
+ background:
+  linear-gradient(var(--c) 0 0) left top/var(--l) var(--w) no-repeat,
+  linear-gradient(var(--c) 0 0) left top/var(--w) var(--l) no-repeat,
+  linear-gradient(var(--c) 0 0) right top/var(--l) var(--w) no-repeat,
+  linear-gradient(var(--c) 0 0) right top/var(--w) var(--l) no-repeat,
+  linear-gradient(var(--c) 0 0) left bottom/var(--l) var(--w) no-repeat,
+  linear-gradient(var(--c) 0 0) left bottom/var(--w) var(--l) no-repeat,
+  linear-gradient(var(--c) 0 0) right bottom/var(--l) var(--w) no-repeat,
+  linear-gradient(var(--c) 0 0) right bottom/var(--w) var(--l) no-repeat;
+}
+.ffEyebrow{display:flex;justify-content:space-between;gap:16px;margin:0 0 20px;font-size:var(--t-meta);letter-spacing:var(--track-eyebrow);color:var(--bone-3)}
+#firstFlight h1{margin:0;font-size:clamp(40px,4.2vw,58px);font-weight:700;line-height:.95;letter-spacing:.06em;color:var(--bone)}
+.ffRule{height:1px;margin:26px 0 22px;background:var(--hair-soft)}
+.ffOrders{margin:0 0 26px;padding:0;list-style:none;display:grid;gap:12px;font-size:var(--t-body);letter-spacing:var(--track-caps);text-transform:uppercase;color:var(--bone)}
 .ffOrders i{display:inline-block;width:36px;font-style:normal;color:var(--ember)}
-.firstFlightControls{display:grid;grid-template-columns:auto 1fr;gap:10px 22px;align-items:center;margin:0 0 34px;padding:18px 0;border-top:1px solid var(--hair-soft);border-bottom:1px solid var(--hair-soft)}
+.firstFlightControls{display:grid;grid-template-columns:auto 1fr;gap:10px 24px;align-items:center;margin:0 0 28px;padding:20px 0;border-top:1px solid var(--hair-soft);border-bottom:1px solid var(--hair-soft)}
 .firstFlightControls div{display:contents}
 .firstFlightControls span{justify-self:start}
-.firstFlightControls b{font-weight:400;font-size:var(--t-body);letter-spacing:var(--track-caps);color:var(--bone-2)}
+.firstFlightControls b{font-weight:400;font-size:var(--t-body);letter-spacing:.08em;color:var(--bone-2)}
 kbd{
  display:inline-block;min-width:28px;padding:5px 8px 4px;text-align:center;
  font-size:var(--t-meta);letter-spacing:.08em;line-height:1;color:var(--bone);
- border:1px solid var(--hair);border-bottom-width:2px;border-radius:2px;text-shadow:none;background:rgba(6,8,7,.25);
+ border:1px solid var(--hair);border-bottom-width:2px;border-radius:2px;background:rgba(241,236,223,.04);
 }
-.firstFlightStart{display:flex;align-items:center;gap:14px;margin:0;font-size:var(--t-body);font-weight:700;letter-spacing:.24em;color:var(--bone)}
+.firstFlightStart{display:flex;align-items:center;justify-content:center;gap:14px;margin:0;font-size:var(--t-body);font-weight:700;letter-spacing:.24em;color:var(--bone)}
 .firstFlightStart kbd{border-color:var(--ember);color:var(--ember)}
 .firstFlightStart:after{content:'';flex:0 0 48px;height:1px;background:var(--ember);transform-origin:left;animation:ffPrompt 2.2s ease-in-out 1s infinite}
 #firstFlightCount{
@@ -236,7 +254,11 @@ kbd{
  background:rgba(6,8,7,.18);
 }
 #firstFlightCount.pulse{animation:ffCount .54s cubic-bezier(.18,.76,.2,1) both}
-@keyframes ffIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes ffIn{from{opacity:0}to{opacity:1}}
+#firstFlight .ffPanel{animation:ffPanelIn .6s cubic-bezier(.2,.72,.18,1) both}
+#firstFlight.departing .ffPanel{animation:ffPanelOut .26s cubic-bezier(.4,0,.8,.2) both}
+@keyframes ffPanelIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes ffPanelOut{to{opacity:0;transform:scale(1.02)}}
 @keyframes ffOut{to{opacity:0}}
 @keyframes ffPrompt{0%,100%{transform:scaleX(.35);opacity:.6}50%{transform:scaleX(1);opacity:1}}
 @keyframes ffCount{0%{opacity:0;transform:scale(1.08)}22%{opacity:1}100%{opacity:.75;transform:scale(.98)}}
@@ -292,5 +314,5 @@ body[data-state=complete] #touchControls{display:none!important}
  #briefing .controls{display:none}
 }
 @media(prefers-reduced-motion:reduce){
- #objectives li,#objectives span,#radio,#firstFlight,.firstFlightStart:after,#health:before{animation:none!important;transition:none!important}
+ #objectives li,#objectives span,#radio,#firstFlight,#firstFlight .ffPanel,.firstFlightStart:after,#health:before{animation:none!important;transition:none!important}
 }
