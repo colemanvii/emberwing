@@ -243,7 +243,7 @@ kbd{
 
 /* ─── end states ─── */
 #crash,#complete{
- position:absolute;inset:0;display:none;place-items:center;text-align:center;pointer-events:auto;
+ position:absolute;inset:0;z-index:6;display:none;place-items:center;text-align:center;pointer-events:auto;
  background:radial-gradient(ellipse at 50% 50%,rgba(9,12,11,.86),rgba(9,12,11,.96));text-shadow:none;
 }
 .endCard{display:grid;justify-items:center;gap:0;padding:0 24px}
