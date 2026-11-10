@@ -132,21 +132,26 @@ if(beast){ball(g,'#286cb7',[0,2.4,0],[.85,.8,.7]);for(const side of[-1,1])ball(g
 if(colossus){ball(g,'#b9c9da',[0,2.15,-.3],[.78,.82,.6]);for(const side of[-1,1])block(g,'#dce8f0',[side*.95,.6,-.45],[.22,.75,.25]);}
 if(jubilee){block(g,'#ffe943',[0,.5,.55],[2.4,2.4,.2]);ball(g,'#292427',[0,2.65,.12],[.78,.48,.6]);block(g,'#ff78bb',[0,2.05,-.74],[.85,.2,.12]);}
  if(hulk){block(g,'#614185',[0,-1.15,0],[2.6,1.2,1.5]);block(g,'#d1e8bc',[0,1.95,-.8],[.75,.18,.1]);}
- nameTag(g,kind,hulk?4:3.3);scene.add(g);g.visible=false;g.rotation.y=Math.PI;return {mesh:g,arms};
+ nameTag(g,kind,hulk?4:3.3);if(kind!=='HULK')g.scale.setScalar(1.7);scene.add(g);g.visible=false;g.rotation.y=Math.PI;return {mesh:g,arms};
 }
+// A compact team roster makes every X-Man findable, even during busy combat.
+const xmenRoster=document.createElement('div');xmenRoster.id='xmen-roster';xmenRoster.setAttribute('aria-label','X-Men allies');
+xmenRoster.style.cssText='position:fixed;left:14px;bottom:54px;z-index:4;max-width:min(390px,70vw);padding:9px 12px;background:rgba(5,21,37,.7);border:1px solid rgba(190,228,255,.45);color:#f5f9ff;font:600 10px/1.65 ui-monospace,monospace;letter-spacing:.05em;pointer-events:none;display:none;text-shadow:0 1px 2px #001;';
+xmenRoster.innerHTML='<span style="color:#ffde7b">X-MEN ASSEMBLED // 11 HEROES</span><div style="margin-top:2px;font-weight:400">Wolverine · Storm · Cyclops · Jean Grey · Iceman · Nightcrawler · Rogue · Gambit · Beast · Colossus · Jubilee</div>';
+document.body.appendChild(xmenRoster);
 const hulk=teammate('HULK'),avengers=[
-{...teammate('IRON MAN'),name:'IRON MAN',color:'#9bf4ff',offset:[15,5,-20],cool:1.2},
-{...teammate('THOR'),name:'THOR',color:'#b7cdff',offset:[-16,7,-27],cool:2.8},
-{...teammate('STORM'),name:'STORM',color:'#f3dcff',offset:[3,10,-26],cool:4},
-{...teammate('CYCLOPS'),name:'CYCLOPS',color:'#ff3453',offset:[-22,3,-18],cool:2.1},
-{...teammate('JEAN GREY'),name:'JEAN GREY',color:'#ff9bdb',offset:[23,8,-30],cool:3.2},
-{...teammate('ICEMAN'),name:'ICEMAN',color:'#7deaff',offset:[-9,12,-40],cool:3.8},
-{...teammate('NIGHTCRAWLER'),name:'NIGHTCRAWLER',color:'#b486ff',offset:[10,11,-43],cool:4.5},
-{...teammate('ROGUE'),name:'ROGUE',color:'#a6ff8a',offset:[-30,6,-34],cool:2.7},
-{...teammate('GAMBIT'),name:'GAMBIT',color:'#ff86e9',offset:[30,4,-39],cool:3.1},
-{...teammate('BEAST'),name:'BEAST',color:'#4c9bff',offset:[-23,10,-52],cool:3.6},
-{...teammate('COLOSSUS'),name:'COLOSSUS',color:'#c2e5ff',offset:[23,9,-56],cool:4.1},
-{...teammate('JUBILEE'),name:'JUBILEE',color:'#ffeb66',offset:[0,15,-61],cool:2.5}];
+{...teammate('IRON MAN'),name:'IRON MAN',color:'#9bf4ff',offset:[9,3,-15],cool:1.2},
+{...teammate('THOR'),name:'THOR',color:'#b7cdff',offset:[-9,5,-16],cool:2.8},
+{...teammate('STORM'),name:'STORM',color:'#f3dcff',offset:[-5,7,-21],cool:4},
+{...teammate('CYCLOPS'),name:'CYCLOPS',color:'#ff3453',offset:[-12,0,-11],cool:2.1},
+{...teammate('JEAN GREY'),name:'JEAN GREY',color:'#ff9bdb',offset:[12,3,-12],cool:3.2},
+{...teammate('ICEMAN'),name:'ICEMAN',color:'#7deaff',offset:[-7,9,-24],cool:3.8},
+{...teammate('NIGHTCRAWLER'),name:'NIGHTCRAWLER',color:'#b486ff',offset:[7,8,-25],cool:4.5},
+{...teammate('ROGUE'),name:'ROGUE',color:'#a6ff8a',offset:[-15,4,-18],cool:2.7},
+{...teammate('GAMBIT'),name:'GAMBIT',color:'#ff86e9',offset:[15,1,-19],cool:3.1},
+{...teammate('BEAST'),name:'BEAST',color:'#4c9bff',offset:[-10,2,-27],cool:3.6},
+{...teammate('COLOSSUS'),name:'COLOSSUS',color:'#c2e5ff',offset:[10,4,-28],cool:4.1},
+{...teammate('JUBILEE'),name:'JUBILEE',color:'#ffeb66',offset:[0,10,-25],cool:2.5}];
 let hulkCooldown=0,hulkAttack=null;
 function beam(from,to,color,lightning=false){const vertices=[from.clone()];if(lightning)for(let i=1;i<7;i++)vertices.push(from.clone().lerp(to,i/7).add(new T.Vector3(rand(-1.8,1.8),rand(-1.2,1.2),0)));vertices.push(to.clone());const m=new T.Line(new T.BufferGeometry().setFromPoints(vertices),new T.LineBasicMaterial({color,transparent:true,opacity:1,depthWrite:false}));scene.add(m);teamEffects.push({mesh:m,life:.35,max:.35});}
 function callHulk(){
@@ -156,7 +161,7 @@ function callHulk(){
 }
 function updateTeam(dt){
  for(let i=teamEffects.length-1;i>=0;i--){const e=teamEffects[i];e.life-=dt;e.mesh.material.opacity=Math.max(0,e.life/e.max);if(e.life<=0){scene.remove(e.mesh);e.mesh.geometry.dispose();e.mesh.material.dispose();teamEffects.splice(i,1);}}
- const enabled=level===3;hulk.mesh.visible=enabled;avengers.forEach(a=>a.mesh.visible=enabled);$('smash').hidden=!enabled||state!=='playing';if(!enabled)return;
+ const enabled=level===3;xmenRoster.style.display=enabled&&state==='playing'?'block':'none';hulk.mesh.visible=enabled;avengers.forEach(a=>a.mesh.visible=enabled);$('smash').hidden=!enabled||state!=='playing';if(!enabled)return;
  const home=new T.Vector3(hero.position.x-11,hero.position.y+1,hero.position.z-12);
  if(state==='playing'){
  hulkCooldown=Math.max(0,hulkCooldown-dt);
@@ -171,7 +176,7 @@ function updateTeam(dt){
  }if(a.age>1.85)hulkAttack=null;
  }else{hulk.mesh.position.lerp(home,1-Math.exp(-dt*5));hulk.mesh.rotation.y=2.8;}
  }
- for(const a of avengers){const dest=hero.position.clone().add(new T.Vector3(...a.offset));a.mesh.position.lerp(dest,1-Math.exp(-dt*5));a.mesh.position.y+=Math.sin(visualTime*2+a.offset[0])*dt*.5;if(state!=='playing')continue;a.cool-=dt;
+ for(const a of avengers){const dest=hero.position.clone().add(new T.Vector3(...a.offset));a.mesh.position.lerp(dest,1-Math.exp(-dt*9));a.mesh.position.y+=Math.sin(visualTime*2+a.offset[0])*dt*.5;if(state!=='playing')continue;a.cool-=dt;
  if(a.cool<=0){const target=boss&&!boss.dead?targets().find(t=>t.pod):nearest(a.mesh.position);if(target){const from=a.mesh.position.clone();from.y+=.5;beam(from,target.p,a.color,a.name==='THOR'||a.name==='STORM'||a.name==='JEAN GREY');hit(target,a.name==='IRON MAN'?2:4,a.name);if(a.name==='IRON MAN')stats.ironManHits++;else if(a.name==='THOR')stats.thorHits++;else if(a.name==='STORM')stats.stormHits++;else stats.xmenHits++;if(a.name==='NIGHTCRAWLER'){explode(target.p,'#b486ff',20);feedback('NIGHTCRAWLER // BAMF!');}tone(a.name==='CYCLOPS'?950:a.name==='IRON MAN'?1200:250,60,.18,'sawtooth',.12);}a.cool=a.name==='IRON MAN'?2.6:4.2;}
  }
  $('smash').disabled=!!hulkAttack||hulkCooldown>0;$('smash').textContent=hulkAttack?'HULK SMASH!':hulkCooldown>0?'HULK // '+Math.ceil(hulkCooldown)+'s':'H · HULK SMASH';
